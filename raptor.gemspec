@@ -4,6 +4,8 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require 'raptor/version'
 
 Gem::Specification.new do |spec|
+  spec.required_ruby_version = '>= 2.0.0'
+
   spec.name          = 'raptor'
   spec.version       = Raptor::VERSION
   spec.date          = Time.now.strftime( '%Y-%m-%d' )
@@ -23,4 +25,5 @@ Gem::Specification.new do |spec|
 
   spec.add_development_dependency 'bundler', '~> 1.3'
   spec.add_development_dependency 'rake'
+  spec.add_development_dependency 'rspec'
 end
