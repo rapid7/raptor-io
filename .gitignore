@@ -13,6 +13,7 @@ test/version_tmp
 tmp
 .idea
 Gemfile.lock
+.rvmrc
 
 # YARD artifacts
 .yardoc
