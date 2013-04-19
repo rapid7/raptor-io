@@ -9,4 +9,8 @@ describe Raptor::Protocols::HTTP::Response do
       described_class.new( request: r ).request.should == r
     end
   end
+
+  describe '#to_s' do
+    it 'returns a String representation of the request'
+  end
 end

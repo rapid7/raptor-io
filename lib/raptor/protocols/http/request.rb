@@ -72,6 +72,12 @@ class Request < PDU
     @http_method = http_verb.to_s.downcase.to_sym
   end
 
+  # @return [String]
+  #   String representation of the request, ready for HTTP transmission.
+  def to_s
+    fail 'Not implemented.'
+  end
+
   CALLBACK_TYPES.each do |type|
     define_method type, -> ( &block ) do
       fail ArgumentError, 'Missing block.' if !block_given?

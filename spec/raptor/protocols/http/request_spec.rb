@@ -77,4 +77,8 @@ describe Raptor::Protocols::HTTP::Request do
     end
 
   end
+
+  describe '#to_s' do
+    it 'returns a String representation of the request'
+  end
 end
