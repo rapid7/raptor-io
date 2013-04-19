@@ -1,0 +1,1 @@
+require 'raptor/ruby/hash'

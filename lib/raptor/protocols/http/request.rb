@@ -56,7 +56,7 @@ class Request < PDU
   # @return [Hash]  Normalized parameters.
   #
   def parameters=( params )
-    @parameters = stringify_hash( params.to_h )
+    @parameters = params.to_h.stringify
   end
 
   #
@@ -97,20 +97,6 @@ class Request < PDU
 
     @callbacks[type].each { |block| block.call response }
     @callbacks[:on_complete].each { |block| block.call response }
-  end
-
-  private
-
-  def stringify_hash( hash )
-    nh = {}
-    hash.each do |k, v|
-      if v.is_a?( Hash )
-        nh[k.to_s] = stringify_hash( v )
-      else
-        nh[k.to_s] = v.to_s
-      end
-    end
-    nh
   end
 
 end
