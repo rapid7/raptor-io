@@ -11,6 +11,6 @@ describe Raptor::Protocols::HTTP::Response do
   end
 
   describe '#to_s' do
-    it 'returns a String representation of the request'
+    it 'returns a String representation of the response'
   end
 end
