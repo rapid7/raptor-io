@@ -1,5 +1,5 @@
 module Raptor
-module Protocols::HTTP
+module Protocol::HTTP
 
 #
 # HTTP Data Unit, holds shared attributes of {Request} and {Response}.

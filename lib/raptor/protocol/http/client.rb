@@ -1,5 +1,5 @@
 module Raptor
-module Protocols::HTTP
+module Protocol::HTTP
 
 #
 # HTTP Client class.

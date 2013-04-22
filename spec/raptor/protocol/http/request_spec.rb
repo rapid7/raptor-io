@@ -1,8 +1,8 @@
 require_relative '../../../spec_helper'
 require 'ostruct'
 
-describe Raptor::Protocols::HTTP::Request do
-  it_should_behave_like 'Raptor::Protocols::HTTP::PDU'
+describe Raptor::Protocol::HTTP::Request do
+  it_should_behave_like 'Raptor::Protocol::HTTP::PDU'
 
   describe '#initialize' do
     it 'sets the instance attributes by the options' do

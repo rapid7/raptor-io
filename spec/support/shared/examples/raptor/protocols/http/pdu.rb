@@ -1,4 +1,4 @@
-shared_examples_for 'Raptor::Protocols::HTTP::PDU' do
+shared_examples_for 'Raptor::Protocol::HTTP::PDU' do
 
   describe '#url' do
     it 'returns the configured value' do
