@@ -1,4 +1,4 @@
-require_relative '../spec_helper'
+require 'spec_helper'
 
 describe Raptor::VERSION do
   it 'holds the version number of the library' do
