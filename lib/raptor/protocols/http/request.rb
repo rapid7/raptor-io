@@ -9,7 +9,7 @@ module Protocols::HTTP
 class Request < PDU
 
   # Acceptable response callback types.
-  CALLBACK_TYPES = %i(on_complete on_failure on_success)
+  CALLBACK_TYPES = [:on_complete, :on_failure, :on_success]
 
   # @return [Symbol]  HTTP method.
   attr_reader :http_method
@@ -48,7 +48,7 @@ class Request < PDU
   #
   # Sets request parameters.
   #
-  # @param  [#to_h]  params
+  # @param  [Hash]  params
   #   Parameters to assign to this request.
   #   If performing a GET request and the URL has parameters of its own they
   #   will be merged and overwritten.
@@ -56,7 +56,7 @@ class Request < PDU
   # @return [Hash]  Normalized parameters.
   #
   def parameters=( params )
-    @parameters = params.to_h.stringify
+    @parameters = params.stringify
   end
 
   #
@@ -79,7 +79,7 @@ class Request < PDU
   end
 
   CALLBACK_TYPES.each do |type|
-    define_method type, -> ( &block ) do
+    define_method type, ->( &block ) do
       fail ArgumentError, 'Missing block.' if !block_given?
       @callbacks[type] << block
     end

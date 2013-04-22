@@ -38,25 +38,6 @@ describe Raptor::Protocols::HTTP::Request do
       described_class.new.parameters.should == {}
     end
 
-    it 'forces arg to Hash' do
-      with_symbols = {
-          test:         'blah',
-          another_hash: {
-              stuff: 'test'
-          }
-      }
-      with_strings = {
-          'test'         => 'blah',
-          'another_hash' => {
-              'stuff' => 'test'
-          }
-      }
-
-      request = described_class.new
-      request.parameters = OpenStruct.new( with_symbols )
-      request.parameters.should == with_strings
-    end
-
     it 'recursively forces converts keys and values to strings' do
       with_symbols = {
           test:         'blah',
