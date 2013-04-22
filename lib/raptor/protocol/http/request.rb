@@ -18,14 +18,10 @@ class Request < PDU
   attr_reader :parameters
 
   #
-  # @note All options will be sent through the class setters whenever
-  #   possible to allow for normalization.
+  # @note This class' options are in addition to {PDU#initialize}.
   #
   # @param  [Hash]  options Request options.
-  # @option options [String] :url The URL of the remote resource.
   # @option options [Symbol, String] :http_method HTTP method to use.
-  # @option options [Hash] :headers HTTP headers to send.
-  # @option options [String] :body HTTP request body to send.
   # @option options [Hash] :parameters
   #   Parameters to send. If performing a GET request and the URL has parameters
   #   of its own they will be merged and overwritten.
@@ -80,8 +76,9 @@ class Request < PDU
 
   CALLBACK_TYPES.each do |type|
     define_method type, ->( &block ) do
-      fail ArgumentError, 'Missing block.' if !block_given?
+      fail ArgumentError, 'Missing block.' if !block
       @callbacks[type] << block
+      self
     end
   end
 
