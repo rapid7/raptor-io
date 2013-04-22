@@ -23,13 +23,10 @@ describe Raptor::Protocol::HTTP::Request do
   end
 
   describe '#http_method=' do
-    it 'sets the HTTP method' do
-      described_class.new.http_method.should == :get
-    end
     it 'normalizes the HTTP method to a downcase symbol' do
       request = described_class.new
-      request.http_method = 'GeT'
-      request.http_method.should == :get
+      request.http_method = 'pOsT'
+      request.http_method.should == :post
     end
   end
 
