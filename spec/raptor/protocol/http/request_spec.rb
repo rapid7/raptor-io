@@ -152,6 +152,71 @@ describe Raptor::Protocol::HTTP::Request do
     end
   end
 
+  describe '#handle_response' do
+    context 'when a response is successful' do
+      let(:response) { Raptor::Protocol::HTTP::Response.new( code: 200 ) }
+
+      it 'calls #on_complete callbacks' do
+        request = described_class.new
+
+        passed_response = nil
+        request.on_complete { |res| passed_response = res }
+        request.handle_response( response )
+
+        passed_response.should == response
+      end
+      it 'calls #on_success callbacks' do
+        request = described_class.new
+
+        passed_response = nil
+        request.on_success { |res| passed_response = res }
+        request.handle_response( response )
+
+        passed_response.should == response
+      end
+      it 'does not call #on_failure callbacks' do
+        request = described_class.new
+
+        passed_response = nil
+        request.on_failure { |res| passed_response = res }
+        request.handle_response( response )
+
+        passed_response.should be_nil
+      end
+    end
+    context 'when a request fails' do
+      let(:response) { Raptor::Protocol::HTTP::Response.new( code: 0 ) }
+
+      it 'calls #on_complete callbacks' do
+        request = described_class.new
+
+        passed_response = nil
+        request.on_complete { |res| passed_response = res }
+        request.handle_response( response )
+
+        passed_response.should == response
+      end
+      it 'does not call #on_success callbacks' do
+        request = described_class.new
+
+        passed_response = nil
+        request.on_success { |res| passed_response = res }
+        request.handle_response( response )
+
+        passed_response.should be_nil
+      end
+      it 'calls #on_failure callbacks' do
+        request = described_class.new
+
+        passed_response = nil
+        request.on_failure { |res| passed_response = res }
+        request.handle_response( response )
+
+        passed_response.should == response
+      end
+    end
+  end
+
   describe '#to_s' do
     it 'returns a String representation of the request'
   end
