@@ -34,7 +34,7 @@ class Client
     fail ArgumentError, "Missing ':address' option." if !@address
 
     @port ||= 80
-    @queue = Queue.new
+    @queue  = Queue.new
   end
 
   #
