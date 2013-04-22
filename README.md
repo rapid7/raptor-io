@@ -6,6 +6,7 @@ Smaller, more agile, and it can open doors.
 
 ### Source
 
+    gem install bundler
     git clone git@github.com:rapid7/raptor.git
     bundle install
     rake install
