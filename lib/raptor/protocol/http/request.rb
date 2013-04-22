@@ -27,8 +27,8 @@ class Request < PDU
   #   of its own they will be merged and overwritten.
   #
   # @see PDU#initialize
-  # @see parameters=
-  # @see http_method=
+  # @see #parameters=
+  # @see #http_method=
   #
   def initialize( options = {} )
     super( options )
