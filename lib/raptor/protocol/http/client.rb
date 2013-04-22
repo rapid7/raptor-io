@@ -94,7 +94,7 @@ class Client
   end
   alias :<< :queue
 
-  # Runs the {#queue queued} {Requests}.
+  # Runs the {#queue queued} {Request}.
   def run
     fail 'Not implemented.'
   end
