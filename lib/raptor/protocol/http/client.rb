@@ -20,7 +20,6 @@ class Client
   # @param  [Hash]  options Request options.
   # @option options [String] :address Address of the HTTP server.
   # @option options [Integer] :port (80) Port number of the HTTP server.
-  # @option options [Integer] :port (80) Port number of the HTTP server.
   #
   def initialize( options )
     options.each do |k, v|
