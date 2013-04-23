@@ -1,6 +1,10 @@
 require 'spec_helper'
 
 describe Raptor::Protocol::HTTP::Client do
+
+  let(:url) { 'http://test.com' }
+  let(:client) { described_class.new( address: 'stuff.com' ) }
+
   describe '#initialize' do
     it 'sets the instance attributes by the options' do
       options = { address: 'test.com', port: 81 }
@@ -26,8 +30,6 @@ describe Raptor::Protocol::HTTP::Client do
     end
   end
 
-  let(:client) { described_class.new( address: 'stuff.com' ) }
-
   describe '#request' do
     it 'forwards the given options to the Request object' do
       options = { parameters: { 'name' => 'value' }}
@@ -37,7 +39,7 @@ describe Raptor::Protocol::HTTP::Client do
     context 'when passed a block' do
       it 'sets it as a callback' do
         passed_response = nil
-        response = Raptor::Protocol::HTTP::Response.new
+        response = Raptor::Protocol::HTTP::Response.new( url: url )
 
         request = client.request( '/blah/' ) { |res| passed_response = res }
         request.handle_response( response )
@@ -79,11 +81,11 @@ describe Raptor::Protocol::HTTP::Client do
   describe '#queue' do
     it 'queues a request' do
       client.queue_size.should == 0
-      client.queue( Raptor::Protocol::HTTP::Request.new )
+      client.queue( Raptor::Protocol::HTTP::Request.new( url: url ) )
       client.queue_size.should == 1
     end
     it 'returns the queued request' do
-      request = Raptor::Protocol::HTTP::Request.new
+      request = Raptor::Protocol::HTTP::Request.new( url: url )
       client.queue(request).should == request
     end
   end
@@ -91,7 +93,7 @@ describe Raptor::Protocol::HTTP::Client do
   describe '#<<' do
     it 'alias of #queue' do
       client.queue_size.should == 0
-      client << Raptor::Protocol::HTTP::Request.new
+      client << Raptor::Protocol::HTTP::Request.new( url: url )
       client.queue_size.should == 1
     end
   end

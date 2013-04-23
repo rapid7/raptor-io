@@ -11,6 +11,9 @@ class PDU
   # @return [String]  URL of the targeted resource.
   attr_reader :url
 
+  # @return [URI]  Parsed version of {#url}.
+  attr_reader :parsed_url
+
   # @return [Hash<String, String>]  HTTP headers as a Hash.
   attr_reader :headers
 
@@ -35,6 +38,8 @@ class PDU
       end
     end
 
+    fail ArgumentError, "Missing ':url' option." if !@url
+    @parsed_url = URI(@url)
     @headers ||= {}
   end
 

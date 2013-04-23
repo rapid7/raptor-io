@@ -4,27 +4,29 @@ require 'ostruct'
 describe Raptor::Protocol::HTTP::Request do
   it_should_behave_like 'Raptor::Protocol::HTTP::PDU'
 
+  let(:url) { 'http://test.com' }
+
   describe '#initialize' do
     it 'sets the instance attributes by the options' do
-      options = { method: :get, parameters: { 'test' => 'blah' } }
+      options = { url: url, method: :get, parameters: { 'test' => 'blah' } }
       described_class.new( options ).http_method.should == options[:method]
       described_class.new( options ).parameters.should == options[:parameters]
     end
     it 'uses the setter methods when configuring' do
-      options = { method: 'gEt', parameters: { 'test' => 'blah' } }
+      options = { url: url, method: 'gEt', parameters: { 'test' => 'blah' } }
       described_class.new( options ).http_method.should == :get
     end
   end
 
   describe '#http_method' do
     it 'defaults to :get' do
-      described_class.new.http_method.should == :get
+      described_class.new( url: url ).http_method.should == :get
     end
   end
 
   describe '#http_method=' do
     it 'normalizes the HTTP method to a downcase symbol' do
-      request = described_class.new
+      request = described_class.new( url: url )
       request.http_method = 'pOsT'
       request.http_method.should == :post
     end
@@ -32,7 +34,7 @@ describe Raptor::Protocol::HTTP::Request do
 
   describe '#parameters' do
     it 'defaults to an empty Hash' do
-      described_class.new.parameters.should == {}
+      described_class.new( url: url ).parameters.should == {}
     end
 
     it 'recursively forces converts keys and values to strings' do
@@ -49,7 +51,7 @@ describe Raptor::Protocol::HTTP::Request do
           }
       }
 
-      request = described_class.new
+      request = described_class.new( url: url )
       request.parameters = with_symbols
       request.parameters.should == with_strings
     end
@@ -58,19 +60,19 @@ describe Raptor::Protocol::HTTP::Request do
 
   describe '#on_complete' do
     it 'adds a callback block to be passed the response' do
-      request = described_class.new
+      request = described_class.new( url: url )
 
       passed_response = nil
       request.on_complete { |res| passed_response = res }
 
-      response = Raptor::Protocol::HTTP::Response.new
+      response = Raptor::Protocol::HTTP::Response.new( url: url )
       request.handle_response( response )
 
       passed_response.should == response
     end
 
     it 'can add multiple callbacks' do
-      request = described_class.new
+      request = described_class.new( url: url )
 
       passed_responses = []
 
@@ -78,7 +80,7 @@ describe Raptor::Protocol::HTTP::Request do
         request.on_complete { |res| passed_responses << res }
       end
 
-      response = Raptor::Protocol::HTTP::Response.new
+      response = Raptor::Protocol::HTTP::Response.new( url: url )
       request.handle_response( response )
 
       passed_responses.size.should == 2
@@ -89,19 +91,19 @@ describe Raptor::Protocol::HTTP::Request do
 
   describe '#on_success' do
     it 'adds a callback block to be called on a successful request' do
-      request = described_class.new
+      request = described_class.new( url: url )
 
       passed_response = nil
       request.on_success { |res| passed_response = res }
 
-      response = Raptor::Protocol::HTTP::Response.new( code: 200 )
+      response = Raptor::Protocol::HTTP::Response.new( url: url, code: 200 )
       request.handle_response( response )
 
       passed_response.should == response
     end
 
     it 'can add multiple callbacks' do
-      request = described_class.new
+      request = described_class.new( url: url )
 
       passed_responses = []
 
@@ -109,7 +111,7 @@ describe Raptor::Protocol::HTTP::Request do
         request.on_success { |res| passed_responses << res }
       end
 
-      response = Raptor::Protocol::HTTP::Response.new( code: 200 )
+      response = Raptor::Protocol::HTTP::Response.new( url: url, code: 200 )
       request.handle_response( response )
 
       passed_responses.size.should == 2
@@ -120,19 +122,19 @@ describe Raptor::Protocol::HTTP::Request do
 
   describe '#on_failure' do
     it 'adds a callback block to be called on a failed request' do
-      request = described_class.new
+      request = described_class.new( url: url )
 
       passed_response = nil
       request.on_failure { |res| passed_response = res }
 
-      response = Raptor::Protocol::HTTP::Response.new( code: 0 )
+      response = Raptor::Protocol::HTTP::Response.new( url: url, code: 0 )
       request.handle_response( response )
 
       passed_response.should == response
     end
 
     it 'can add multiple callbacks' do
-      request = described_class.new
+      request = described_class.new( url: url )
 
       passed_responses = []
 
@@ -140,7 +142,7 @@ describe Raptor::Protocol::HTTP::Request do
         request.on_failure { |res| passed_responses << res }
       end
 
-      response = Raptor::Protocol::HTTP::Response.new( code: 0 )
+      response = Raptor::Protocol::HTTP::Response.new( url: url, code: 0 )
       request.handle_response( response )
 
       passed_responses.size.should == 2
@@ -151,10 +153,10 @@ describe Raptor::Protocol::HTTP::Request do
 
   describe '#handle_response' do
     context 'when a response is successful' do
-      let(:response) { Raptor::Protocol::HTTP::Response.new( code: 200 ) }
+      let(:response) { Raptor::Protocol::HTTP::Response.new( url: url, code: 200 ) }
 
       it 'calls #on_complete callbacks' do
-        request = described_class.new
+        request = described_class.new( url: url )
 
         passed_response = nil
         request.on_complete { |res| passed_response = res }
@@ -163,7 +165,7 @@ describe Raptor::Protocol::HTTP::Request do
         passed_response.should == response
       end
       it 'calls #on_success callbacks' do
-        request = described_class.new
+        request = described_class.new( url: url )
 
         passed_response = nil
         request.on_success { |res| passed_response = res }
@@ -172,7 +174,7 @@ describe Raptor::Protocol::HTTP::Request do
         passed_response.should == response
       end
       it 'does not call #on_failure callbacks' do
-        request = described_class.new
+        request = described_class.new( url: url )
 
         passed_response = nil
         request.on_failure { |res| passed_response = res }
@@ -182,10 +184,10 @@ describe Raptor::Protocol::HTTP::Request do
       end
     end
     context 'when a request fails' do
-      let(:response) { Raptor::Protocol::HTTP::Response.new( code: 0 ) }
+      let(:response) { Raptor::Protocol::HTTP::Response.new( url: url, code: 0 ) }
 
       it 'calls #on_complete callbacks' do
-        request = described_class.new
+        request = described_class.new( url: url )
 
         passed_response = nil
         request.on_complete { |res| passed_response = res }
@@ -194,7 +196,7 @@ describe Raptor::Protocol::HTTP::Request do
         passed_response.should == response
       end
       it 'does not call #on_success callbacks' do
-        request = described_class.new
+        request = described_class.new( url: url )
 
         passed_response = nil
         request.on_success { |res| passed_response = res }
@@ -203,7 +205,7 @@ describe Raptor::Protocol::HTTP::Request do
         passed_response.should be_nil
       end
       it 'calls #on_failure callbacks' do
-        request = described_class.new
+        request = described_class.new( url: url )
 
         passed_response = nil
         request.on_failure { |res| passed_response = res }
