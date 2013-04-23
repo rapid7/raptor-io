@@ -55,6 +55,22 @@ class Request < PDU
     @parameters = params.stringify
   end
 
+  # @return [Hash] Parameters to be used for the query part of the resource.
+  def query_parameters
+    query = parsed_url.query
+    if !query
+      return http_method == :get ? parameters : {}
+    end
+
+    qparams = query.split( '&' ).inject({}) do |h, pair|
+      k, v = pair.split('=', 2)
+      h.merge( URI.decode(k) => URI.decode(v) )
+    end
+    return qparams if http_method != :get
+
+    qparams.merge( parameters )
+  end
+
   #
   # @note Method will be normalized to a lower-case symbol.
   #

@@ -5,6 +5,7 @@ describe Raptor::Protocol::HTTP::Request do
   it_should_behave_like 'Raptor::Protocol::HTTP::PDU'
 
   let(:url) { 'http://test.com' }
+  let(:url_with_query) { 'http://test.com?id=1&stuff=blah' }
 
   describe '#initialize' do
     it 'sets the instance attributes by the options' do
@@ -55,7 +56,47 @@ describe Raptor::Protocol::HTTP::Request do
       request.parameters = with_symbols
       request.parameters.should == with_strings
     end
+  end
 
+  describe '#query_parameters' do
+    it 'decodes the URL query parameters' do
+      weird_url = 'http://test.com/?first=test%3Fblah%2F&second%2F%26=blah'
+      r = described_class.new( url: weird_url, http_method: :other )
+      r.query_parameters.should == { 'first' => 'test?blah/', 'second/&' => 'blah' }
+    end
+
+    context 'when the request method is' do
+      context 'GET' do
+        context 'when no parameters have been provided as options' do
+          it 'returns the query parameters as a Hash' do
+            r = described_class.new( url: url_with_query, http_method: :get )
+            r.query_parameters.should == { 'id' => '1', 'stuff' => 'blah' }
+          end
+        end
+        context 'when there are parameters as options' do
+          let(:parameters) { { 'id' => '2', 'stuff' => 'blah' } }
+
+          context 'and the URL has no query parameters' do
+            it 'returns the parameters from options' do
+              r = described_class.new( url: url, http_method: :get, parameters: parameters )
+              r.query_parameters.should == parameters
+            end
+          end
+          context 'and the URL has query parameters' do
+            it 'returns the query parameters merged with the options parameters' do
+              r = described_class.new( url: url_with_query, http_method: :get, parameters: parameters )
+              r.query_parameters.should == { 'id' => '1', 'stuff' => 'blah' }.merge(parameters)
+            end
+          end
+        end
+      end
+      context 'other' do
+        it 'returns the query parameters as a Hash' do
+          r = described_class.new( url: url_with_query, http_method: :other )
+          r.query_parameters.should == { 'id' => '1', 'stuff' => 'blah' }
+        end
+      end
+    end
   end
 
   describe '#on_complete' do
