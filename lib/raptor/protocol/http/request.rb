@@ -1,3 +1,5 @@
+require 'cgi'
+
 module Raptor
 module Protocol::HTTP
 
@@ -64,11 +66,20 @@ class Request < PDU
 
     qparams = query.split( '&' ).inject({}) do |h, pair|
       k, v = pair.split('=', 2)
-      h.merge( URI.decode(k) => URI.decode(v) )
+      h.merge( CGI.unescape(k) => CGI.unescape(v) )
     end
     return qparams if http_method != :get
 
     qparams.merge( parameters )
+  end
+
+  # @return [Hash] Location of the resource to request.
+  def effective_url
+    cparsed_url = parsed_url.dup
+    cparsed_url.query = query_parameters.map do |k, v|
+      "#{CGI.escape(k)}=#{CGI.escape(v)}"
+    end.join('&')
+    cparsed_url.normalize.to_s
   end
 
   #
