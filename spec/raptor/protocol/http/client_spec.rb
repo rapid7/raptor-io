@@ -5,31 +5,6 @@ describe Raptor::Protocol::HTTP::Client do
   let(:url) { 'http://test.com' }
   let(:client) { described_class.new( address: 'stuff.com' ) }
 
-  describe '#initialize' do
-    it 'sets the instance attributes by the options' do
-      options = { address: 'test.com', port: 81 }
-      client = described_class.new( options )
-
-      client.address.should == options[:address]
-      client.port.should == options[:port]
-    end
-    it 'uses 80 as the default port' do
-      described_class.new( address: 'stuff.com' ).port.should == 80
-    end
-
-    context 'when not passed an address' do
-      it 'raises an ArgumentError' do
-        raised = false
-        begin
-          described_class.new
-        rescue ArgumentError
-          raised = true
-        end
-        raised.should be_true
-      end
-    end
-  end
-
   describe '#request' do
     it 'forwards the given options to the Request object' do
       options = { parameters: { 'name' => 'value' }}

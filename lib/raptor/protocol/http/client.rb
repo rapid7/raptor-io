@@ -10,12 +10,6 @@ module Protocol::HTTP
 #
 class Client
 
-  # @return [String]  Address of the HTTP server.
-  attr_reader :address
-
-  # @return [Integer]  Port number of the HTTP server.
-  attr_reader :port
-
   #
   # @param  [Hash]  options Request options.
   # @option options [String] :address Address of the HTTP server.
@@ -30,9 +24,6 @@ class Client
       end
     end
 
-    fail ArgumentError, "Missing ':address' option." if !@address
-
-    @port ||= 80
     @queue  = Queue.new
   end
 
