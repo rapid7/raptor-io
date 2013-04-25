@@ -14,6 +14,25 @@ shared_examples_for 'Raptor::Protocol::HTTP::PDU' do
         raised.should be_true
       end
     end
+
+    it 'sets the instance attributes by the options' do
+      options = {
+          url:          url,
+          http_version: '1.0',
+          headers:      {
+              'X-Stuff' => 'Blah'
+          }
+      }
+      r = described_class.new( options )
+      r.http_version.should == options[:http_version]
+      r.headers.should      == options[:headers]
+    end
+  end
+
+  describe '#http_version' do
+    it 'defaults to 1.1' do
+      described_class.new( url: url ).http_version.should == '1.1'
+    end
   end
 
   describe '#url' do

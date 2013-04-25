@@ -8,6 +8,9 @@ module Protocol::HTTP
 #
 class PDU
 
+  # @return [String]  HTTP version.
+  attr_reader :http_version
+
   # @return [String]  URL of the targeted resource.
   attr_reader :url
 
@@ -39,8 +42,10 @@ class PDU
     end
 
     fail ArgumentError, "Missing ':url' option." if !@url
+
     @parsed_url = URI(@url)
     @headers ||= {}
+    @http_version ||= '1.1'
   end
 
 end

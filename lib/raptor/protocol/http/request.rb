@@ -13,9 +13,6 @@ class Request < PDU
   # Acceptable response callback types.
   CALLBACK_TYPES = [:on_complete, :on_failure, :on_success]
 
-  # @return [String]  HTTP version.
-  attr_reader :http_version
-
   # @return [Symbol]  HTTP method.
   attr_reader :http_method
 
@@ -41,7 +38,6 @@ class Request < PDU
 
     @callbacks = CALLBACK_TYPES.inject( {} ) { |h, type| h[type] = []; h }
 
-    @http_version ||= '1.1'
     @parameters   ||= {}
     @http_method  ||= :get
   end

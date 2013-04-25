@@ -12,12 +12,10 @@ describe Raptor::Protocol::HTTP::Request do
       options = {
           url: url,
           http_method: :get,
-          http_version: '1.0',
           parameters: { 'test' => 'blah' }
       }
       r = described_class.new( options )
       r.http_method.should  == options[:http_method]
-      r.http_version.should == options[:http_version]
       r.parameters.should   == options[:parameters]
     end
     it 'uses the setter methods when configuring' do
@@ -29,12 +27,6 @@ describe Raptor::Protocol::HTTP::Request do
   describe '#http_method' do
     it 'defaults to :get' do
       described_class.new( url: url ).http_method.should == :get
-    end
-  end
-
-  describe '#http_version' do
-    it 'defaults to 1.1' do
-      described_class.new( url: url ).http_version.should == '1.1'
     end
   end
 
