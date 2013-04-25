@@ -1,3 +1,5 @@
+require 'cgi'
+
 module Raptor::Protocol::HTTP
 end
 

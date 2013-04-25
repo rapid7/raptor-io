@@ -1,5 +1,3 @@
-require 'cgi'
-
 module Raptor
 module Protocol::HTTP
 
