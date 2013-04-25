@@ -22,6 +22,27 @@ describe Raptor::Protocol::HTTP::Response do
     end
   end
 
+  describe '.parse' do
+    it 'parses an HTTP response string into a Response object' do
+      response = "HTTP/1.1 404 Not Found
+Content-Type: text/html;charset=utf-8
+Content-Length: 431
+\r\n\r\n<!DOCTYPE html>
+More stuff
+"
+
+      r = described_class.parse( response )
+      r.http_version.should == '1.1'
+      r.code.should == 404
+      r.message.should == 'Not Found'
+      r.body.should == "<!DOCTYPE html>\nMore stuff\n"
+      r.headers.should == {
+          'Content-Type'   => 'text/html;charset=utf-8',
+          'Content-Length' => '431'
+      }
+    end
+  end
+
   describe '#to_s' do
     it 'returns a String representation of the response'
   end
