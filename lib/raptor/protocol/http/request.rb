@@ -13,6 +13,9 @@ class Request < PDU
   # Acceptable response callback types.
   CALLBACK_TYPES = [:on_complete, :on_failure, :on_success]
 
+  # @return [String]  HTTP version.
+  attr_reader :http_version
+
   # @return [Symbol]  HTTP method.
   attr_reader :http_method
 
@@ -23,8 +26,9 @@ class Request < PDU
   # @note This class' options are in addition to {PDU#initialize}.
   #
   # @param  [Hash]  options Request options.
-  # @option options [Symbol, String] :http_method HTTP method to use.
-  # @option options [Hash] :parameters
+  # @option options [String] :http_version ('1.1') HTTP version to use.
+  # @option options [Symbol, String] :http_method (:get) HTTP method to use.
+  # @option options [Hash] :parameters ({})
   #   Parameters to send. If performing a GET request and the URL has parameters
   #   of its own they will be merged and overwritten.
   #
@@ -37,8 +41,9 @@ class Request < PDU
 
     @callbacks = CALLBACK_TYPES.inject( {} ) { |h, type| h[type] = []; h }
 
-    self.parameters  ||= {}
-    self.http_method ||= :get
+    @http_version ||= '1.1'
+    @parameters   ||= {}
+    @http_method  ||= :get
   end
 
   #
@@ -64,7 +69,7 @@ class Request < PDU
       return http_method == :get ? parameters : {}
     end
 
-    qparams = query.split( '&' ).inject({}) do |h, pair|
+    qparams = query.split('&').inject({}) do |h, pair|
       k, v = pair.split('=', 2)
       h.merge( CGI.unescape(k) => CGI.unescape(v) )
     end
