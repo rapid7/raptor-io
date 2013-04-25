@@ -159,6 +159,17 @@ describe Raptor::Protocol::HTTP::Request do
       end
     end
 
+    context 'when there is a body' do
+      it 'encodes it' do
+        options = {
+            url:  url,
+            body: "fds g45\#$ 6@ %y @^2\r\n"
+        }
+        described_class.new( options ).effective_body.should ==
+            'fds+g45%23%24+6%40+%25y+%40%5E2%0D%0A'
+      end
+    end
+
     context 'when the request method is' do
       context 'POST' do
         context 'when no parameters have been provided as options' do
@@ -381,6 +392,184 @@ describe Raptor::Protocol::HTTP::Request do
   end
 
   describe '#to_s' do
-    it 'returns a String representation of the request'
+    it 'includes a Host header' do
+      described_class.new( url: url ).to_s.should ==
+          "GET / HTTP/1.1\r\n" +
+              "Host: #{URI(url).host}\r\n\r\n"
+    end
+
+    context 'when the request method is' do
+      context 'GET' do
+        context 'when no parameters have been provided as options' do
+          it 'uses the original URL' do
+            r = described_class.new( url: url_with_query, http_method: :get )
+            r.to_s.lines.first.should == "GET /?id=1&stuff=blah HTTP/1.1\r\n"
+          end
+        end
+        context 'when there are parameters as options' do
+          let(:parameters) { { 'id' => '2', 'stuff' => 'blah' } }
+
+          context 'and the URL has no query parameters' do
+            it 'uses the URL with the option parameters' do
+              r = described_class.new( url: url, http_method: :get, parameters: parameters )
+              r.to_s.lines.first.should == "GET /?id=2&stuff=blah HTTP/1.1\r\n"
+            end
+          end
+          context 'and the URL has query parameters' do
+            it 'uses the query parameters merged with the options parameters' do
+              r = described_class.new( url: url_with_query, http_method: :get, parameters: parameters )
+              r.to_s.lines.first.should == "GET /?id=2&stuff=blah HTTP/1.1\r\n"
+            end
+          end
+        end
+      end
+
+      context 'POST' do
+        context 'when no parameters have been provided as options' do
+          it 'uses the original body' do
+            options = {
+                url: url_with_query,
+                http_method: :post,
+                body: 'stuff=1&blah=test'
+            }
+            described_class.new( options ).to_s.split( /[\n\r]+/ ).last.should ==
+                options[:body]
+          end
+        end
+        context 'when there are parameters as options' do
+          let(:parameters) { { 'id $#^3 4q%$#' => '2 dfgr ', 'stuff' => 'blah' } }
+
+          context 'and there is no body configured' do
+            it 'uses the escaped option parameters' do
+              options = {
+                  url: url_with_query,
+                  http_method: :post,
+                  parameters: parameters
+              }
+              described_class.new( options ).to_s.split( /[\n\r]+/ ).last.should ==
+                  "id+%24%23%5E3+4q%25%24%23=2+dfgr+&stuff=blah"
+            end
+          end
+          context 'and there is a body' do
+            it 'uses the body parameters merged with the options parameters' do
+              options = {
+                  url: url_with_query,
+                  http_method: :post,
+                  body: 'stuff 4354%$43=$#535!35VWE g4 %yt5&stuff=1',
+                  parameters: parameters
+              }
+              described_class.new( options ).to_s.split( /[\n\r]+/ ).last.should ==
+                  "stuff+4354%25%2443=%24%23535%2135VWE+g4+%25yt5&stuff=blah&id+%24%23%5E3+4q%25%24%23=2+dfgr+"
+            end
+          end
+        end
+      end
+
+      context 'other' do
+        it 'returns the original body' do
+          options = {
+              url: url_with_query,
+              http_method: :other,
+              body: 'stuff'
+          }
+          described_class.new( options ).to_s.split( /[\n\r]+/ ).last.should ==
+              options[:body]
+        end
+
+        it 'escapes the original body' do
+          options = {
+              url: url_with_query,
+              http_method: :other,
+              body: 'stuff here #$^#46 %H# '
+          }
+          described_class.new( options ).to_s.split( /[\n\r]+/ ).last.should ==
+              'stuff+here+%23%24%5E%2346+%25H%23+'
+        end
+
+        it 'returns the original URL' do
+          options = {
+              url: url_with_query,
+              http_method: :other
+          }
+          described_class.new( options ).to_s.lines.first.should ==
+              "OTHER /?id=1&stuff=blah HTTP/1.1\r\n"
+        end
+      end
+    end
+
+    context 'when headers' do
+      context 'have been provided' do
+        it 'escapes and includes them in the request' do
+          options = {
+              url:     url,
+              headers: {
+                  'X-Stuff !@$^54 n7' => "dsad3R$#% t@%Y1y165^U2 \r\n"
+              }
+          }
+          described_class.new( options ).to_s.should ==
+              "GET / HTTP/1.1\r\n" +
+                "Host: #{URI(url).host}\r\n" +
+                "X-Stuff+%21%40%24%5E54+n7: dsad3R%24%23%25+t%40%25Y1y165%5EU2+%0D%0A\r\n\r\n"
+        end
+      end
+    end
+
+    context 'when an HTTP method' do
+      context 'has been provided' do
+        it 'includes it the request' do
+          options = {
+              url:         url,
+              http_method: :stuff
+          }
+          described_class.new( options ).to_s.lines.first.should == "STUFF / HTTP/1.1\r\n"
+        end
+      end
+      context 'has not been provided' do
+        it 'defaults to GET' do
+          described_class.new( url: url ).to_s.lines.first.should == "GET / HTTP/1.1\r\n"
+        end
+      end
+    end
+
+    context 'when an HTTP version' do
+      context 'has been provided' do
+        it 'includes it the request' do
+          options = {
+              url:          url,
+              http_version: '2'
+          }
+          described_class.new( options ).to_s.lines.first.should == "GET / HTTP/2\r\n"
+        end
+      end
+      context 'has not been provided' do
+        it 'defaults to 1.1' do
+          described_class.new( url: url ).to_s.lines.first.should == "GET / HTTP/1.1\r\n"
+        end
+      end
+    end
+
+    context 'when there is a body' do
+      it 'encodes it' do
+        options = {
+            url:  url,
+            body: "fds g45\#$ 6@ %y @^2\r\n"
+        }
+        described_class.new( options ).to_s.split( /[\n\r]+/ ).last.should ==
+                "fds+g45%23%24+6%40+%25y+%40%5E2%0D%0A"
+      end
+      it 'sets the Content-Length header' do
+        options = {
+            url:  url,
+            body: "fds g45\#$ 6@ %y @^2\r\n"
+        }
+        described_class.new( options ).to_s.should ==
+            "GET / HTTP/1.1\r\n" +
+                "Host: test.com\r\n" +
+                "Content-Length: 37\r\n\r\n" +
+                "fds+g45%23%24+6%40+%25y+%40%5E2%0D%0A\r\n\r\n"
+      end
+    end
+
   end
+
 end
