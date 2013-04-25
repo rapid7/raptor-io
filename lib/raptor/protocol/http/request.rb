@@ -16,6 +16,12 @@ class Request < PDU
   # @return [Symbol]  HTTP method.
   attr_reader :http_method
 
+  # @return [String]  URL of the targeted resource.
+  attr_reader :url
+
+  # @return [URI]  Parsed version of {#url}.
+  attr_reader :parsed_url
+
   # @return [Hash]  Request parameters.
   attr_reader :parameters
 
@@ -38,6 +44,9 @@ class Request < PDU
 
     @callbacks = CALLBACK_TYPES.inject( {} ) { |h, type| h[type] = []; h }
 
+    fail ArgumentError, "Missing ':url' option." if !@url
+
+    @parsed_url     = URI(@url)
     @parameters   ||= {}
     @http_method  ||= :get
   end

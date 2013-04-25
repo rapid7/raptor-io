@@ -3,18 +3,6 @@ shared_examples_for 'Raptor::Protocol::HTTP::PDU' do
   let(:url) { 'http://test.com' }
 
   describe '#initialize' do
-    context 'when no :url option has been provided' do
-      it 'raises ArgumentError' do
-        raised = false
-        begin
-          described_class.new
-        rescue ArgumentError
-          raised = true
-        end
-        raised.should be_true
-      end
-    end
-
     it 'sets the instance attributes by the options' do
       options = {
           url:          url,
@@ -32,18 +20,6 @@ shared_examples_for 'Raptor::Protocol::HTTP::PDU' do
   describe '#http_version' do
     it 'defaults to 1.1' do
       described_class.new( url: url ).http_version.should == '1.1'
-    end
-  end
-
-  describe '#url' do
-    it 'returns the configured value' do
-      described_class.new( url: url ).url.should == url
-    end
-  end
-
-  describe '#parsed_url' do
-    it 'returns the configured URL as a parsed object' do
-      described_class.new( url: url ).parsed_url.should == URI(url)
     end
   end
 

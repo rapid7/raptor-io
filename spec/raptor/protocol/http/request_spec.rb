@@ -22,6 +22,29 @@ describe Raptor::Protocol::HTTP::Request do
       options = { url: url, http_method: 'gEt', parameters: { 'test' => 'blah' } }
       described_class.new( options ).http_method.should == :get
     end
+    context 'when no :url option has been provided' do
+      it 'raises ArgumentError' do
+        raised = false
+        begin
+          described_class.new
+        rescue ArgumentError
+          raised = true
+        end
+        raised.should be_true
+      end
+    end
+  end
+
+  describe '#url' do
+    it 'returns the configured value' do
+      described_class.new( url: url ).url.should == url
+    end
+  end
+
+  describe '#parsed_url' do
+    it 'returns the configured URL as a parsed object' do
+      described_class.new( url: url ).parsed_url.should == URI(url)
+    end
   end
 
   describe '#http_method' do
