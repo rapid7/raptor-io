@@ -9,12 +9,12 @@ describe Raptor::Protocol::HTTP::Request do
 
   describe '#initialize' do
     it 'sets the instance attributes by the options' do
-      options = { url: url, method: :get, parameters: { 'test' => 'blah' } }
-      described_class.new( options ).http_method.should == options[:method]
+      options = { url: url, http_method: :get, parameters: { 'test' => 'blah' } }
+      described_class.new( options ).http_method.should == options[:http_method]
       described_class.new( options ).parameters.should == options[:parameters]
     end
     it 'uses the setter methods when configuring' do
-      options = { url: url, method: 'gEt', parameters: { 'test' => 'blah' } }
+      options = { url: url, http_method: 'gEt', parameters: { 'test' => 'blah' } }
       described_class.new( options ).http_method.should == :get
     end
   end
