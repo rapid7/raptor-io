@@ -152,6 +152,76 @@ describe Raptor::Protocol::HTTP::Request do
     end
   end
 
+  describe '#effective_body' do
+    context 'when no body has been provided' do
+      it 'returns an empty string' do
+        described_class.new( url: url ).effective_body.should == ''
+      end
+    end
+
+    context 'when the request method is' do
+      context 'POST' do
+        context 'when no parameters have been provided as options' do
+          it 'returns the original body' do
+            options = {
+                url: url_with_query,
+                http_method: :post,
+                body: 'stuff=1&blah=test'
+            }
+            described_class.new( options ).effective_body.should == options[:body]
+          end
+        end
+        context 'when there are parameters as options' do
+          let(:parameters) { { 'id' => '2', 'stuff' => 'blah' } }
+
+          context 'and there is no body configured' do
+            it 'returns the escaped option parameters' do
+              options = {
+                  url: url_with_query,
+                  http_method: :post,
+                  parameters: parameters
+              }
+              described_class.new( options ).effective_body.to_s.should ==
+                  "id=2&stuff=blah"
+            end
+          end
+          context 'and there is a body' do
+            it 'returns the body parameters merged with the options parameters' do
+              options = {
+                  url: url_with_query,
+                  http_method: :post,
+                  body: 'stuff 4354%$43=$#535!35VWE g4 %yt5&stuff=1',
+                  parameters: parameters
+              }
+              described_class.new( options ).effective_body.to_s.should ==
+                  "stuff+4354%25%2443=%24%23535%2135VWE+g4+%25yt5&stuff=blah&id=2"
+            end
+          end
+        end
+      end
+
+      context 'other' do
+        it 'returns the original body' do
+          options = {
+              url: url_with_query,
+              http_method: :other,
+              body: 'stuff'
+          }
+          described_class.new( options ).effective_body.should == options[:body]
+        end
+        it 'escapes the original body' do
+          options = {
+              url: url_with_query,
+              http_method: :other,
+              body: 'stuff here #$^#46 %H# '
+          }
+          described_class.new( options ).effective_body.should ==
+              'stuff+here+%23%24%5E%2346+%25H%23+'
+        end
+      end
+    end
+  end
+
   describe '#on_complete' do
     it 'adds a callback block to be passed the response' do
       request = described_class.new( url: url )

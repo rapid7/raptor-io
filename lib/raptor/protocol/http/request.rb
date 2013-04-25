@@ -88,6 +88,26 @@ class Request < PDU
     cparsed_url.normalize
   end
 
+  # @return [String]  Response body to use.
+  def effective_body
+    return CGI.escape(body.to_s) if http_method != :post
+
+    body_params = if !body.to_s.empty?
+                    body.split('&').inject({}) do |h, pair|
+                      k, v = pair.split('=', 2)
+                      h.merge( CGI.unescape(k) => CGI.unescape(v) )
+                    end
+                  else
+                    {}
+                  end
+
+    return '' if body_params.empty? && parameters.empty?
+
+    body_params.merge( parameters ).map do |k, v|
+      "#{CGI.escape(k)}=#{CGI.escape(v)}"
+    end.join('&')
+  end
+
   #
   # @note Method will be normalized to a lower-case symbol.
   #
