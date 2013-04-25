@@ -78,13 +78,14 @@ class Request < PDU
     qparams.merge( parameters )
   end
 
-  # @return [Hash] Location of the resource to request.
+  # @return [URI] Location of the resource to request.
   def effective_url
     cparsed_url = parsed_url.dup
     cparsed_url.query = query_parameters.map do |k, v|
       "#{CGI.escape(k)}=#{CGI.escape(v)}"
-    end.join('&')
-    cparsed_url.normalize.to_s
+    end.join('&') if query_parameters.any?
+
+    cparsed_url.normalize
   end
 
   #

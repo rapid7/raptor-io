@@ -115,7 +115,7 @@ describe Raptor::Protocol::HTTP::Request do
   describe '#effective_url' do
     it 'encodes the URL query parameters' do
       r = described_class.new( url: url, parameters: { 'first' => 'test?blah/', 'second/&' => 'blah' } )
-      r.effective_url.should == 'http://test.com/?first=test%3Fblah%2F&second%2F%26=blah'
+      r.effective_url.to_s.should == 'http://test.com/?first=test%3Fblah%2F&second%2F%26=blah'
     end
 
     context 'when the request method is' do
@@ -123,7 +123,7 @@ describe Raptor::Protocol::HTTP::Request do
         context 'when no parameters have been provided as options' do
           it 'returns the original URL' do
             r = described_class.new( url: url_with_query, http_method: :get )
-            r.effective_url.should == url_with_query
+            r.effective_url.to_s.should == url_with_query
           end
         end
         context 'when there are parameters as options' do
@@ -132,13 +132,13 @@ describe Raptor::Protocol::HTTP::Request do
           context 'and the URL has no query parameters' do
             it 'returns a URL with the option parameters' do
               r = described_class.new( url: url, http_method: :get, parameters: parameters )
-              r.effective_url.should == "#{url}/?id=2&stuff=blah"
+              r.effective_url.to_s.should == "#{url}/?id=2&stuff=blah"
             end
           end
           context 'and the URL has query parameters' do
             it 'returns the query parameters merged with the options parameters' do
               r = described_class.new( url: url_with_query, http_method: :get, parameters: parameters )
-              r.effective_url.should == "#{url}/?id=2&stuff=blah"
+              r.effective_url.to_s.should == "#{url}/?id=2&stuff=blah"
             end
           end
         end
@@ -146,7 +146,7 @@ describe Raptor::Protocol::HTTP::Request do
       context 'other' do
         it 'returns the original URL' do
           r = described_class.new( url: url_with_query, http_method: :other )
-          r.effective_url.should == url_with_query
+          r.effective_url.to_s.should == url_with_query
         end
       end
     end
