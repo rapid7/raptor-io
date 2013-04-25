@@ -74,6 +74,32 @@ describe Raptor::Protocol::HTTP::Client do
   end
 
   describe '#run' do
-    it 'runs all the queued requests'
+    it 'runs all the queued requests' do
+      cnt   = 0
+      times = 2
+
+      times.times do
+        client.get 'http://example.com' do |r|
+          cnt += 1
+        end
+      end
+
+      client.run
+      cnt.should == times
+    end
+
+    it 'runs requests queued via callbacks' do
+      url = 'http://example.com'
+      called = false
+
+      client.get url do
+        client.get url do
+          called = true
+        end
+      end
+
+      client.run
+      called.should be_true
+    end
   end
 end
