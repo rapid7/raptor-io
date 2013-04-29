@@ -11,7 +11,7 @@ class PDU
   # @return [String]  HTTP version.
   attr_reader :http_version
 
-  # @return [Hash<String, String>]  HTTP headers as a Hash.
+  # @return [Headers<String, String>]  HTTP headers as a Hash-like object.
   attr_reader :headers
 
   # @return [String]  {Request}/{Response} body.
@@ -35,7 +35,7 @@ class PDU
       end
     end
 
-    @headers      ||= {}
+    @headers        = Headers.new( @headers )
     @http_version ||= '1.1'
   end
 

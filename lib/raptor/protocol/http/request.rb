@@ -133,14 +133,12 @@ class Request < PDU
 
     body = effective_body
 
-    computed_headers = { 'Host' => req_url.host }
+    computed_headers = Headers.new( 'Host' => req_url.host )
     computed_headers['Content-Length'] = body.size.to_s if !body.to_s.empty?
 
     request = "#{http_method.to_s.upcase} #{req_resource} HTTP/#{http_version}\r\n"
-    computed_headers.merge(headers).each do |k, v|
-      request << "#{CGI.escape(k)}: #{CGI.escape(v)}\r\n"
-    end
-    request << "\r\n"
+    request << computed_headers.merge(headers).to_s
+    request << "\r\n\r\n"
 
     return request if body.to_s.empty?
 

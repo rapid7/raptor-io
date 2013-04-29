@@ -53,17 +53,9 @@ class Response < PDU
     options[:http_version], options[:code], options[:message] =
         request_line.scan( /HTTP\/([\d.]+)\s+(\d+)\s+(.*)$/ ).flatten
 
-    options[:code] = options[:code].to_i
-
-    headers = {}
-    headers_string.split( /[\r\n]+/ )[1..-1].each do |header|
-      k, v = header.split( ':', 2 )
-      k = CGI.unescape( k.to_s.strip )
-      v = CGI.unescape( v.to_s.strip )
-      headers[k] = v
-    end
-
-    options[:headers] = headers
+    options[:code]    = options[:code].to_i
+    options[:headers] =
+        Headers.parse( headers_string.split( /[\r\n]+/ )[1..-1].join( "\r\n" ) )
 
     new( options )
   end
