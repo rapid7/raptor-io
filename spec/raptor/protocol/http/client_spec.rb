@@ -3,7 +3,7 @@ require 'spec_helper'
 describe Raptor::Protocol::HTTP::Client do
 
   let(:url) { 'http://test.com' }
-  let(:client) { described_class.new( address: 'stuff.com' ) }
+  let(:client) { described_class.new }
 
   describe '#request' do
     it 'forwards the given options to the Request object' do
@@ -70,6 +70,48 @@ describe Raptor::Protocol::HTTP::Client do
       client.queue_size.should == 0
       client << Raptor::Protocol::HTTP::Request.new( url: url )
       client.queue_size.should == 1
+    end
+  end
+
+  describe '#concurrency' do
+    it 'defaults to 20' do
+      described_class.new.concurrency.should == 20
+    end
+  end
+
+  describe '#concurrency=' do
+    it 'restricts the amount of maximum open connections' do
+      cnt   = 0
+      times = 10
+
+      url = 'http://example.net'
+
+      client.concurrency = 1
+      times.times do
+        client.get url do
+          cnt += 1
+        end
+      end
+
+      t = Time.now
+      client.run
+      runtime_1 =  Time.now - t
+      cnt.should == times
+
+      cnt = 0
+      client.concurrency = 20
+      times.times do
+        client.get url do
+          cnt += 1
+        end
+      end
+
+      t = Time.now
+      client.run
+      runtime_2 =  Time.now - t
+
+      cnt.should == times
+      runtime_1.should > runtime_2
     end
   end
 

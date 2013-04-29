@@ -10,12 +10,16 @@ module Protocol::HTTP
 #
 class Client
 
+  # @param [Integer] Maximum open sockets.
+  # @return [Integer] Maximum open sockets.
+  attr_accessor :concurrency
+
   #
   # @param  [Hash]  options Request options.
   # @option options [String] :address Address of the HTTP server.
   # @option options [Integer] :port (80) Port number of the HTTP server.
   #
-  def initialize( options )
+  def initialize( options = {} )
     options.each do |k, v|
       begin
         send( "#{k}=", v )
@@ -24,7 +28,8 @@ class Client
       end
     end
 
-    @queue  = []
+    @concurrency = 20
+    @queue       = []
   end
 
   #
@@ -95,78 +100,80 @@ class Client
     }
 
     responses = {}
+    while @queue.any?
 
-    # Build the sockets for the queued requests.
-    while request = @queue.pop
-      socket = TCPSocket.new( request.parsed_url.host, request.parsed_url.port )
-      sockets[:lookup_request][socket] = request
-    end
+      # Get us some seed sockets.
+      add_sockets( @concurrency, sockets )
 
-    sockets[:writes] = sockets[:lookup_request].keys
+      while sockets[:done].size != sockets[:lookup_request].size
 
-    while sockets[:done].size != sockets[:lookup_request].size
-      reads, writes, errors = select( sockets[:reads], sockets[:writes], nil )
-      sockets[:done] |= errors
+        # Open up new sockets to fill the concurrency allowance.
+        add_sockets( @concurrency - sockets[:writes].size, sockets )
 
-      reads.each do |socket|
-        responses[socket]               ||= {}
-        # Do we have full headers?
-        responses[socket][:has_headers] ||= false
-        # HTTP headers buffer.
-        responses[socket][:headers]     ||= ''
-        # Response body buffer.
-        responses[socket][:body]        ||= ''
+        reads, writes, errors = select( sockets[:reads], sockets[:writes], nil )
 
-        response = responses[socket]
+        sockets[:done] |= errors
 
-        if response[:has_full_headers]
+        reads.each do |socket|
+          responses[socket]               ||= {}
+          # Do we have full headers?
+          responses[socket][:has_headers] ||= false
+          # HTTP headers buffer.
+          responses[socket][:headers]     ||= ''
+          # Response body buffer.
+          responses[socket][:body]        ||= ''
 
-          read_size = if response[:content_length]
-                        response[:content_length] - response[:body].size
-                      else
-                        nil
-                      end
+          response = responses[socket]
 
-          response[:body] << socket.gets( read_size ).to_s
+          if response[:has_full_headers]
 
-          # Check to see if we're done.
-          next if response[:body].size < response[:content_length]
+            read_size = if response[:content_length]
+                          response[:content_length] - response[:body].size
+                        else
+                          nil
+                        end
 
-          socket.close
-          sockets[:done] << sockets[:reads].delete( socket )
+            response[:body] << socket.gets( read_size ).to_s
 
-          handle_response( sockets[:lookup_request][socket], response )
-          next
-        end
+            # Check to see if we're done.
+            next if response[:body].size < response[:content_length]
 
-        response[:headers] << socket.gets.to_s
+            socket.close
+            sockets[:done] << sockets[:reads].delete( socket )
 
-        # Extract the content length, lets us know how of of the body, if any,
-        # to read before we close the socket.
-        response[:content_length] ||= find_content_length( response[:headers] )
+            handle_response( sockets[:lookup_request][socket], response )
+            next
+          end
 
-        # If we hit a content-length of 0 we're done.
-        if response[:content_length] == 0
+          response[:headers] << socket.gets.to_s
+
+          # Extract the content length, lets us know how of of the body, if any,
+          # to read before we close the socket.
+          response[:content_length] ||= find_content_length( response[:headers] )
+
+          # If we hit a content-length of 0 we're done.
+          if response[:content_length] == 0
+            response[:has_full_headers] = true
+            next
+          end
+
+          # Keep going until we get all the headers.
+          next if !response[:headers].include?( "\r\n\r\n" )
           response[:has_full_headers] = true
-          next
+
+          # Some of the body may have gotten into the headers' buffer, sort them out.
+          response[:headers], response[:body] = response[:headers].split( "\r\n\r\n", 2 )
         end
 
-        # Keep going until we get all the headers.
-        next if !response[:headers].include?( "\r\n\r\n" )
-        response[:has_full_headers] = true
+        writes.each do |socket|
+          # Send out the request.
+          socket.write( sockets[:lookup_request][socket].to_s )
 
-        # Some of the body may have gotten into the headers' buffer, sort them out.
-        response[:headers], response[:body] = response[:headers].split( "\r\n\r\n", 2 )
+          # Move it to the read list.
+          sockets[:reads] << sockets[:writes].delete( socket )
+        end
+
       end
-
-      writes.each do |socket|
-        # Send out the request.
-        socket.write( sockets[:lookup_request][socket].to_s )
-
-        # Move it to the read list.
-        sockets[:reads] << sockets[:writes].delete( socket )
-      end
-
     end
 
     # Callbacks may have added new requests to the queue.
@@ -176,6 +183,39 @@ class Client
   end
 
   private
+
+  def add_sockets( amount, sockets )
+    return if amount <= 0
+
+    amount.times do
+      break if @queue.empty?
+      q_request = @queue.pop
+
+      socket = connect( q_request )
+      sockets[:lookup_request][socket] = q_request
+      sockets[:writes] << socket
+    end
+
+    sockets
+  end
+
+  def connect( request, timeout = 10 )
+    @address ||= {}
+
+    host = request.parsed_url.host
+    port = request.parsed_url.port
+
+    address = (@address["#{host}:#{port}"] ||= Socket.getaddrinfo( host, nil ))
+
+    socket = Socket.new( Socket.const_get( address[0][0] ), Socket::SOCK_STREAM, 0 )
+
+    begin
+      socket.connect_nonblock( Socket.pack_sockaddr_in( port, address[0][3] ) )
+    rescue Errno::EINPROGRESS
+    end
+
+    socket
+  end
 
   def find_content_length( response )
     return if !response.downcase.include?( 'content-length' )
