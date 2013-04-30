@@ -79,69 +79,126 @@ describe Raptor::Protocol::HTTP::Client do
     end
   end
 
-  describe '#concurrency=' do
-    it 'restricts the amount of maximum open connections' do
-      cnt   = 0
-      times = 10
+  #describe '#concurrency=' do
+  #  it 'restricts the amount of maximum open connections' do
+  #    cnt   = 0
+  #    times = 1000
+  #
+  #    #url = 'http://localhost:4567'
+  #    url = 'http://exasmple.com'
+  #
+  #    client.concurrency = 20
+  #    times.times do
+  #      client.get url do |r|
+  #        p r
+  #        p cnt += 1
+  #      end
+  #    end
+  #
+  #    t = Time.now
+  #    client.run
+  #    p  Time.now - t
+  #    cnt.should == times
+  #  end
+  #end
 
-      url = 'http://example.net'
-
-      client.concurrency = 1
-      times.times do
-        client.get url do
-          cnt += 1
-        end
-      end
-
-      t = Time.now
-      client.run
-      runtime_1 =  Time.now - t
-      cnt.should == times
-
-      cnt = 0
-      client.concurrency = 20
-      times.times do
-        client.get url do
-          cnt += 1
-        end
-      end
-
-      t = Time.now
-      client.run
-      runtime_2 =  Time.now - t
-
-      cnt.should == times
-      runtime_1.should > runtime_2
-    end
-  end
+  #describe '#concurrency=' do
+  #  it 'restricts the amount of maximum open connections' do
+  #    cnt   = 0
+  #    times = 10
+  #
+  #    url = 'http://example.net'
+  #
+  #    client.concurrency = 1
+  #    times.times do
+  #      client.get url do
+  #        cnt += 1
+  #      end
+  #    end
+  #
+  #    t = Time.now
+  #    client.run
+  #    runtime_1 =  Time.now - t
+  #    cnt.should == times
+  #
+  #    cnt = 0
+  #    client.concurrency = 20
+  #    times.times do
+  #      client.get url do
+  #        cnt += 1
+  #      end
+  #    end
+  #
+  #    t = Time.now
+  #    client.run
+  #    runtime_2 =  Time.now - t
+  #
+  #    cnt.should == times
+  #    runtime_1.should > runtime_2
+  #  end
+  #end
 
   describe '#run' do
-    it 'runs all the queued requests' do
-      cnt   = 0
-      times = 2
+    context 'when a request fails' do
+      context 'due to a closed port' do
+        it 'passes the callback an empty response' do
+          url = 'http://localhost'
 
-      times.times do
-        client.get 'http://example.com' do |r|
-          cnt += 1
+          response = nil
+          client.get( url ){ |r| response = r }
+          client.run
+
+          response.http_version.should == '1.1'
+          response.code.should == 0
+          response.message.should be_nil
+          response.body.should be_empty
+          response.headers.should == {}
         end
       end
 
-      client.run
-      cnt.should == times
-    end
+      context 'due to an invalid address' do
+        it 'passes the callback an empty response' do
+          url = 'http://stuffhereblahblahblah'
 
-    it 'runs requests queued via callbacks' do
-      url = 'http://example.com'
-      called = false
+          response = nil
+          client.get( url ){ |r| response = r }
+          client.run
 
-      client.get url do
-        client.get url do
-          called = true
+          response.http_version.should == '1.1'
+          response.code.should == 0
+          response.message.should be_nil
+          response.body.should be_empty
+          response.headers.should == {}
         end
       end
-
-      client.run
-      called.should be_true
     end
+
+    #it 'runs all the queued requests' do
+    #  cnt   = 0
+    #  times = 2
+    #
+    #  times.times do
+    #    client.get 'http://example.com' do |r|
+    #      cnt += 1
+    #    end
+    #  end
+    #
+    #  client.run
+    #  cnt.should == times
+    #end
+    #
+    #it 'runs requests queued via callbacks' do
+    #  url = 'http://example.com'
+    #  called = false
+    #
+    #  client.get url do
+    #    client.get url do
+    #      called = true
+    #    end
+    #  end
+    #
+    #  client.run
+    #  called.should be_true
+    #end
   end
 end
