@@ -48,14 +48,19 @@ class Response < PDU
     options[:original] = response
 
     headers_string, options[:body] = response.split( "\r\n\r\n", 2 )
-    request_line  = headers_string.lines.first
+    request_line   = headers_string.to_s.lines.first.to_s
 
     options[:http_version], options[:code], options[:message] =
         request_line.scan( /HTTP\/([\d.]+)\s+(\d+)\s+(.*)$/ ).flatten
 
-    options[:code]    = options[:code].to_i
-    options[:headers] =
-        Headers.parse( headers_string.split( /[\r\n]+/ )[1..-1].join( "\r\n" ) )
+    options[:code] = options[:code].to_i
+
+    if !headers_string.to_s.empty?
+      options[:headers] =
+          Headers.parse( headers_string.split( /[\r\n]+/ )[1..-1].join( "\r\n" ) )
+    else
+      options[:headers] = Headers.new
+    end
 
     new( options )
   end

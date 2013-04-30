@@ -41,6 +41,17 @@ More stuff
           'Content-Length' => '431'
       }
     end
+
+    context 'when passed an empty string' do
+      it 'returns an empty response' do
+        r = described_class.parse( '' )
+        r.http_version.should == '1.1'
+        r.code.should == 0
+        r.message.should be_nil
+        r.body.should be_nil
+        r.headers.should == {}
+      end
+    end
   end
 
   describe '#to_s' do
