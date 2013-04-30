@@ -18,8 +18,12 @@ class Headers < Hash
     map { |k, v| "#{CGI.escape(k)}: #{CGI.escape(v)}" }.join( "\r\n" )
   end
 
+  # @param  [String]  headers_string
+  # @return [Headers]
   def self.parse( headers_string )
     headers = Headers.new
+    return headers if headers_string.to_s.empty?
+
     headers_string.split( /[\r\n]+/ ).each do |header|
       k, v = header.split( ':', 2 )
       k = CGI.unescape( k.to_s.strip )

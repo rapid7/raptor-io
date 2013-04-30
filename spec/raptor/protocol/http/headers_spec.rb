@@ -15,6 +15,12 @@ describe Raptor::Protocol::HTTP::Headers do
   end
 
   describe '.parse' do
+    context 'when passed an empty string' do
+      it 'returns empty Headers' do
+        described_class.parse( '' ).should be_empty
+      end
+    end
+
     it 'parses an HTTP headers string' do
       headers_string = "Content-Type: text/html;charset=utf-8\r\n" +
         "X-Stuff+%21%40%24%5E54+n7: dsad3R%24%23%25+t%40%25Y1y165%5EU2+%0D%0A\r\n" +
