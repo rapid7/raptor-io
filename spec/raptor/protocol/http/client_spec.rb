@@ -79,64 +79,41 @@ describe Raptor::Protocol::HTTP::Client do
     end
   end
 
-  #describe '#concurrency=' do
-  #  it 'restricts the amount of maximum open connections' do
-  #    cnt   = 0
-  #    times = 1000
-  #
-  #    #url = 'http://localhost:4567'
-  #    url = 'http://exasmple.com'
-  #
-  #    client.concurrency = 20
-  #    times.times do
-  #      client.get url do |r|
-  #        p r
-  #        p cnt += 1
-  #      end
-  #    end
-  #
-  #    t = Time.now
-  #    client.run
-  #    p  Time.now - t
-  #    cnt.should == times
-  #  end
-  #end
+  describe '#concurrency=' do
+    it 'restricts the amount of maximum open connections' do
+      cnt   = 0
+      times = 10
 
-  #describe '#concurrency=' do
-  #  it 'restricts the amount of maximum open connections' do
-  #    cnt   = 0
-  #    times = 10
-  #
-  #    url = 'http://example.net'
-  #
-  #    client.concurrency = 1
-  #    times.times do
-  #      client.get url do
-  #        cnt += 1
-  #      end
-  #    end
-  #
-  #    t = Time.now
-  #    client.run
-  #    runtime_1 =  Time.now - t
-  #    cnt.should == times
-  #
-  #    cnt = 0
-  #    client.concurrency = 20
-  #    times.times do
-  #      client.get url do
-  #        cnt += 1
-  #      end
-  #    end
-  #
-  #    t = Time.now
-  #    client.run
-  #    runtime_2 =  Time.now - t
-  #
-  #    cnt.should == times
-  #    runtime_1.should > runtime_2
-  #  end
-  #end
+      url = 'http://example.net'
+
+      client.concurrency = 1
+      times.times do
+        client.get url do
+          cnt += 1
+        end
+      end
+
+      t = Time.now
+      client.run
+      runtime_1 =  Time.now - t
+      cnt.should == times
+
+      cnt = 0
+      client.concurrency = 20
+      times.times do
+        client.get url do
+          cnt += 1
+        end
+      end
+
+      t = Time.now
+      client.run
+      runtime_2 =  Time.now - t
+
+      cnt.should == times
+      runtime_1.should > runtime_2
+    end
+  end
 
   describe '#run' do
     context 'when a request fails' do
@@ -173,32 +150,32 @@ describe Raptor::Protocol::HTTP::Client do
       end
     end
 
-    #it 'runs all the queued requests' do
-    #  cnt   = 0
-    #  times = 2
-    #
-    #  times.times do
-    #    client.get 'http://example.com' do |r|
-    #      cnt += 1
-    #    end
-    #  end
-    #
-    #  client.run
-    #  cnt.should == times
-    #end
-    #
-    #it 'runs requests queued via callbacks' do
-    #  url = 'http://example.com'
-    #  called = false
-    #
-    #  client.get url do
-    #    client.get url do
-    #      called = true
-    #    end
-    #  end
-    #
-    #  client.run
-    #  called.should be_true
-    #end
+    it 'runs all the queued requests' do
+      cnt   = 0
+      times = 2
+
+      times.times do
+        client.get 'http://example.com' do |r|
+          cnt += 1
+        end
+      end
+
+      client.run
+      cnt.should == times
+    end
+
+    it 'runs requests queued via callbacks' do
+      url = 'http://example.com'
+      called = false
+
+      client.get url do
+        client.get url do
+          called = true
+        end
+      end
+
+      client.run
+      called.should be_true
+    end
   end
 end
