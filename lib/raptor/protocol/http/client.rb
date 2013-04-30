@@ -131,7 +131,7 @@ class Client
       consume_requests
 
       while @sockets[:done].size != @sockets[:lookup_request].size
-        reads, writes, errors = select( @sockets[:reads], @sockets[:writes], open_sockets )
+        reads, writes, errors = select( @sockets[:reads], @sockets[:writes], nil )
 
         errors.each do |socket|
           handle_error( socket )
