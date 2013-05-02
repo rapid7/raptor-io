@@ -1,4 +1,5 @@
 require 'cgi'
+require 'uri'
 
 module Raptor::Protocol::HTTP
 end
