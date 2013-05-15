@@ -5,6 +5,14 @@ describe Raptor::Protocol::HTTP::Response do
 
   let(:url) { 'http://test.com' }
 
+  let(:response) do
+    "HTTP/1.1 404 Not Found\r\n" +
+"Content-Type: text/html;charset=utf-8\r\n" +
+"Content-Length: 431\r\n\r\n" +
+"<!DOCTYPE html>\n" +
+"More stuff\n"
+  end
+
   describe '#code' do
     it 'returns the HTTP status code' do
       described_class.new( url: url, code: 200 ).code.should == 200
@@ -24,13 +32,6 @@ describe Raptor::Protocol::HTTP::Response do
 
   describe '.parse' do
     it 'parses an HTTP response string into a Response object' do
-      response = "HTTP/1.1 404 Not Found
-Content-Type: text/html;charset=utf-8
-Content-Length: 431
-\r\n\r\n<!DOCTYPE html>
-More stuff
-"
-
       r = described_class.parse( response )
       r.http_version.should == '1.1'
       r.code.should == 404
@@ -40,6 +41,7 @@ More stuff
           'Content-Type'   => 'text/html;charset=utf-8',
           'Content-Length' => '431'
       }
+      r.to_s.should == response
     end
 
     context 'when passed an empty string' do
@@ -55,6 +57,19 @@ More stuff
   end
 
   describe '#to_s' do
-    it 'returns a String representation of the response'
+    it 'returns a String representation of the response' do
+      r = described_class.new(
+        http_version: '1.1',
+        code:         404,
+        message:      'Not Found',
+        body:         "<!DOCTYPE html>\nMore stuff\n",
+        headers:      {
+            'Content-Type'   => 'text/html;charset=utf-8',
+            'Content-Length' => '431'
+        }
+      )
+
+      r.to_s.should == response
+    end
   end
 end

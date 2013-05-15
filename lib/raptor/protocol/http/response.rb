@@ -35,7 +35,11 @@ class Response < PDU
   # @return [String]
   #   String representation of the response.
   def to_s
-    @original || ''
+    return @original if @original
+
+    r = "HTTP/#{http_version} #{code} #{message}\r\n"
+    r << "#{headers.to_s}\r\n\r\n"
+    r << body
   end
 
   #
@@ -48,7 +52,7 @@ class Response < PDU
     options[:original] = response
 
     headers_string, options[:body] = response.split( "\r\n\r\n", 2 )
-    request_line   = headers_string.to_s.lines.first.to_s
+    request_line   = headers_string.to_s.lines.first.to_s.chomp
 
     options[:http_version], options[:code], options[:message] =
         request_line.scan( /HTTP\/([\d.]+)\s+(\d+)\s+(.*)$/ ).flatten
