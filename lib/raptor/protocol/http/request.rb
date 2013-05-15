@@ -167,6 +167,8 @@ class Request < PDU
 
   # @private
   def handle_response( response )
+    response.request = self
+
     type = (response.code.to_i == 0) ? :on_failure : :on_success
 
     @callbacks[type].each { |block| block.call response }

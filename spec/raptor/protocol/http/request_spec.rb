@@ -342,6 +342,18 @@ describe Raptor::Protocol::HTTP::Request do
   end
 
   describe '#handle_response' do
+    it 'assigns self as the #request attribute of the response' do
+      request = described_class.new( url: url )
+
+      passed_response = nil
+      request.on_complete { |res| passed_response = res }
+
+      response = Raptor::Protocol::HTTP::Response.new( url: url )
+      request.handle_response( response )
+
+      passed_response.request.should == request
+    end
+
     context 'when a response is successful' do
       let(:response) { Raptor::Protocol::HTTP::Response.new( url: url, code: 200 ) }
 
