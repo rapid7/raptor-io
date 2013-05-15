@@ -1,3 +1,5 @@
+require 'uri'
+
 module Raptor
 module Protocol::HTTP
 
@@ -15,7 +17,7 @@ class Headers < Hash
 
   # @return [String]  HTTP headers formatted for transmission.
   def to_s
-    map { |k, v| "#{CGI.escape(k)}: #{CGI.escape(v)}" }.join( "\r\n" )
+    map { |k, v| "#{URI.encode(k)}: #{URI.encode(v)}" }.join( "\r\n" )
   end
 
   # @param  [String]  headers_string

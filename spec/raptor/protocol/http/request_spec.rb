@@ -524,7 +524,7 @@ describe Raptor::Protocol::HTTP::Request do
           described_class.new( options ).to_s.should ==
               "GET / HTTP/1.1\r\n" +
                 "Host: #{URI(url).host}\r\n" +
-                "X-Stuff+%21%40%24%5E54+n7: dsad3R%24%23%25+t%40%25Y1y165%5EU2+%0D%0A\r\n\r\n"
+                "X-Stuff%20!@$%5E54%20n7: dsad3R$%23%25%20t@%25Y1y165%5EU2%20%0D%0A\r\n\r\n"
         end
       end
     end

@@ -9,7 +9,7 @@ describe Raptor::Protocol::HTTP::Headers do
         'X-More-Stuff'      => 'blah'
       }
       described_class.new( options ).to_s.should ==
-              "X-Stuff+%21%40%24%5E54+n7: dsad3R%24%23%25+t%40%25Y1y165%5EU2+%0D%0A\r\n" +
+              "X-Stuff%20!@$%5E54%20n7: dsad3R$%23%25%20t@%25Y1y165%5EU2%20%0D%0A\r\n" +
               "X-More-Stuff: blah"
     end
   end
