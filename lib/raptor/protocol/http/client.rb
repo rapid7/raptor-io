@@ -64,6 +64,10 @@ class Client
       # Response body buffer.
       body: ''
     )
+
+    # Instance to use for synchronous requests.
+    sync_opts = options.merge( concurrency: 10, has_sync: true )
+    @sync = self.class.new( sync_opts ) if !options[:has_sync]
   end
 
   #
@@ -81,6 +85,15 @@ class Client
   #
   def request( url, options = {}, &block )
     req = Request.new( options.merge( url: url ) )
+
+    if options[:type] == :sync
+      res = nil
+      req.on_complete { |r| res = r }
+      @sync.queue( req )
+      @sync.run
+      return res
+    end
+
     req.on_complete( &block ) if block_given?
     queue( req )
     req
