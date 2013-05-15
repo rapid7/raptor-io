@@ -15,7 +15,7 @@ class Response < PDU
   attr_reader :message
 
   # @return [Request] HTTP {Request} which triggered this {Response}.
-  attr_reader :request
+  attr_accessor :request
 
   #
   # @note This class' options are in addition to {PDU#initialize}.
