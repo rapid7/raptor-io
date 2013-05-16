@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe Raptor::Protocol::HTTP::Response do
-  it_should_behave_like 'Raptor::Protocol::HTTP::PDU'
+  it_should_behave_like 'Raptor::Protocol::HTTP::Message'
 
   let(:url) { 'http://test.com' }
 

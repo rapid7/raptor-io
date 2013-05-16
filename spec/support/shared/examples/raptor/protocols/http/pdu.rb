@@ -1,4 +1,4 @@
-shared_examples_for 'Raptor::Protocol::HTTP::PDU' do
+shared_examples_for 'Raptor::Protocol::HTTP::Message' do
 
   let(:url) { 'http://test.com' }
 

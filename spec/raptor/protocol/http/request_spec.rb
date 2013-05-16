@@ -2,7 +2,7 @@ require 'spec_helper'
 require 'ostruct'
 
 describe Raptor::Protocol::HTTP::Request do
-  it_should_behave_like 'Raptor::Protocol::HTTP::PDU'
+  it_should_behave_like 'Raptor::Protocol::HTTP::Message'
 
   let(:url) { 'http://test.com' }
   let(:url_with_query) { 'http://test.com/?id=1&stuff=blah' }

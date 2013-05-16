@@ -2,11 +2,11 @@ module Raptor
 module Protocol::HTTP
 
 #
-# HTTP Data Unit, holds shared attributes of {Request} and {Response}.
+# HTTP message, holds shared attributes of {Request} and {Response}.
 #
 # @author Tasos Laskos <tasos_laskos@rapid7.com>
 #
-class PDU
+class Message
 
   # @return [String]  HTTP version.
   attr_reader :http_version
@@ -21,7 +21,7 @@ class PDU
   # @note All options will be sent through the class setters whenever
   #   possible to allow for normalization.
   #
-  # @param  [Hash]  options PDU options.
+  # @param  [Hash]  options Message options.
   # @option options [String] :url The URL of the remote resource.
   # @option options [Hash] :headers HTTP headers.
   # @option options [String] :body Body.

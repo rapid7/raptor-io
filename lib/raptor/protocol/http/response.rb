@@ -6,7 +6,7 @@ module Protocol::HTTP
 #
 # @author Tasos Laskos <tasos_laskos@rapid7.com>
 #
-class Response < PDU
+class Response < Message
 
   # @return [Integer] HTTP response status code.
   attr_reader :code
@@ -18,13 +18,13 @@ class Response < PDU
   attr_accessor :request
 
   #
-  # @note This class' options are in addition to {PDU#initialize}.
+  # @note This class' options are in addition to {Message#initialize}.
   #
   # @param  [Hash]  options Request options.
   # @option options [Integer] :code HTTP response status code.
   # @option options [Request] :request HTTP request that triggered this response.
   #
-  # @see PDU#initialize
+  # @see Message#initialize
   #
   def initialize( options = {} )
     super( options )

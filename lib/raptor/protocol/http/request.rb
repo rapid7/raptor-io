@@ -6,7 +6,7 @@ module Protocol::HTTP
 #
 # @author Tasos Laskos <tasos_laskos@rapid7.com>
 #
-class Request < PDU
+class Request < Message
 
   # Acceptable response callback types.
   CALLBACK_TYPES = [:on_complete, :on_failure, :on_success]
@@ -24,7 +24,7 @@ class Request < PDU
   attr_reader :parameters
 
   #
-  # @note This class' options are in addition to {PDU#initialize}.
+  # @note This class' options are in addition to {Message#initialize}.
   #
   # @param  [Hash]  options Request options.
   # @option options [String] :http_version ('1.1') HTTP version to use.
@@ -33,7 +33,7 @@ class Request < PDU
   #   Parameters to send. If performing a GET request and the URL has parameters
   #   of its own they will be merged and overwritten.
   #
-  # @see PDU#initialize
+  # @see Message#initialize
   # @see #parameters=
   # @see #http_method=
   #
