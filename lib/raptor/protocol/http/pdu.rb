@@ -39,6 +39,18 @@ class PDU
     @http_version ||= '1.1'
   end
 
+  # @return [Boolean]
+  #   `true` when {#http_version} is `1.1`, `false` otherwise.
+  def http_1_1?
+    http_version == '1.1'
+  end
+
+  # @return [Boolean]
+  #   `true` when {#http_version} is `1.0`, `false` otherwise.
+  def http_1_0?
+    http_version == '1.0'
+  end
+
 end
 
 end

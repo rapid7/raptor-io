@@ -23,6 +23,34 @@ shared_examples_for 'Raptor::Protocol::HTTP::PDU' do
     end
   end
 
+  describe '#http_1_1?' do
+    context 'when the protocol version is 1.1' do
+      it 'returns true' do
+        described_class.new( url: url, http_version: '1.1' ).http_1_1?.should be_true
+      end
+    end
+
+    context 'when the protocol version is not 1.1' do
+      it 'returns false' do
+        described_class.new( url: url, http_version: '1.2' ).http_1_1?.should be_false
+      end
+    end
+  end
+
+  describe '#http_1_0?' do
+    context 'when the protocol version is 1.0' do
+      it 'returns true' do
+        described_class.new( url: url, http_version: '1.0' ).http_1_0?.should be_true
+      end
+    end
+
+    context 'when the protocol version is not 1.0' do
+      it 'returns false' do
+        described_class.new( url: url, http_version: '1.2' ).http_1_0?.should be_false
+      end
+    end
+  end
+
   describe '#headers' do
     context 'when not configured' do
       it 'defaults to an empty Hash' do
