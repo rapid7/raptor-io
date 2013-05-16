@@ -165,6 +165,11 @@ class Request < PDU
   #   Assigns a block to be called if the request fails.
   #   @param [Block] block Block to call on failure.
 
+  #
+  # Handles the `response` to `self` by passing to the appropriate callbacks.
+  #
+  # @param  [Response]  response
+  #
   # @private
   def handle_response( response )
     response.request = self
@@ -173,6 +178,7 @@ class Request < PDU
 
     @callbacks[type].each { |block| block.call response }
     @callbacks[:on_complete].each { |block| block.call response }
+    true
   end
 
 end

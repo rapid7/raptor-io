@@ -1,3 +1,8 @@
+#
+# Monkey-patches Ruby's stdlib `Hash` with a few convenience methods.
+#
+# @author Tasos Laskos <tasos_laskos@rapid7.com>
+#
 class Hash
 
   # @return [Hash]

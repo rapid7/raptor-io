@@ -1,6 +1,11 @@
 require 'cgi'
 require 'uri'
 
+#
+# HTTP protocol implementation.
+#
+# @author Tasos Laskos <tasos_laskos@rapid7.com>
+#
 module Raptor::Protocol::HTTP
 end
 
