@@ -23,12 +23,12 @@ describe Raptor::Protocol::HTTP::Client do
     end
 
     describe 'option' do
-      describe :type do
+      describe :mode do
         describe :sync do
           it 'performs the request synchronously and returns the response' do
             options = {
                 parameters: { 'name' => 'value' },
-                type:       :sync
+                mode:       :sync
             }
             response = client.request( 'http://example.net', options )
             response.should be_kind_of Raptor::Protocol::HTTP::Response

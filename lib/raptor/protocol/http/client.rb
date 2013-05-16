@@ -10,8 +10,7 @@ module Protocol::HTTP
 #
 class Client
 
-  # @param [Integer] Maximum open sockets.
-  # @return [Integer] Maximum open sockets.
+  # @return [Integer] concurrency Maximum open sockets.
   attr_accessor :concurrency
 
   # @param  [Hash]  options Request options.
@@ -64,20 +63,25 @@ class Client
       # Response body buffer.
       body: ''
     )
-
-    # Instance to use for synchronous requests.
-    sync_opts = options.merge( concurrency: 10, has_sync: true )
-    @sync = self.class.new( sync_opts ) if !options[:has_sync]
   end
 
   #
   # Creates and {#queue queues} a {Request}.
   #
   # @param  [String]  url URL of the remote resource.
-  # @param  [Hash]  options {Request} options.
+  # @param  [Hash]  options {Request} options with the following extras:
+  # @option options [Symbol]  :mode (:async)
+  #   Mode to use for the request, available options are:
+  #
+  #   * `:async`  -- Adds the request to the queue.
+  #   * `:sync`  -- Performs the request in a blocking manner and returns the
+  #     {Response}.
+  #
   # @param  [Block] block Callback to be passed the {Response}.
   #
-  # @return [Request] Queued {Request}.
+  # @return [Request, Response]
+  #   Queued {Request} when in `:async` `:mode`, {Response} when in `:sync`
+  #   `:mode`.
   #
   # @see Request#initialize
   # @see Request#on_complete
@@ -86,13 +90,7 @@ class Client
   def request( url, options = {}, &block )
     req = Request.new( options.merge( url: url ) )
 
-    if options[:type] == :sync
-      res = nil
-      req.on_complete { |r| res = r }
-      @sync.queue( req )
-      @sync.run
-      return res
-    end
+    return sync_request( req ) if options[:mode] == :sync
 
     req.on_complete( &block ) if block_given?
     queue( req )
@@ -180,6 +178,19 @@ class Client
 
   private
 
+  # @param  [Request] request Request to perform in blocking mode.
+  # @return [Response]  HTTP response.
+  def sync_request( request )
+    client = self.class.new
+
+    res = nil
+    request.on_complete { |r| res = r }
+    client.queue( request )
+    client.run
+
+    res
+  end
+
   # @return [Array<Socket>] Sockets currently open.
   def open_sockets
     @sockets[:writes] + @sockets[:reads]
@@ -196,7 +207,7 @@ class Client
   #
   # Writes the associated {Request} to `socket`.
   #
-  # @param  [#write]  Writable IO object.
+  # @param  [#write]  socket  Writable IO object.
   #
   def write( socket )
     request        = @sockets[:lookup_request][socket]
@@ -228,7 +239,7 @@ class Client
   # associated request once the full response is received -- at which point it
   # also closes the socket.
   #
-  # @param  [#gets]  Readable IO object.
+  # @param  [#gets] socket  Readable IO object.
   #
   # @return [true, nil]
   #   `true` if the response finished being buffered, `nil` otherwise.
@@ -306,11 +317,11 @@ class Client
   #
   # Opens up an non-blocking socket for the given `request`.
   #
-  # @param  [Request]
+  # @param  [Request] request
   #
   # @return [Socket, nil]
-  # Socket on success, `nil` on failure. On failure, the request callback will
-  # be passed an empty response.
+  #   Socket on success, `nil` on failure. On failure, the request callback will
+  #   be passed an empty response.
   #
   def connect( request, timeout = 10 )
     @address ||= {}
