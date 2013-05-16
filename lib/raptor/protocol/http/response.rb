@@ -37,7 +37,9 @@ class Response < PDU
   def to_s
     return @original if @original
 
-    r = "HTTP/#{http_version} #{code} #{message}\r\n"
+    r = "HTTP/#{http_version} #{code}"
+    r <<  " #{message}" if message
+    r <<  "\r\n"
     r << "#{headers.to_s}\r\n\r\n"
     r << body
   end
@@ -48,14 +50,18 @@ class Response < PDU
   # @return [Response]
   #
   def self.parse( response )
-    options          ||= {}
+    options ||= {}
+
+    # Since we've got the original response store it to be returned by {#to_s}.
     options[:original] = response
 
     headers_string, options[:body] = response.split( "\r\n\r\n", 2 )
     request_line   = headers_string.to_s.lines.first.to_s.chomp
 
     options[:http_version], options[:code], options[:message] =
-        request_line.scan( /HTTP\/([\d.]+)\s+(\d+)\s+(.*)$/ ).flatten
+        request_line.scan( /HTTP\/([\d.]+)\s+(\d+)\s*(.*)\s*$/ ).flatten
+
+    options.delete(:message) if options[:message].to_s.empty?
 
     options[:code] = options[:code].to_i
 
