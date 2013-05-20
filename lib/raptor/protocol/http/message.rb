@@ -9,7 +9,7 @@ module Protocol::HTTP
 class Message
 
   # @return [String]  HTTP version.
-  attr_reader :http_version
+  attr_reader :version
 
   # @return [Headers<String, String>]  HTTP headers as a Hash-like object.
   attr_reader :headers
@@ -25,6 +25,7 @@ class Message
   # @option options [String] :url The URL of the remote resource.
   # @option options [Hash] :headers HTTP headers.
   # @option options [String] :body Body.
+  # @option options [String] :version (1.1) HTTP version.
   #
   def initialize( options = {} )
     options.each do |k, v|
@@ -35,20 +36,20 @@ class Message
       end
     end
 
-    @headers        = Headers.new( @headers )
-    @http_version ||= '1.1'
+    @headers  = Headers.new( @headers )
+    @version ||= '1.1'
   end
 
   # @return [Boolean]
-  #   `true` when {#http_version} is `1.1`, `false` otherwise.
+  #   `true` when {#version} is `1.1`, `false` otherwise.
   def http_1_1?
-    http_version == '1.1'
+    version == '1.1'
   end
 
   # @return [Boolean]
-  #   `true` when {#http_version} is `1.0`, `false` otherwise.
+  #   `true` when {#version} is `1.0`, `false` otherwise.
   def http_1_0?
-    http_version == '1.0'
+    version == '1.0'
   end
 
 end

@@ -563,7 +563,7 @@ describe Raptor::Protocol::HTTP::Request do
         it 'includes it the request' do
           options = {
               url:          url,
-              http_version: '2'
+              version: '2'
           }
           described_class.new( options ).to_s.lines.first.should == "GET / HTTP/2\r\n"
         end

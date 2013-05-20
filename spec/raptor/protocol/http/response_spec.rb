@@ -33,7 +33,7 @@ describe Raptor::Protocol::HTTP::Response do
   describe '.parse' do
     it 'parses an HTTP response string into a Response object' do
       r = described_class.parse( response )
-      r.http_version.should == '1.1'
+      r.version.should == '1.1'
       r.code.should == 404
       r.message.should == 'Not Found'
       r.body.should == "<!DOCTYPE html>\nMore stuff\n"
@@ -47,7 +47,7 @@ describe Raptor::Protocol::HTTP::Response do
     context 'when passed an empty string' do
       it 'returns an empty response' do
         r = described_class.parse( '' )
-        r.http_version.should == '1.1'
+        r.version.should == '1.1'
         r.code.should == 0
         r.message.should be_nil
         r.body.should be_nil
@@ -59,7 +59,7 @@ describe Raptor::Protocol::HTTP::Response do
   describe '#to_s' do
     it 'returns a String representation of the response' do
       r = described_class.new(
-        http_version: '1.1',
+        version: '1.1',
         code:         404,
         message:      'Not Found',
         body:         "<!DOCTYPE html>\nMore stuff\n",

@@ -6,33 +6,33 @@ shared_examples_for 'Raptor::Protocol::HTTP::Message' do
     it 'sets the instance attributes by the options' do
       options = {
           url:          url,
-          http_version: '1.0',
+          version: '1.0',
           headers:      {
               'X-Stuff' => 'Blah'
           }
       }
       r = described_class.new( options )
-      r.http_version.should == options[:http_version]
-      r.headers.should      == options[:headers]
+      r.version.should == options[:version]
+      r.headers.should == options[:headers]
     end
   end
 
-  describe '#http_version' do
+  describe '#version' do
     it 'defaults to 1.1' do
-      described_class.new( url: url ).http_version.should == '1.1'
+      described_class.new( url: url ).version.should == '1.1'
     end
   end
 
   describe '#http_1_1?' do
     context 'when the protocol version is 1.1' do
       it 'returns true' do
-        described_class.new( url: url, http_version: '1.1' ).http_1_1?.should be_true
+        described_class.new( url: url, version: '1.1' ).http_1_1?.should be_true
       end
     end
 
     context 'when the protocol version is not 1.1' do
       it 'returns false' do
-        described_class.new( url: url, http_version: '1.2' ).http_1_1?.should be_false
+        described_class.new( url: url, version: '1.2' ).http_1_1?.should be_false
       end
     end
   end
@@ -40,13 +40,13 @@ shared_examples_for 'Raptor::Protocol::HTTP::Message' do
   describe '#http_1_0?' do
     context 'when the protocol version is 1.0' do
       it 'returns true' do
-        described_class.new( url: url, http_version: '1.0' ).http_1_0?.should be_true
+        described_class.new( url: url, version: '1.0' ).http_1_0?.should be_true
       end
     end
 
     context 'when the protocol version is not 1.0' do
       it 'returns false' do
-        described_class.new( url: url, http_version: '1.2' ).http_1_0?.should be_false
+        described_class.new( url: url, version: '1.2' ).http_1_0?.should be_false
       end
     end
   end

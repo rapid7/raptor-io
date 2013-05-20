@@ -141,7 +141,7 @@ describe Raptor::Protocol::HTTP::Client do
           client.get( url ){ |r| response = r }
           client.run
 
-          response.http_version.should == '1.1'
+          response.version.should == '1.1'
           response.code.should == 0
           response.message.should be_nil
           response.body.should be_empty
@@ -157,7 +157,7 @@ describe Raptor::Protocol::HTTP::Client do
           client.get( url ){ |r| response = r }
           client.run
 
-          response.http_version.should == '1.1'
+          response.version.should == '1.1'
           response.code.should == 0
           response.message.should be_nil
           response.body.should be_empty

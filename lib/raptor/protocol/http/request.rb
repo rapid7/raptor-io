@@ -27,7 +27,7 @@ class Request < Message
   # @note This class' options are in addition to {Message#initialize}.
   #
   # @param  [Hash]  options Request options.
-  # @option options [String] :http_version ('1.1') HTTP version to use.
+  # @option options [String] :version ('1.1') HTTP version to use.
   # @option options [Symbol, String] :http_method (:get) HTTP method to use.
   # @option options [Hash] :parameters ({})
   #   Parameters to send. If performing a GET request and the URL has parameters
@@ -136,7 +136,7 @@ class Request < Message
     computed_headers = Headers.new( 'Host' => req_url.host )
     computed_headers['Content-Length'] = body.size.to_s if !body.to_s.empty?
 
-    request = "#{http_method.to_s.upcase} #{req_resource} HTTP/#{http_version}\r\n"
+    request = "#{http_method.to_s.upcase} #{req_resource} HTTP/#{version}\r\n"
     request << computed_headers.merge(headers).to_s
     request << "\r\n\r\n"
 
