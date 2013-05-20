@@ -23,7 +23,7 @@ class Headers < Hash
   # @param  [String]  field Field name
   # @return [String]  Field value.
   def []( field )
-    fetch( format_field_name(field.to_s.downcase) )
+    super format_field_name( field.to_s.downcase )
   end
 
   # @note `field` will be capitalized appropriately before storing.
@@ -31,7 +31,7 @@ class Headers < Hash
   # @param  [String]  value Field value.
   # @return [String]  Field `value`.
   def []=( field, value )
-    store( format_field_name(field.to_s.downcase), value.to_s )
+    super( format_field_name(field.to_s.downcase), value.to_s )
   end
 
   # @return [String]  HTTP headers formatted for transmission.
