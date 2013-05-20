@@ -1,3 +1,6 @@
+require 'zlib'
+require 'stringio'
+
 module Raptor
 module Protocol::HTTP
 
@@ -44,11 +47,8 @@ class Response < Message
     r << body
   end
 
-  #
   # @param  [String]  response  HTTP response.
-  #
   # @return [Response]
-  #
   def self.parse( response )
     options ||= {}
 
@@ -72,7 +72,34 @@ class Response < Message
       options[:headers] = Headers.new
     end
 
+    case options[:headers]['content-encoding'].to_s.downcase
+      when 'gzip', 'x-gzip'
+        options[:body] = unzip( options[:body] )
+      when 'deflate', 'compress', 'x-compress'
+        options[:body] = inflate( options[:body] )
+    end
+
     new( options )
+  end
+
+  # @param  [String]  str Inflates `str`.
+  # @return [String]  Inflated `str`.
+  def self.inflate( str )
+    z = Zlib::Inflate.new
+    s = z.inflate( str )
+    z.close
+    s
+  end
+
+  # @param  [String]  str Unzips `str`.
+  # @return [String]  Unziped `str`.
+  def self.unzip( str )
+    s = ''
+    s.force_encoding( 'ASCII-8BIT' ) if s.respond_to?( :encoding )
+    gz = Zlib::GzipReader.new( StringIO.new( str, 'rb' ) )
+    s << gz.read
+    gz.close
+    s
   end
 
   protected
