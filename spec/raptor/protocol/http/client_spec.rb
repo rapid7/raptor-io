@@ -2,6 +2,11 @@ require 'spec_helper'
 
 describe Raptor::Protocol::HTTP::Client do
 
+  before :all do
+    WebServers.start :client
+    @url = WebServers.url_for( :client )
+  end
+
   let(:url) { 'http://test.com' }
   let(:client) { described_class.new }
 
@@ -30,7 +35,7 @@ describe Raptor::Protocol::HTTP::Client do
                 parameters: { 'name' => 'value' },
                 mode:       :sync
             }
-            response = client.request( 'http://example.net', options )
+            response = client.request( @url, options )
             response.should be_kind_of Raptor::Protocol::HTTP::Response
             response.request.parameters.should == options[:parameters]
           end
@@ -46,6 +51,16 @@ describe Raptor::Protocol::HTTP::Client do
 
     it 'returns the request' do
       client.request( '/blah/' ).should be_kind_of Raptor::Protocol::HTTP::Request
+    end
+
+    describe 'Content-Encoding' do
+      it 'supports gzip' do
+        client.get( "#{@url}/gzip", mode: :sync ).body.should == 'gzip'
+      end
+
+      it 'supports deflate' do
+        client.get( "#{@url}/deflate", mode: :sync ).body.should == 'deflate'
+      end
     end
   end
 
@@ -100,7 +115,7 @@ describe Raptor::Protocol::HTTP::Client do
       cnt   = 0
       times = 10
 
-      url = 'http://example.net'
+      url = "#{@url}/sleep"
 
       client.concurrency = 1
       times.times do
@@ -111,7 +126,7 @@ describe Raptor::Protocol::HTTP::Client do
 
       t = Time.now
       client.run
-      runtime_1 =  Time.now - t
+      runtime_1 = Time.now - t
       cnt.should == times
 
       cnt = 0
@@ -171,7 +186,7 @@ describe Raptor::Protocol::HTTP::Client do
       times = 2
 
       times.times do
-        client.get 'http://example.com' do |r|
+        client.get @url do |r|
           cnt += 1
         end
       end
@@ -181,11 +196,9 @@ describe Raptor::Protocol::HTTP::Client do
     end
 
     it 'runs requests queued via callbacks' do
-      url = 'http://example.com'
       called = false
-
-      client.get url do
-        client.get url do
+      client.get @url do
+        client.get @url do
           called = true
         end
       end
