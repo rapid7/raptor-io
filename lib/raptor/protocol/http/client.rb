@@ -13,11 +13,21 @@ class Client
   # @return [Integer] concurrency Maximum open sockets.
   attr_accessor :concurrency
 
+  # @return [String]  User-agent string to use.
+  attr_accessor :user_agent
+
+  DEFAULT_OPTIONS = {
+      concurrency: 20,
+      user_agent:  "Raptor::HTTP/#{Raptor::VERSION}"
+  }
+
   # @param  [Hash]  options Request options.
-  # @option options [String] :address Address of the HTTP server.
-  # @option options [Integer] :port (80) Port number of the HTTP server.
+  # @option options [Integer] :concurrency (20)
+  #   Amount of open sockets at any given time.
+  # @option options [String] :user_agent ('Raptor::HTTP/<Raptor::VERSION>')
+  #   User-agent string to include in the requests.
   def initialize( options = {} )
-    options.each do |k, v|
+    DEFAULT_OPTIONS.merge( options ).each do |k, v|
       begin
         send( "#{k}=", v )
       rescue NoMethodError
@@ -25,11 +35,8 @@ class Client
       end
     end
 
-    # Pretty reasonable amount.
-    @concurrency = 20
-
     # Holds Request objects.
-    @queue       = []
+    @queue = []
 
     # A socket starts in `:writes`, once the request is written it gets moved
     # to `:reads` -- at which point it stays there while the response is being
@@ -89,6 +96,8 @@ class Client
   #
   def request( url, options = {}, &block )
     req = Request.new( options.merge( url: url ) )
+
+    req.headers['User-Agent'] = @user_agent if !@user_agent.to_s.empty?
 
     return sync_request( req ) if options[:mode] == :sync
 

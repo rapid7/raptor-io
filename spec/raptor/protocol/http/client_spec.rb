@@ -10,6 +10,85 @@ describe Raptor::Protocol::HTTP::Client do
   let(:url) { 'http://test.com' }
   let(:client) { described_class.new }
 
+  describe '#initialize' do
+    describe :concurrency do
+      it 'sets the request concurrency option' do
+        described_class.new( concurrency: 10 ).concurrency.should == 10
+      end
+
+      it 'sets the amount of maximum open connections at any given time' do
+        cnt   = 0
+        times = 10
+
+        url = "#{@url}/sleep"
+
+        client.concurrency = 1
+        times.times do
+          client.get url do
+            cnt += 1
+          end
+        end
+
+        t = Time.now
+        client.run
+        runtime_1 = Time.now - t
+        cnt.should == times
+
+        cnt = 0
+        client.concurrency = 20
+        times.times do
+          client.get url do
+            cnt += 1
+          end
+        end
+
+        t = Time.now
+        client.run
+        runtime_2 =  Time.now - t
+
+        cnt.should == times
+        runtime_1.should > runtime_2
+      end
+
+      it 'defaults to 20' do
+        client.concurrency.should == 20
+      end
+    end
+
+    describe :user_agent do
+      it 'sets the user-agent option' do
+        described_class.new( user_agent: 'Stuff' ).user_agent.should == 'Stuff'
+      end
+
+      it 'sets the User-Agent for the requests' do
+        ua = 'Stuff'
+        client = described_class.new( user_agent: ua )
+        client.request( @url ).headers['User-Agent'].should == ua
+      end
+
+      it "defaults to 'Raptor::HTTP/#{Raptor::VERSION}'" do
+        client.user_agent.should == "Raptor::HTTP/#{Raptor::VERSION}"
+      end
+    end
+  end
+
+  describe '#concurrency=' do
+    it 'sets the concurrency option' do
+      client.concurrency.should_not == 10
+      client.concurrency = 10
+      client.concurrency.should == 10
+    end
+  end
+
+  describe '#user_agent=' do
+    it 'sets the user_agent option' do
+      ua = 'stuff'
+      client.user_agent.should_not == ua
+      client.user_agent = ua
+      client.user_agent.should == ua
+    end
+  end
+
   describe '#request' do
     it 'forwards the given options to the Request object' do
       options = { parameters: { 'name' => 'value' }}
@@ -101,48 +180,6 @@ describe Raptor::Protocol::HTTP::Client do
       client.queue_size.should == 0
       client << Raptor::Protocol::HTTP::Request.new( url: url )
       client.queue_size.should == 1
-    end
-  end
-
-  describe '#concurrency' do
-    it 'defaults to 20' do
-      described_class.new.concurrency.should == 20
-    end
-  end
-
-  describe '#concurrency=' do
-    it 'restricts the amount of maximum open connections' do
-      cnt   = 0
-      times = 10
-
-      url = "#{@url}/sleep"
-
-      client.concurrency = 1
-      times.times do
-        client.get url do
-          cnt += 1
-        end
-      end
-
-      t = Time.now
-      client.run
-      runtime_1 = Time.now - t
-      cnt.should == times
-
-      cnt = 0
-      client.concurrency = 20
-      times.times do
-        client.get url do
-          cnt += 1
-        end
-      end
-
-      t = Time.now
-      client.run
-      runtime_2 =  Time.now - t
-
-      cnt.should == times
-      runtime_1.should > runtime_2
     end
   end
 
