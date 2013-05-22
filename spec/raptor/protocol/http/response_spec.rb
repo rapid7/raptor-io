@@ -23,6 +23,64 @@ describe Raptor::Protocol::HTTP::Response do
     end
   end
 
+  describe '#redirect?' do
+    context 'when the code is in the 3xx family' do
+      context 'and there is a Location in the headers' do
+        it 'returns true' do
+          300.upto( 399 ) do |code|
+            described_class.new(
+                url: url,
+                code: code,
+                headers: { 'Location' => url }
+            ).redirect?.should be_true
+          end
+        end
+      end
+      context 'and there is no Location in the headers' do
+        it 'returns false' do
+          300.upto( 399 ) do |code|
+            described_class.new(
+                url: url,
+                code: code
+            ).redirect?.should be_false
+          end
+        end
+      end
+    end
+
+    context 'when the code is not in the 3xx family' do
+      it 'returns false' do
+        described_class.new(
+            url: url,
+            code: 200
+        ).redirect?.should be_false
+      end
+
+      context 'and there is a Location in the headers' do
+        it 'returns true' do
+          described_class.new(
+              url: url,
+              code: 200,
+              headers: { 'Location' => url }
+          ).redirect?.should be_false
+        end
+      end
+    end
+  end
+
+  describe '#modified?' do
+    context 'when the code is 304' do
+      it 'returns false' do
+        described_class.new( url: url, code: 304 ).modified?.should be_false
+      end
+    end
+    context 'when the code is not 304' do
+      it 'returns true' do
+        described_class.new( url: url, code: 301 ).modified?.should be_true
+      end
+    end
+  end
+
   describe '#request' do
     it 'returns the assigned request' do
       r = Raptor::Protocol::HTTP::Request.new( url: url )
