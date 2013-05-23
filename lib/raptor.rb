@@ -1,3 +1,6 @@
+require 'rubygems'
+require 'bundler/setup'
+
 module Raptor
 end
 
