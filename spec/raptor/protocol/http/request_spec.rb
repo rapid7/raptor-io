@@ -5,6 +5,7 @@ describe Raptor::Protocol::HTTP::Request do
   it_should_behave_like 'Raptor::Protocol::HTTP::Message'
 
   let(:url) { 'http://test.com' }
+  let(:parsed_url) { URI(url) }
   let(:url_with_query) { 'http://test.com/?id=1&stuff=blah' }
 
   describe '#initialize' do
@@ -422,7 +423,7 @@ describe Raptor::Protocol::HTTP::Request do
     it 'includes a Host header' do
       described_class.new( url: url ).to_s.should ==
           "GET / HTTP/1.1\r\n" +
-              "Host: #{URI(url).host}\r\n\r\n"
+              "Host: #{parsed_url.host}:#{parsed_url.port}\r\n\r\n"
     end
 
     context 'when the request method is' do
@@ -535,7 +536,7 @@ describe Raptor::Protocol::HTTP::Request do
           }
           described_class.new( options ).to_s.should ==
               "GET / HTTP/1.1\r\n" +
-                "Host: #{URI(url).host}\r\n" +
+                "Host: #{parsed_url.host}:#{parsed_url.port}\r\n" +
                 "X-Stuff: blah\r\n\r\n"
         end
       end
@@ -562,7 +563,7 @@ describe Raptor::Protocol::HTTP::Request do
       context 'has been provided' do
         it 'includes it the request' do
           options = {
-              url:          url,
+              url:     url,
               version: '2'
           }
           described_class.new( options ).to_s.lines.first.should == "GET / HTTP/2\r\n"
@@ -591,7 +592,7 @@ describe Raptor::Protocol::HTTP::Request do
         }
         described_class.new( options ).to_s.should ==
             "GET / HTTP/1.1\r\n" +
-                "Host: test.com\r\n" +
+                "Host: #{parsed_url.host}:#{parsed_url.port}\r\n" +
                 "Content-Length: 37\r\n\r\n" +
                 "fds+g45%23%24+6%40+%25y+%40%5E2%0D%0A\r\n\r\n"
       end

@@ -44,9 +44,14 @@ class Request < Message
 
     fail ArgumentError, "Missing ':url' option." if !@url
 
-    @parsed_url     = URI(@url)
     @parameters   ||= {}
     @http_method  ||= :get
+  end
+
+  def url=( uri )
+    @url = uri
+    @parsed_url= URI(@url)
+    @url
   end
 
   #
@@ -133,7 +138,7 @@ class Request < Message
 
     body = effective_body
 
-    computed_headers = Headers.new( 'Host' => req_url.host )
+    computed_headers = Headers.new( 'Host' => "#{req_url.host}:#{req_url.port}" )
     computed_headers['Content-Length'] = body.size.to_s if !body.to_s.empty?
 
     request = "#{http_method.to_s.upcase} #{req_resource} HTTP/#{version}\r\n"
@@ -179,6 +184,14 @@ class Request < Message
     @callbacks[type].each { |block| block.call response }
     @callbacks[:on_complete].each { |block| block.call response }
     true
+  end
+
+  def dup
+    r = self.class.new( url: url )
+    instance_variables.each do |iv|
+      r.instance_variable_set iv, instance_variable_get( iv )
+    end
+    r
   end
 
 end
