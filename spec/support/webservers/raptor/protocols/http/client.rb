@@ -2,6 +2,10 @@ require 'zlib'
 require 'sinatra'
 require 'sinatra/contrib'
 
+get '/echo' do
+  params.to_s
+end
+
 get '/gzip' do
   headers['Content-Encoding'] = 'gzip'
   io = StringIO.new
@@ -28,4 +32,14 @@ end
 
 get '/sleep' do
   sleep 2
+end
+
+get /\/redirect_(\d+)_times/ do
+  num = params[:captures].first.to_i - 1
+
+  if num == 0
+    'End of the line...'
+  else
+    redirect "/redirect_#{num}_times"
+  end
 end

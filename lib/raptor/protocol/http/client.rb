@@ -13,12 +13,16 @@ class Client
   # @return [Integer] concurrency Maximum open sockets.
   attr_accessor :concurrency
 
-  # @return [String]  User-agent string to use.
+  # @return [String]  user_agent  User-agent string to use.
   attr_accessor :user_agent
 
+  # @return [Integer] max_redirects Maximum redirection responses to follow.
+  attr_accessor :max_redirections
+
   DEFAULT_OPTIONS = {
-      concurrency: 20,
-      user_agent:  "Raptor::HTTP/#{Raptor::VERSION}"
+      concurrency:      20,
+      user_agent:       "Raptor::HTTP/#{Raptor::VERSION}",
+      max_redirections: 5 # RFC says 5 max.
   }
 
   # @param  [Hash]  options Request options.
@@ -60,16 +64,18 @@ class Client
     }
 
     # Response buffer.
-    @pending_responses = Hash.new(
-      # Do we have full headers?
-      has_headers: false,
+    @pending_responses = Hash.new do |h, k|
+        h[k] = {
+          # Do we have full headers?
+          has_headers: false,
 
-      # HTTP headers buffer.
-      headers: '',
+          # HTTP headers buffer.
+          headers: '',
 
-      # Response body buffer.
-      body: ''
-    )
+          # Response body buffer.
+          body: ''
+        }
+    end
   end
 
   #
@@ -190,7 +196,10 @@ class Client
   # @param  [Request] request Request to perform in blocking mode.
   # @return [Response]  HTTP response.
   def sync_request( request )
-    client = self.class.new
+    client = self.class.new(
+        max_redirections: max_redirections,
+        user_agent:       user_agent
+    )
 
     res = nil
     request.on_complete { |r| res = r }
@@ -228,6 +237,7 @@ class Client
         bytes_written = socket.write( request_string )
       rescue Errno::ECONNREFUSED, Errno::EPIPE
         handle_response( request )
+        socket.close
         @sockets[:done] << @sockets[:writes].delete( socket )
         return
       end
@@ -272,8 +282,8 @@ class Client
       socket.close
       @sockets[:done] << @sockets[:reads].delete( socket )
 
-      handle_response( @sockets[:lookup_request][socket], response )
       @pending_responses.delete( socket )
+      handle_response( @sockets[:lookup_request][socket], response )
       return true
     end
 
@@ -368,9 +378,23 @@ class Client
   end
 
   # @param  [Request] request Request whose callback is passed a parsed {Response}.
-  # @param  [Hash]  response Response buffer data.
-  def handle_response( request, response = {} )
-    request.handle_response Response.parse( "#{response[:headers]}\r\n\r\n#{response[:body]}" )
+  # @param  [Hash]  response_data Response buffer data.
+  def handle_response( request, response_data = {} )
+    response = Response.parse( "#{response_data[:headers]}\r\n\r\n#{response_data[:body]}" )
+
+    @redirections ||= Hash.new([])
+
+    if response.redirect? && @redirections[request].size < max_redirections
+      (@redirections[request] ||= []) << response
+
+      request     = request.dup
+      request.url = response.headers['Location'].dup
+      queue( request.dup )
+      return
+    end
+
+    response.redirections = @redirections[request]
+    request.handle_response response
   end
 
 end

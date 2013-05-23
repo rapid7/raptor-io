@@ -20,6 +20,10 @@ class Response < Message
   # @return [Request] HTTP {Request} which triggered this {Response}.
   attr_accessor :request
 
+  # @return [Array<Response>]
+  #   Automatically followed redirections that eventually led to this response.
+  attr_accessor :redirections
+
   #
   # @note This class' options are in addition to {Message#initialize}.
   #
@@ -33,13 +37,16 @@ class Response < Message
     super( options )
 
     @code ||= 0
+
+    # Holds the redirection responses that eventually led to this one.
+    @redirections ||= []
   end
 
   # @return [Boolean]
   #   `true` if the response is a `3xx` redirect **and** there is a `Location`
   #   header field.
   def redirect?
-    code >= 300 && code <= 399 && headers['Location']
+    code >= 300 && code <= 399 && !!headers['Location']
   end
 
   # @note Depends on the response code.
