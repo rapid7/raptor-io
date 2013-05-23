@@ -1,4 +1,5 @@
 require 'singleton'
+require 'net/http'
 
 class WebServers
   include Singleton
@@ -24,6 +25,8 @@ class WebServers
     server_info[:pid] = quite_fork {
       exec 'ruby', server_info[:path], '-p ' + server_info[:port].to_s
     }
+
+    sleep 0.2 while !up?( name )
   end
 
   def url_for( name )
@@ -52,11 +55,11 @@ class WebServers
 
   def up?( name )
     begin
-      Net::HTTP.get_response( URI.parse( url_for( name ) ) )
+      ::Net::HTTP.get_response( URI.parse( url_for( name ) ) )
       true
     rescue Errno::ECONNRESET
       true
-    rescue
+    rescue => e
       false
     end
   end
