@@ -28,6 +28,22 @@ describe Raptor::Protocol::HTTP::Client do
       end
     end
 
+    describe :username do
+      context 'when the password option is missing' do
+        it 'raises ArgumentError' do
+          expect { described_class.new( password: 'stuff' ) }.to raise_error ArgumentError
+        end
+      end
+    end
+
+    describe :password do
+      context 'when the username option is missing' do
+        it 'raises ArgumentError' do
+          expect { described_class.new( password: 'stuff' ) }.to raise_error ArgumentError
+        end
+      end
+    end
+
     describe :concurrency do
       it 'sets the request concurrency option' do
         described_class.new( concurrency: 10 ).concurrency.should == 10
@@ -86,6 +102,15 @@ describe Raptor::Protocol::HTTP::Client do
       it "defaults to 'Raptor::HTTP/#{Raptor::VERSION}'" do
         client.user_agent.should == "Raptor::HTTP/#{Raptor::VERSION}"
       end
+    end
+  end
+
+  context 'when credentials are given' do
+    it 'uses them to connect to a restricted resource' do
+      client.get( "#{@url}/basic-auth", mode: :sync ).code.should == 401
+
+      client = described_class.new( username: 'admin', password: 'secret' )
+      client.get( "#{@url}/basic-auth", mode: :sync ).code.should == 200
     end
   end
 

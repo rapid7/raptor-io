@@ -1,4 +1,5 @@
 require 'socket'
+require 'base64'
 
 module Raptor
 module Protocol::HTTP
@@ -19,10 +20,18 @@ class Client
   # @return [Integer] max_redirects Maximum redirection responses to follow.
   attr_accessor :max_redirections
 
+  # @return [String]  username  User name to authenticate as.
+  attr_accessor :username
+
+  # @return [String]  password  Password to use for authentication.
+  attr_accessor :password
+
   DEFAULT_OPTIONS = {
       concurrency:      20,
       user_agent:       "Raptor::HTTP/#{Raptor::VERSION}",
-      max_redirections: 5 # RFC says 5 max.
+      max_redirections: 5, # RFC says 5 max.
+      username:         nil,
+      password:         nil
   }
 
   # @param  [Hash]  options Request options.
@@ -37,6 +46,10 @@ class Client
       rescue NoMethodError
         instance_variable_set( "@#{k}".to_sym, v )
       end
+    end
+
+    if [@username.to_s, @password.to_s].reject( &:empty? ).size == 1
+      fail ArgumentError, 'Both \':username\' and \':password\' options are required.'
     end
 
     # Holds Request objects.
@@ -104,6 +117,10 @@ class Client
     req = Request.new( options.merge( url: url ) )
 
     req.headers['User-Agent'] = @user_agent if !@user_agent.to_s.empty?
+
+    if @username && @password
+      req.headers['Authorization'] = "Basic #{Base64.encode64("#{@username}:#{@password}")}"
+    end
 
     return sync_request( req ) if options[:mode] == :sync
 
