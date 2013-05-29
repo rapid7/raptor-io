@@ -227,37 +227,76 @@ describe Raptor::Protocol::HTTP::Client do
 
   describe '#run' do
     context 'when a request fails' do
-      context 'due to a closed port' do
-        it 'passes the callback an empty response' do
-          url = 'http://localhost'
+      context 'in asynchronous mode' do
+        context 'due to a closed port' do
+          it 'passes the callback an empty response' do
+            url = 'http://localhost'
 
-          response = nil
-          client.get( url ){ |r| response = r }
-          client.run
+            response = nil
+            client.get( url ){ |r| response = r }
+            client.run
 
-          response.version.should == '1.1'
-          response.code.should == 0
-          response.message.should be_nil
-          response.body.should be_empty
-          response.headers.should == {}
+            response.version.should == '1.1'
+            response.code.should == 0
+            response.message.should be_nil
+            response.body.should be_nil
+            response.headers.should == {}
+          end
+
+          it 'assigns an exception as an #error' do
+            url = 'http://localhost'
+
+            response = nil
+            client.get( url ){ |r| response = r }
+            client.run
+
+            response.error.should be_kind_of Exception
+          end
+
+        end
+
+        context 'due to an invalid address' do
+          it 'passes the callback an empty response' do
+            url = 'http://stuffhereblahblahblah'
+
+            response = nil
+            client.get( url ){ |r| response = r }
+            client.run
+
+            response.version.should == '1.1'
+            response.code.should == 0
+            response.message.should be_nil
+            response.body.should be_nil
+            response.headers.should == {}
+          end
+
+          it 'assigns an exception as an #error' do
+            url = 'http://stuffhereblahblahblah'
+
+            response = nil
+            client.get( url ){ |r| response = r }
+            client.run
+
+            response.error.should be_kind_of Exception
+          end
+
         end
       end
 
-      context 'due to an invalid address' do
-        it 'passes the callback an empty response' do
-          url = 'http://stuffhereblahblahblah'
+      context 'in synchronous mode' do
+        context 'due to a closed port' do
+          it 'raises an exception' do
+            expect { client.get( 'http://localhost', mode: :sync ) }.to raise_error
+          end
+        end
 
-          response = nil
-          client.get( url ){ |r| response = r }
-          client.run
-
-          response.version.should == '1.1'
-          response.code.should == 0
-          response.message.should be_nil
-          response.body.should be_empty
-          response.headers.should == {}
+        context 'due to an invalid address' do
+          it 'raises an exception' do
+            expect { client.get( 'http://stuffhereblahblahblah', mode: :sync ) }.to raise_error
+          end
         end
       end
+
     end
 
     it 'runs all the queued requests' do

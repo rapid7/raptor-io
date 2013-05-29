@@ -24,6 +24,9 @@ class Response < Message
   #   Automatically followed redirections that eventually led to this response.
   attr_accessor :redirections
 
+  # @return [Exception] Exception representing the error that occurred.
+  attr_reader :error
+
   #
   # @note This class' options are in addition to {Message#initialize}.
   #
@@ -67,7 +70,7 @@ class Response < Message
     r <<  " #{message}" if message
     r <<  "\r\n"
     r << "#{headers.to_s}\r\n\r\n"
-    r << body
+    r << body.to_s
   end
 
   # @param  [String]  response  HTTP response.

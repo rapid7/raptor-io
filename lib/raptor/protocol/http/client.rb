@@ -178,7 +178,7 @@ class Client
             select( @sockets[:reads], @sockets[:writes], open_sockets )
 
         errors.each do |socket|
-          handle_error( socket )
+          handle_error( @sockets[:lookup_request][socket], nil, socket )
         end
 
         reads.each do |socket|
@@ -223,20 +223,14 @@ class Client
     client.queue( request )
     client.run
 
+    raise res.error if res.error
+
     res
   end
 
   # @return [Array<Socket>] Sockets currently open.
   def open_sockets
     @sockets[:writes] + @sockets[:reads]
-  end
-
-  def handle_error( socket )
-    [:reads, :writes].each { |state| @sockets[state].delete( socket ) }
-    @sockets[:done] << socket
-
-    handle_response( @sockets[:lookup_request][socket] )
-    nil
   end
 
   #
@@ -252,10 +246,8 @@ class Client
     loop do
       begin
         bytes_written = socket.write( request_string )
-      rescue Errno::ECONNREFUSED, Errno::EPIPE
-        handle_response( request )
-        socket.close
-        @sockets[:done] << @sockets[:writes].delete( socket )
+      rescue Errno::ECONNREFUSED, Errno::EPIPE => e
+        handle_error( request, e, socket )
         return
       end
 
@@ -367,8 +359,8 @@ class Client
 
     address =  begin
       (@address["#{host}:#{port}"] ||= Socket.getaddrinfo( host, nil ))
-    rescue Errno::ENOENT
-      handle_response( request )
+    rescue Errno::ENOENT => e
+      handle_error( request, e, nil )
       return
     end
 
@@ -392,6 +384,17 @@ class Client
   def find_content_length( response )
     return if !response.downcase.include?( 'content-length' )
     response.scan( /^content\-length:\s*(\d+)\s*$/i ).flatten.first.to_i
+  end
+
+  def handle_error( request, error = nil, socket = nil )
+    if socket
+      socket.close
+      [:reads, :writes].each { |state| @sockets[state].delete( socket ) }
+      @sockets[:done] << socket
+    end
+
+    response = Response.new( error: error )
+    request.handle_response response
   end
 
   # @param  [Request] request Request whose callback is passed a parsed {Response}.
