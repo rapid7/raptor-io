@@ -13,11 +13,14 @@ describe Raptor::Protocol::HTTP::Request do
       options = {
           url: url,
           http_method: :get,
-          parameters: { 'test' => 'blah' }
+          parameters: { 'test' => 'blah' },
+          timeout: 10
       }
       r = described_class.new( options )
+      r.url.should == url
       r.http_method.should  == options[:http_method]
       r.parameters.should   == options[:parameters]
+      r.timeout.should   == options[:timeout]
     end
     it 'uses the setter methods when configuring' do
       options = { url: url, http_method: 'gEt', parameters: { 'test' => 'blah' } }

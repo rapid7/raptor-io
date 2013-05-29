@@ -11,6 +11,25 @@ describe Raptor::Protocol::HTTP::Client do
   let(:client) { described_class.new }
 
   describe '#initialize' do
+
+    describe :timeout do
+      it 'sets the timeout  option' do
+        described_class.new( timeout: 15 ).timeout.should == 15
+      end
+
+      it 'sets the default timeout limit for requests' do
+        client = described_class.new( timeout: 1 )
+        client.get( "#{@url}/sleep", mode: :sync ).code.should == 0
+
+        client = described_class.new( timeout: 3 )
+        client.get( "#{@url}/sleep", mode: :sync ).code.should == 200
+      end
+
+      it 'defaults to 10' do
+        described_class.new.timeout.should == 10
+      end
+    end
+
     describe :max_redirects do
       it 'sets the max_redirects option' do
         described_class.new( max_redirections: 10 ).max_redirections.should == 10
@@ -149,6 +168,12 @@ describe Raptor::Protocol::HTTP::Client do
     end
 
     describe 'option' do
+      describe :timeout do
+        it 'sets a timeout for this request' do
+          client.get( "#{@url}/sleep", mode: :sync, timeout: 1 ).code.should == 0
+          client.get( "#{@url}/sleep", mode: :sync, timeout: 3 ).code.should == 200
+        end
+      end
       describe :mode do
         describe :sync do
           it 'performs the request synchronously and returns the response' do

@@ -23,6 +23,9 @@ class Request < Message
   # @return [Hash]  Request parameters.
   attr_reader :parameters
 
+  # @return [Integer, Float] timeout Timeout in seconds.
+  attr_reader :timeout
+
   #
   # @note This class' options are in addition to {Message#initialize}.
   #

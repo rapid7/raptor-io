@@ -11,19 +11,22 @@ module Protocol::HTTP
 #
 class Client
 
-  # @return [Integer] concurrency Maximum open sockets.
+  # @return [Integer, Float] Timeout in seconds.
+  attr_accessor :timeout
+
+  # @return [Integer] Maximum open sockets.
   attr_accessor :concurrency
 
-  # @return [String]  user_agent  User-agent string to use.
+  # @return [String]  User-agent string to use.
   attr_accessor :user_agent
 
-  # @return [Integer] max_redirects Maximum redirection responses to follow.
+  # @return [Integer] Maximum redirection responses to follow.
   attr_accessor :max_redirections
 
-  # @return [String]  username  User name to authenticate as.
+  # @return [String]  User name to authenticate as.
   attr_accessor :username
 
-  # @return [String]  password  Password to use for authentication.
+  # @return [String]  Password to use for authentication.
   attr_accessor :password
 
   DEFAULT_OPTIONS = {
@@ -31,7 +34,8 @@ class Client
       user_agent:       "Raptor::HTTP/#{Raptor::VERSION}",
       max_redirections: 5, # RFC says 5 max.
       username:         nil,
-      password:         nil
+      password:         nil,
+      timeout:          10
   }
 
   # @param  [Hash]  options Request options.
@@ -114,6 +118,9 @@ class Client
   # @see #queue
   #
   def request( url, options = {}, &block )
+    options = options.dup
+    options[:timeout] ||= @timeout
+
     req = Request.new( options.merge( url: url ) )
 
     req.headers['User-Agent'] = @user_agent if !@user_agent.to_s.empty?
@@ -174,19 +181,32 @@ class Client
       consume_requests
 
       while @sockets[:done].size != @sockets[:lookup_request].size
-        reads, writes, errors =
-            select( @sockets[:reads], @sockets[:writes], open_sockets )
 
-        errors.each do |socket|
-          handle_error( @sockets[:lookup_request][socket], nil, socket )
-        end
+        # Read sockets need individual timeouts (because requests have individual
+        # timeouts) so they get their own #select calls.
+        @sockets[:reads].dup.each do |socket|
+          request = @sockets[:lookup_request][socket]
+          res = select( [socket], nil, [socket], request.timeout )
 
-        reads.each do |socket|
+          # We either reached the timeout or the connection was reset.
+          if !res || res[2].any?
+            handle_error( request, nil, socket )
+            next
+          end
+
           # Buffer/handle the response for the given socket.
           read( socket )
 
           # Fully utilize our socket allowance.
           consume_requests
+        end
+
+        next if @sockets[:writes].empty?
+
+        _, writes, errors = select( nil, @sockets[:writes], @sockets[:writes] )
+
+        errors.each do |socket|
+          handle_error( @sockets[:lookup_request][socket], nil, socket )
         end
 
         writes.each do |socket|
@@ -215,7 +235,8 @@ class Client
   def sync_request( request )
     client = self.class.new(
         max_redirections: max_redirections,
-        user_agent:       user_agent
+        user_agent:       user_agent,
+        timeout:          timeout
     )
 
     res = nil

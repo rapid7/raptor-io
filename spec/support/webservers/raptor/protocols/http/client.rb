@@ -51,6 +51,12 @@ end
 
 get '/sleep' do
   sleep 2
+  'Blah...'
+end
+
+get '/long-sleep' do
+  sleep 5
+  'Blah...'
 end
 
 get /\/redirect_(\d+)_times/ do
