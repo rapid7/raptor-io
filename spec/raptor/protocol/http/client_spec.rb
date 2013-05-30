@@ -13,16 +13,17 @@ describe Raptor::Protocol::HTTP::Client do
   describe '#initialize' do
 
     describe :timeout do
-      it 'sets the timeout  option' do
+      it 'sets the timeout option' do
         described_class.new( timeout: 15 ).timeout.should == 15
       end
 
-      it 'sets the default timeout limit for requests' do
-        client = described_class.new( timeout: 1 )
-        client.get( "#{@url}/sleep", mode: :sync ).code.should == 0
-
-        client = described_class.new( timeout: 3 )
-        client.get( "#{@url}/sleep", mode: :sync ).code.should == 200
+      context 'when a timeout occurs' do
+        it 'raises Raptor::Error::Timeout' do
+          client = described_class.new( timeout: 1 )
+          expect {
+            client.get( "#{@url}/sleep", mode: :sync )
+          }.to raise_error Raptor::Error::Timeout
+        end
       end
 
       it 'defaults to 10' do
@@ -169,9 +170,13 @@ describe Raptor::Protocol::HTTP::Client do
 
     describe 'option' do
       describe :timeout do
-        it 'sets a timeout for this request' do
-          client.get( "#{@url}/sleep", mode: :sync, timeout: 1 ).code.should == 0
-          client.get( "#{@url}/sleep", mode: :sync, timeout: 3 ).code.should == 200
+        context 'when a timeout occurs' do
+          it 'raises Raptor::Error::Timeout' do
+            client = described_class.new( timeout: 1 )
+            expect {
+              client.get( "#{@url}/sleep", mode: :sync )
+            }.to raise_error Raptor::Error::Timeout
+          end
         end
       end
       describe :mode do
@@ -268,19 +273,45 @@ describe Raptor::Protocol::HTTP::Client do
             response.headers.should == {}
           end
 
-          it 'assigns an exception as an #error' do
+          it 'assigns Raptor::Protocol::Error::ConnectionRefused to #error' do
             url = 'http://localhost'
 
             response = nil
             client.get( url ){ |r| response = r }
             client.run
 
-            response.error.should be_kind_of Exception
+            response.error.should be_kind_of Raptor::Protocol::Error::ConnectionRefused
           end
 
         end
 
-        context 'due to an invalid address' do
+        context 'due to an invalid IP address' do
+          it 'passes the callback an empty response' do
+            url = 'http://10.11.12.13'
+
+            response = nil
+            client.get( url ){ |r| response = r }
+            client.run
+
+            response.version.should == '1.1'
+            response.code.should == 0
+            response.message.should be_nil
+            response.body.should be_nil
+            response.headers.should == {}
+          end
+
+          it 'assigns Raptor::Protocol::Error::HostUnreachable to #error' do
+            url = 'http://10.11.12.13'
+
+            response = nil
+            client.get( url ){ |r| response = r }
+            client.run
+
+            response.error.should be_kind_of Raptor::Protocol::Error::HostUnreachable
+          end
+        end
+
+        context 'due to an invalid hostname' do
           it 'passes the callback an empty response' do
             url = 'http://stuffhereblahblahblah'
 
@@ -295,16 +326,15 @@ describe Raptor::Protocol::HTTP::Client do
             response.headers.should == {}
           end
 
-          it 'assigns an exception as an #error' do
+          it 'assigns Raptor::Protocol::Error::CouldNotResolve to #error' do
             url = 'http://stuffhereblahblahblah'
 
             response = nil
             client.get( url ){ |r| response = r }
             client.run
 
-            response.error.should be_kind_of Exception
+            response.error.should be_kind_of Raptor::Protocol::Error::CouldNotResolve
           end
-
         end
       end
 

@@ -189,7 +189,14 @@ class Client
           res = select( [socket], nil, [socket], request.timeout )
 
           # We either reached the timeout or the connection was reset.
-          if !res || res[2].any?
+          if !res
+            error = Raptor::Error::Timeout.new( 'Request timed-out.' )
+            error.set_backtrace( caller )
+            handle_error( request, error, socket )
+            next
+          end
+
+          if res[2].any?
             handle_error( request, nil, socket )
             next
           end
@@ -267,8 +274,15 @@ class Client
     loop do
       begin
         bytes_written = socket.write( request_string )
-      rescue Errno::ECONNREFUSED, Errno::EPIPE => e
-        handle_error( request, e, socket )
+      rescue Errno::ECONNREFUSED => e
+        error = Protocol::Error::ConnectionRefused.new( e.to_s )
+        error.set_backtrace( e.backtrace )
+        handle_error( request, error, socket )
+        return
+      rescue Errno::EPIPE => e
+        error = Protocol::Error::BrokenPipe.new( e.to_s )
+        error.set_backtrace( e.backtrace )
+        handle_error( request, error, socket )
         return
       end
 
@@ -381,7 +395,9 @@ class Client
     address =  begin
       (@address["#{host}:#{port}"] ||= Socket.getaddrinfo( host, nil ))
     rescue Errno::ENOENT => e
-      handle_error( request, e, nil )
+      error = Protocol::Error::CouldNotResolve.new( e.to_s )
+      error.set_backtrace( e.backtrace )
+      handle_error( request, error, nil )
       return
     end
 
@@ -390,6 +406,12 @@ class Client
     begin
       socket.connect_nonblock( Socket.pack_sockaddr_in( port, address[0][3] ) )
     rescue Errno::EINPROGRESS
+      if select( nil, [socket], nil, @timeout ).nil?
+        error = Protocol::Error::HostUnreachable.new
+        error.set_backtrace( caller )
+        handle_error( request, error, nil )
+        return
+      end
     end
 
     socket

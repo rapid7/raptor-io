@@ -9,6 +9,7 @@ require 'uri'
 module Raptor::Protocol::HTTP
 end
 
+require 'raptor/protocol/http/error'
 require 'raptor/protocol/http/headers'
 require 'raptor/protocol/http/message'
 require 'raptor/protocol/http/request'

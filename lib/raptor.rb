@@ -5,5 +5,6 @@ module Raptor
 end
 
 require 'raptor/version'
+require 'raptor/error'
 require 'raptor/ruby'
 require 'raptor/protocol'
