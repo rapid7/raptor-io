@@ -129,6 +129,9 @@ class Client
       req.headers['Authorization'] = "Basic #{Base64.encode64("#{@username}:#{@password}")}"
     end
 
+    # We don't support persistent connections yet so let the server know.
+    req.headers['Connection'] = 'close' if req.http_1_1?
+
     return sync_request( req ) if options[:mode] == :sync
 
     req.on_complete( &block ) if block_given?

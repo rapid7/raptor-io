@@ -157,6 +157,19 @@ describe Raptor::Protocol::HTTP::Client do
       client.request( '/blah/', options ).parameters.should == options[:parameters]
     end
 
+    context 'when using HTTP/1.1' do
+      it 'signals that is does not support persistent connections' do
+        client.request( '/blah/' ).headers['Connection'].should == 'close'
+      end
+
+      context 'otherwise' do
+        it 'does not' do
+          client.request( '/blah/', version: '1.0' ).headers.should_not include 'Connection'
+        end
+      end
+
+    end
+
     context 'when passed a block' do
       it 'sets it as a callback' do
         passed_response = nil
