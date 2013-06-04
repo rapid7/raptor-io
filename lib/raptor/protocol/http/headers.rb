@@ -22,6 +22,20 @@ class Headers < Hash
   # @note `field` will be capitalized appropriately before storing.
   # @param  [String]  field Field name
   # @return [String]  Field value.
+  def delete( field )
+    super format_field_name( field.to_s.downcase )
+  end
+
+  # @note `field` will be capitalized appropriately before storing.
+  # @param  [String]  field Field name
+  # @return [String]  Field value.
+  def include?( field )
+    super format_field_name( field.to_s.downcase )
+  end
+
+  # @note `field` will be capitalized appropriately before storing.
+  # @param  [String]  field Field name
+  # @return [String]  Field value.
   def []( field )
     super format_field_name( field.to_s.downcase )
   end

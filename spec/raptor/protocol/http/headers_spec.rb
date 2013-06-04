@@ -12,6 +12,27 @@ describe Raptor::Protocol::HTTP::Headers do
     end
   end
 
+  describe '#delete' do
+    it 'deleted a header field' do
+      h = described_class.new( 'x-my-field' => 'stuff' )
+      h.delete( 'X-My-Field' ).should == 'stuff'
+    end
+  end
+
+  describe '#include?' do
+    context 'when the field is included' do
+      it 'returns true' do
+        h = described_class.new( 'X-My-Field' => 'stuff' )
+        h.include?( 'x-my-field' ).should be_true
+      end
+    end
+    context 'when the field is not included' do
+      it 'returns false' do
+        described_class.new.include?( 'x-my-field' ).should be_false
+      end
+    end
+  end
+
   describe '.parse' do
     context 'when passed an empty string' do
       it 'returns empty Headers' do
