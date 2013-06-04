@@ -226,6 +226,17 @@ describe Raptor::Protocol::HTTP::Client do
         client.get( "#{@url}/deflate", mode: :sync ).body.should == 'deflate'
       end
     end
+
+    describe 'Content-Encoding' do
+      context 'supports' do
+        it 'chunked' do
+          res = client.get( "#{@url}/chunked", mode: :sync )
+          res.body.should == "foo\nbara\rbaraf\r\n"
+          res.headers.should_not include 'Transfer-Encoding'
+          res.headers['Content-Length'].to_i.should == res.body.size
+        end
+      end
+    end
   end
 
   describe '#get' do

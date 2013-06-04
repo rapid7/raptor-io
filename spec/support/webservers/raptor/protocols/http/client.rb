@@ -2,6 +2,34 @@ require 'zlib'
 require 'sinatra'
 require 'sinatra/contrib'
 
+module Sinatra::Helpers
+  class Stream
+    def each(&front)
+      p @front = front
+      callback do
+        @front.call("0\r\n\r\n")
+      end
+
+      @scheduler.defer do
+        begin
+          @back.call(self)
+        rescue Exception => e
+          @scheduler.schedule { raise e }
+        end
+        close unless @keep_open
+      end
+    end
+
+    def <<(data)
+      @scheduler.schedule do
+        size = data.to_s.bytesize
+        @front.call([size.to_s(16), "\r\n", data.to_s, "\r\n"].join)
+      end
+      self
+    end
+  end
+end
+
 helpers do
   def protected!
     return if authorized?
@@ -14,6 +42,17 @@ helpers do
     @auth.provided? && @auth.basic? && @auth.credentials &&
         @auth.credentials == ['admin', 'secret']
   end
+end
+
+get '/chunked' do
+  headers "Transfer-Encoding" => "chunked"
+  stream do |out|
+    out << "foo\n"
+    sleep 1
+    out << "bara\r"
+    sleep 2
+    out << "baraf\r\n"
+    end
 end
 
 get '/echo' do

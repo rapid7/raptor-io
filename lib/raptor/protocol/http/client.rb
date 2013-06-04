@@ -4,6 +4,10 @@ require 'base64'
 module Raptor
 module Protocol::HTTP
 
+  CRLF             = "\r\n"
+  CRLF_SIZE        = CRLF.size
+  HEADER_SEPARATOR = CRLF * 2
+
 #
 # HTTP Client class.
 #
@@ -314,17 +318,36 @@ class Client
     response = @pending_responses[socket]
 
     if response[:has_full_headers]
+      headers = (response[:parsed_headers] ||= Response.parse( response[:headers] ).headers)
 
-      read_size = if response[:content_length]
-                    response[:content_length] - response[:body].size
-                  else
-                    nil
-                  end
+      # Handling of chunked responses gets a tad weird as we want to avoid
+      # blocking. We just read *once* and then break out and wait for our next
+      # turn.
+      if headers['Transfer-Encoding'] == 'chunked'
+        read_size = response[:next_chunk_size]
 
-      response[:body] << socket.gets( read_size ).to_s
+          if read_size
+            response[:body] << socket.gets( read_size + CRLF_SIZE ).to_s[0...read_size]
+            response[:next_chunk_size] = nil
+            return
+          else
+            read_size = socket.gets.to_s[0...-CRLF_SIZE]
+            return if read_size.empty?
 
-      # Check to see if we're done.
-      return if response[:body].size < response[:content_length]
+            response[:next_chunk_size] = read_size.to_i( 16 )
+
+            # Bail out and wait for our next term unless there are no more chunks.
+            return if response[:next_chunk_size] != 0
+          end
+      else
+        content_length = headers['Content-length'].to_i
+        read_size = content_length - response[:body].size
+
+        response[:body] << socket.gets( read_size ).to_s
+
+        # Check to see if we're done.
+        return if response[:body].size < content_length
+      end
 
       socket.close
       @sockets[:done] << @sockets[:reads].delete( socket )
@@ -336,22 +359,20 @@ class Client
 
     response[:headers] << socket.gets.to_s
 
-    # Extract the content length, lets us know how of of the body, if any,
-    # to read before we close the socket.
-    response[:content_length] ||= find_content_length( response[:headers] )
+    headers = Response.parse( response[:headers] ).headers
 
-    # If we hit a content-length of 0 we're done.
-    if response[:content_length] == 0
+    # If we hit a content-length of 0, we're done.
+    if headers.include?( 'Content-length' ) && headers['Content-length'] == 0
       response[:has_full_headers] = true
       return
     end
 
     # Keep going until we get all the headers.
-    return if !response[:headers].include?( "\r\n\r\n" )
+    return if !response[:headers].include?( HEADER_SEPARATOR )
     response[:has_full_headers] = true
 
     # Some of the body may have gotten into the headers' buffer, sort them out.
-    response[:headers], response[:body] = response[:headers].split( "\r\n\r\n", 2 )
+    response[:headers], response[:body] = response[:headers].split( HEADER_SEPARATOR, 2 )
   end
 
   #
@@ -420,18 +441,6 @@ class Client
     socket
   end
 
-  #
-  # Extracts the content length from HTTP headers.
-  #
-  # @param  [String]  response  HTTP response.
-  #
-  # @return [Integer] Content-length value, `0` if there isn't one.
-  #
-  def find_content_length( response )
-    return if !response.downcase.include?( 'content-length' )
-    response.scan( /^content\-length:\s*(\d+)\s*$/i ).flatten.first.to_i
-  end
-
   def handle_error( request, error = nil, socket = nil )
     if socket
       socket.close
@@ -446,17 +455,24 @@ class Client
   # @param  [Request] request Request whose callback is passed a parsed {Response}.
   # @param  [Hash]  response_data Response buffer data.
   def handle_response( request, response_data = {} )
-    response = Response.parse( "#{response_data[:headers]}\r\n\r\n#{response_data[:body]}" )
+    response = Response.parse( "#{response_data[:headers]}#{HEADER_SEPARATOR}#{response_data[:body]}" )
+    response.headers.delete( 'Transfer-Encoding' )
+    response.headers.delete( 'Content-Encoding' )
+    response.headers['Content-Length'] = response.body.to_s.size
 
     @redirections ||= Hash.new([])
 
-    if response.redirect? && @redirections[request].size < max_redirections
-      (@redirections[request] ||= []) << response
+    if response.redirect?
+      if @redirections[request].size < max_redirections
+        (@redirections[request] ||= []) << response
 
-      request     = request.dup
-      request.url = response.headers['Location'].dup
-      queue( request.dup )
-      return
+        request     = request.dup
+        request.url = response.headers['Location'].dup
+        queue( request.dup )
+        return
+      else
+        @redirections.delete( request )
+      end
     end
 
     response.redirections = @redirections[request]
