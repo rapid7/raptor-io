@@ -64,8 +64,6 @@ class Response < Message
   # @return [String]
   #   String representation of the response.
   def to_s
-    return @original if @original
-
     r = "HTTP/#{version} #{code}"
     r <<  " #{message}" if message
     r <<  "\r\n"
@@ -77,9 +75,6 @@ class Response < Message
   # @return [Response]
   def self.parse( response )
     options ||= {}
-
-    # Since we've got the original response store it to be returned by {#to_s}.
-    options[:original] = response
 
     headers_string, options[:body] = response.split( "\r\n\r\n", 2 )
     request_line   = headers_string.to_s.lines.first.to_s.chomp
@@ -98,11 +93,13 @@ class Response < Message
       options[:headers] = Headers.new
     end
 
-    case options[:headers]['content-encoding'].to_s.downcase
-      when 'gzip', 'x-gzip'
-        options[:body] = unzip( options[:body] )
-      when 'deflate', 'compress', 'x-compress'
-        options[:body] = inflate( options[:body] )
+    if !options[:body].to_s.empty?
+      case options[:headers]['content-encoding'].to_s.downcase
+        when 'gzip', 'x-gzip'
+          options[:body] = unzip( options[:body] )
+        when 'deflate', 'compress', 'x-compress'
+          options[:body] = inflate( options[:body] )
+      end
     end
 
     new( options )
@@ -126,12 +123,6 @@ class Response < Message
     s << gz.read
     gz.close
     s
-  end
-
-  protected
-
-  def original=( response )
-    @original = response
   end
 
 end
