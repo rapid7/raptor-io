@@ -39,6 +39,19 @@ describe Raptor::Protocol::HTTP::Request do
     end
   end
 
+  describe '#connection_id' do
+    it 'returns an ID for the given host:port' do
+      described_class.new( url: 'http://stuff' ).connection_id.should ==
+        described_class.new( url: 'http://stuff:80' ).connection_id
+
+      described_class.new( url: 'http://stuff' ).connection_id.should_not ==
+          described_class.new( url: 'http://stuff:81' ).connection_id
+
+      described_class.new( url: 'http://stuff.com' ).connection_id.should ==
+          described_class.new( url: 'http://stuff.com' ).connection_id
+    end
+  end
+
   describe '#url' do
     it 'returns the configured value' do
       described_class.new( url: url ).url.should == url

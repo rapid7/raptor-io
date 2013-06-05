@@ -57,6 +57,11 @@ class Request < Message
     @url
   end
 
+  # @return [Integer] Identification for the remote host:port.
+  def connection_id
+    "#{parsed_url.host}:#{parsed_url.port}".hash
+  end
+
   #
   # @note All keys and values will be recursively converted to strings.
   #
