@@ -320,24 +320,13 @@ class Client
     if response[:has_full_headers]
       headers = (response[:parsed_headers] ||= Response.parse( response[:headers] ).headers)
 
-      # Handling of chunked responses gets a tad weird as we want to avoid
-      # blocking. We just read *once* and then break out and wait for our next
-      # turn.
       if headers['Transfer-Encoding'] == 'chunked'
-        read_size = response[:next_chunk_size]
+          read_size = socket.gets.to_s[0...-CRLF_SIZE]
+          return if read_size.empty?
 
-          if read_size
+          if (read_size = read_size.to_i( 16 )) > 0
             response[:body] << socket.gets( read_size + CRLF_SIZE ).to_s[0...read_size]
-            response[:next_chunk_size] = nil
             return
-          else
-            read_size = socket.gets.to_s[0...-CRLF_SIZE]
-            return if read_size.empty?
-
-            response[:next_chunk_size] = read_size.to_i( 16 )
-
-            # Bail out and wait for our next term unless there are no more chunks.
-            return if response[:next_chunk_size] != 0
           end
       else
         content_length = headers['Content-length'].to_i
