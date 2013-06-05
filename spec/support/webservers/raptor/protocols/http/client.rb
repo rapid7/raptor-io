@@ -5,7 +5,7 @@ require 'sinatra/contrib'
 module Sinatra::Helpers
   class Stream
     def each(&front)
-      p @front = front
+      @front = front
       callback do
         @front.call("0\r\n\r\n")
       end

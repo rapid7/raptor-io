@@ -7,6 +7,9 @@ require 'uri'
 # @author Tasos Laskos <tasos_laskos@rapid7.com>
 #
 module Raptor::Protocol::HTTP
+  CRLF             = "\r\n"
+  CRLF_SIZE        = CRLF.size
+  HEADER_SEPARATOR = CRLF * 2
 end
 
 require 'raptor/protocol/http/error'

@@ -94,11 +94,20 @@ class Response < Message
     end
 
     if !options[:body].to_s.empty?
+
+      # If any encoding has been applied to the body, remove all evidence of it
+      # and adjust the content-length accordingly.
+
       case options[:headers]['content-encoding'].to_s.downcase
         when 'gzip', 'x-gzip'
           options[:body] = unzip( options[:body] )
         when 'deflate', 'compress', 'x-compress'
           options[:body] = inflate( options[:body] )
+      end
+
+      if options[:headers].delete( 'content-encoding' ) ||
+          options[:headers].delete( 'transfer-encoding' )
+        options[:headers]['content-length'] = options[:body].size
       end
     end
 

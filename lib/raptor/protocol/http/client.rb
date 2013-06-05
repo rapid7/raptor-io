@@ -4,10 +4,6 @@ require 'base64'
 module Raptor
 module Protocol::HTTP
 
-  CRLF             = "\r\n"
-  CRLF_SIZE        = CRLF.size
-  HEADER_SEPARATOR = CRLF * 2
-
 #
 # HTTP Client class.
 #
@@ -63,40 +59,8 @@ class Client
     # Holds Request objects.
     @queue = []
 
-    # A socket starts in `:writes`, once the request is written it gets moved
-    # to `:reads` -- at which point it stays there while the response is being
-    # buffered. Once a full response is received the socket is closed and moved
-    # to `:done`.
-    @sockets = {
-        # Socket => HTTP Request lookup
-        lookup_request: {},
-
-        # Sockets ready to read from.
-        reads:          [],
-
-        # Sockets ready to write to.
-        writes:         [],
-
-        # Sockets with errors.
-        errors:         [],
-
-        # Sockets which have finished (or errored).
-        done:           []
-    }
-
-    # Response buffer.
-    @pending_responses = Hash.new do |h, k|
-        h[k] = {
-          # Do we have full headers?
-          has_headers: false,
-
-          # HTTP headers buffer.
-          headers: '',
-
-          # Response body buffer.
-          body: ''
-        }
-    end
+    reset_sockets
+    reset_pending_responses
   end
 
   #
@@ -130,11 +94,8 @@ class Client
     req.headers['User-Agent'] = @user_agent if !@user_agent.to_s.empty?
 
     if @username && @password
-      req.headers['Authorization'] = "Basic #{Base64.encode64("#{@username}:#{@password}")}"
+      req.headers['Authorization'] = "Basic #{Base64.encode64("#{@username}:#{@password}").chomp}"
     end
-
-    # We don't support persistent connections yet so let the server know.
-    req.headers['Connection'] = 'close' if req.http_1_1?
 
     return sync_request( req ) if options[:mode] == :sync
 
@@ -234,6 +195,9 @@ class Client
       end
     end
 
+    reset_sockets
+    reset_pending_responses
+
     nil
   end
 
@@ -330,38 +294,37 @@ class Client
           end
       else
         content_length = headers['Content-length'].to_i
-        read_size = content_length - response[:body].size
+        if content_length > 0
+          read_size = content_length - response[:body].size
 
-        response[:body] << socket.gets( read_size ).to_s
+          response[:body] << socket.gets( read_size ).to_s
 
-        # Check to see if we're done.
-        return if response[:body].size < content_length
+          # Return back to the #select loop if there's more data to be read
+          # and wait for our next turn.
+          return if response[:body].size < content_length
+        end
       end
 
-      socket.close
-      @sockets[:done] << @sockets[:reads].delete( socket )
-
-      @pending_responses.delete( socket )
-      handle_response( @sockets[:lookup_request][socket], response )
+      handle_success( socket )
       return true
     end
 
     response[:headers] << socket.gets.to_s
 
-    headers = Response.parse( response[:headers] ).headers
-
-    # If we hit a content-length of 0, we're done.
-    if headers.include?( 'Content-length' ) && headers['Content-length'] == 0
-      response[:has_full_headers] = true
-      return
-    end
-
     # Keep going until we get all the headers.
     return if !response[:headers].include?( HEADER_SEPARATOR )
     response[:has_full_headers] = true
 
+    headers = Response.parse( response[:headers] ).headers
+
+    # If we hit a content-length of 0, we're done.
+    # Directly call the #read handle to take care of the response.
+    return read( socket ) if headers['Content-length'] == '0'
+
     # Some of the body may have gotten into the headers' buffer, sort them out.
     response[:headers], response[:body] = response[:headers].split( HEADER_SEPARATOR, 2 )
+
+    nil
   end
 
   #
@@ -378,7 +341,7 @@ class Client
       return added if @queue.empty?
       q_request = @queue.pop
 
-      socket = connect( q_request )
+      socket = connection_for_request( q_request )
       next if !socket
 
       @sockets[:lookup_request][socket] = q_request
@@ -390,23 +353,40 @@ class Client
     added
   end
 
-  #
+  # @param  [Request] request
+  def connection_for_request( request )
+    # If there's an idling connection to that server, use it instead of opening
+    # a new one.
+    socket =  if connection_pool[request.connection_id].empty?
+                connect( request )
+              else
+                connection_pool[request.connection_id].pop
+              end
+
+    @sockets[:done].delete( socket )
+    socket
+  end
+
+  def self.connection_pool
+    @connection_pool ||= Hash.new do |h, k|
+      h[k] = Queue.new
+    end
+  end
+  def connection_pool
+    self.class.connection_pool
+  end
+
   # Opens up an non-blocking socket for the given `request`.
   #
   # @param  [Request] request
-  #
-  # @return [Socket, nil]
-  #   Socket on success, `nil` on failure. On failure, the request callback will
-  #   be passed an empty response.
-  #
-  def connect( request, timeout = 10 )
+  def connect( request )
     @address ||= {}
 
     host = request.parsed_url.host
     port = request.parsed_url.port
 
     address =  begin
-      (@address["#{host}:#{port}"] ||= Socket.getaddrinfo( host, nil ))
+      (@address[request.connection_id] ||= Socket.getaddrinfo( host, nil ))
     rescue Errno::ENOENT => e
       error = Protocol::Error::CouldNotResolve.new( e.to_s )
       error.set_backtrace( e.backtrace )
@@ -430,24 +410,18 @@ class Client
     socket
   end
 
-  def handle_error( request, error = nil, socket = nil )
-    if socket
-      socket.close
-      [:reads, :writes].each { |state| @sockets[state].delete( socket ) }
-      @sockets[:done] << socket
-    end
+  def handle_success( socket )
+    response_data = @pending_responses.delete( socket )
+    @sockets[:done] << @sockets[:reads].delete( socket )
 
-    response = Response.new( error: error )
-    request.handle_response response
-  end
-
-  # @param  [Request] request Request whose callback is passed a parsed {Response}.
-  # @param  [Hash]  response_data Response buffer data.
-  def handle_response( request, response_data = {} )
     response = Response.parse( "#{response_data[:headers]}#{HEADER_SEPARATOR}#{response_data[:body]}" )
-    response.headers.delete( 'Transfer-Encoding' )
-    response.headers.delete( 'Content-Encoding' )
-    response.headers['Content-Length'] = response.body.to_s.size
+    request  = @sockets[:lookup_request][socket]
+
+    if response.keep_alive?
+      connection_pool[request.connection_id] << socket
+    else
+      socket.close
+    end
 
     @redirections ||= Hash.new([])
 
@@ -459,7 +433,7 @@ class Client
 
         # RFC says the Location URI must be a full absolute URL however not
         # all webapps respect that.
-        request.url = request.parsed_url.merge( response.headers['Location'] )
+        request.url = request.parsed_url.merge( response.headers['Location'] ).to_s
 
         queue( request.dup )
         return
@@ -469,7 +443,62 @@ class Client
     end
 
     response.redirections = @redirections[request]
+
     request.handle_response response
+  end
+
+  def handle_error( request, error = nil, socket = nil )
+    if socket
+      socket.close
+      [:reads, :writes].each { |state| @sockets[state].delete( socket ) }
+      @sockets[:done] << socket
+    end
+
+    response = Response.new( error: error )
+    request.handle_response response
+  end
+
+  def reset_sockets
+    # A socket starts in `:writes`, once the request is written it gets moved
+    # to `:reads`, at which point it stays there while the response is being
+    # buffered. Once a full response is received, and keep-alive is disabled, the
+    # socket is closed and moved to `:done`.
+    #
+    # If keep-alive is enabled, the connection is moved to `:done` without
+    # first being closed and will be reused appropriately, at which point it
+    # will be removed from `:done` and start all over.
+    @sockets = {
+        # Socket => HTTP Request lookup
+        lookup_request: {},
+
+        # Sockets ready to read from.
+        reads:          [],
+
+        # Sockets ready to write to.
+        writes:         [],
+
+        # Sockets with errors.
+        errors:         [],
+
+        # Sockets which have finished (or errored).
+        done:           []
+    }
+  end
+
+  def reset_pending_responses
+    # Response buffer.
+    @pending_responses = Hash.new do |h, k|
+      h[k] = {
+          # Do we have full headers?
+          has_full_headers: false,
+
+          # HTTP headers buffer.
+          headers: '',
+
+          # Response body buffer.
+          body: ''
+      }
+    end
   end
 
 end

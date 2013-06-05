@@ -149,13 +149,13 @@ class Request < Message
     computed_headers = Headers.new( 'Host' => "#{req_url.host}:#{req_url.port}" )
     computed_headers['Content-Length'] = body.size.to_s if !body.to_s.empty?
 
-    request = "#{http_method.to_s.upcase} #{req_resource} HTTP/#{version}\r\n"
+    request = "#{http_method.to_s.upcase} #{req_resource} HTTP/#{version}#{CRLF}"
     request << computed_headers.merge(headers).to_s
-    request << "\r\n\r\n"
+    request << HEADER_SEPARATOR
 
     return request if body.to_s.empty?
 
-    request << "#{body}\r\n\r\n"
+    request << "#{body}#{HEADER_SEPARATOR}"
   end
 
   CALLBACK_TYPES.each do |type|

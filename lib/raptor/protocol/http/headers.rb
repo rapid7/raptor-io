@@ -50,7 +50,7 @@ class Headers < Hash
 
   # @return [String]  HTTP headers formatted for transmission.
   def to_s
-    map { |k, v| "#{k}: #{v}" }.join( "\r\n" )
+    map { |k, v| "#{k}: #{v}" }.join( CRLF )
   end
 
   # @param  [String]  headers_string
