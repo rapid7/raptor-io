@@ -455,8 +455,12 @@ class Client
       if @redirections[request].size < max_redirections
         (@redirections[request] ||= []) << response
 
-        request     = request.dup
-        request.url = response.headers['Location'].dup
+        request = request.dup
+
+        # RFC says the Location URI must be a full absolute URL however not
+        # all webapps respect that.
+        request.url = request.parsed_url.merge( response.headers['Location'] )
+
         queue( request.dup )
         return
       else
