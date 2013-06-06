@@ -50,7 +50,7 @@ get '/deflate' do
 end
 
 get '/sleep' do
-  sleep 2
+  sleep 1
   'Blah...'
 end
 

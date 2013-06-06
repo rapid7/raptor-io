@@ -172,7 +172,7 @@ describe Raptor::Protocol::HTTP::Client do
       describe :timeout do
         context 'when a timeout occurs' do
           it 'raises Raptor::Error::Timeout' do
-            client = described_class.new( timeout: 1 )
+            client = described_class.new( timeout: 0.1 )
             expect {
               client.get( "#{@url}/sleep", mode: :sync )
             }.to raise_error Raptor::Error::Timeout

@@ -22,9 +22,7 @@ class WebServers
     return if up?( name )
 
     server_info = data_for( name )
-    server_info[:pid] = quite_fork {
-      exec 'ruby', server_info[:path], '-p ' + server_info[:port].to_s
-    }
+    server_info[:pid] = Process.spawn('ruby', server_info[:path], '-p', server_info[:port].to_s)
 
     sleep 0.2 while !up?( name )
   end
@@ -85,8 +83,8 @@ class WebServers
     loop do
       port = 5555 + rand( 9999 )
       begin
-        socket = Socket.new( :INET, :STREAM, 0 )
-        socket.bind( Addrinfo.tcp( '127.0.0.1', port ) )
+        socket = ::Socket.new( :INET, :STREAM, 0 )
+        socket.bind(::Socket.sockaddr_in(port, "127.0.0.1"))
         socket.close
         return port
       rescue Errno::EADDRINUSE => e
@@ -116,13 +114,4 @@ class WebServers
     @servers[normalize_name( name )] = data
   end
 
-  def quite_fork( &block )
-    pid = fork {
-      $stdout.reopen( '/dev/null', 'w' )
-      $stderr.reopen( '/dev/null', 'w' )
-      block.call
-    }
-    Process.detach( pid )
-    pid
-  end
 end

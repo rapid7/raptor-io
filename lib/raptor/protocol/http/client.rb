@@ -393,7 +393,7 @@ class Client
     port = request.parsed_url.port
 
     address =  begin
-      (@address["#{host}:#{port}"] ||= Socket.getaddrinfo( host, nil ))
+      (@address["#{host}:#{port}"] ||= ::Socket.getaddrinfo( host, nil ))
     rescue Errno::ENOENT => e
       error = Protocol::Error::CouldNotResolve.new( e.to_s )
       error.set_backtrace( e.backtrace )
@@ -401,10 +401,10 @@ class Client
       return
     end
 
-    socket = Socket.new( Socket.const_get( address[0][0] ), Socket::SOCK_STREAM, 0 )
+    socket = ::Socket.new( ::Socket.const_get( address[0][0] ), ::Socket::SOCK_STREAM, 0 )
 
     begin
-      socket.connect_nonblock( Socket.pack_sockaddr_in( port, address[0][3] ) )
+      socket.connect_nonblock( ::Socket.pack_sockaddr_in( port, address[0][3] ) )
     rescue Errno::EINPROGRESS
       if select( nil, [socket], nil, @timeout ).nil?
         error = Protocol::Error::HostUnreachable.new

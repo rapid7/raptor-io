@@ -1,3 +1,4 @@
+# A collection of useful protocols
 module Raptor::Protocol
 end
 
