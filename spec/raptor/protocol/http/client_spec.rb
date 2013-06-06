@@ -18,7 +18,7 @@ describe Raptor::Protocol::HTTP::Client do
       end
 
       context 'when a timeout occurs' do
-        it 'raises Raptor::Error::Timeout' do
+        it 'raises Raptor::Error::Timeout', speed: :'slow' do
           client = described_class.new( timeout: 1 )
           expect {
             client.get( "#{@url}/sleep", mode: :sync )
@@ -69,7 +69,7 @@ describe Raptor::Protocol::HTTP::Client do
         described_class.new( concurrency: 10 ).concurrency.should == 10
       end
 
-      it 'sets the amount of maximum open connections at any given time' do
+      it 'sets the amount of maximum open connections at any given time', speed: :'slow' do
         cnt   = 0
         times = 10
 
@@ -171,7 +171,7 @@ describe Raptor::Protocol::HTTP::Client do
     describe 'option' do
       describe :timeout do
         context 'when a timeout occurs' do
-          it 'raises Raptor::Error::Timeout' do
+          it 'raises Raptor::Error::Timeout', speed: :'slow' do
             client = described_class.new( timeout: 1 )
             expect {
               client.get( "#{@url}/sleep", mode: :sync )
@@ -216,7 +216,7 @@ describe Raptor::Protocol::HTTP::Client do
 
     describe 'Content-Encoding' do
       context 'supports' do
-        it 'chunked' do
+        it 'chunked', speed: :'slow' do
           res = client.get( "#{@url}/chunked", mode: :sync )
           res.body.should == "foo\nbara\rbaraf\r\n"
           res.headers.should_not include 'Transfer-Encoding'
@@ -297,7 +297,7 @@ describe Raptor::Protocol::HTTP::Client do
         end
 
         context 'due to an invalid IP address' do
-          it 'passes the callback an empty response' do
+          it 'passes the callback an empty response', speed: :'slow' do
             url = 'http://10.11.12.13'
 
             response = nil
@@ -311,7 +311,7 @@ describe Raptor::Protocol::HTTP::Client do
             response.headers.should == {}
           end
 
-          it 'assigns Raptor::Protocol::Error::HostUnreachable to #error' do
+          it 'assigns Raptor::Protocol::Error::HostUnreachable to #error', speed: :'slow' do
             url = 'http://10.11.12.13'
 
             response = nil
