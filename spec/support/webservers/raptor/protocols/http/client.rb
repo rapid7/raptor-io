@@ -44,6 +44,10 @@ helpers do
   end
 end
 
+get '/204' do
+  204
+end
+
 get '/chunked' do
   headers "Transfer-Encoding" => "chunked"
   stream do |out|

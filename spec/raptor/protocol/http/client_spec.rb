@@ -153,6 +153,11 @@ describe Raptor::Protocol::HTTP::Client do
   end
 
   describe '#request' do
+
+    it 'handle responses without body (1xx, 204, 304)' do
+      client.get( "#{@url}/204", mode: :sync ).should be_kind_of Raptor::Protocol::HTTP::Response
+    end
+
     it 'forwards the given options to the Request object' do
       options = { parameters: { 'name' => 'value' }}
       client.request( '/blah/', options ).parameters.should == options[:parameters]

@@ -293,7 +293,8 @@ class Client
     response = @pending_responses[socket]
 
     if response[:has_full_headers]
-      headers = (response[:parsed_headers] ||= Response.parse( response[:headers] ).headers)
+      response[:partial_response] ||= Response.parse( response[:headers] )
+      headers = (response[:parsed_headers] ||= response[:partial_response].headers)
 
       if headers['Transfer-Encoding'] == 'chunked'
           read_size = socket.gets.to_s[0...-CRLF_SIZE]
@@ -313,8 +314,10 @@ class Client
           read_size = content_length - response[:body].size
         end
 
+        has_body = headers['Content-length'] != '0' && !status_without_body?( response[:partial_response].code )
+
         closed = false
-        if headers['Content-length'] != '0'
+        if has_body
           begin
             if (line = socket.gets( *[read_size].compact ))
               response[:body] << line
@@ -329,7 +332,7 @@ class Client
 
         # Return back to the #select loop if there's more data to be read
         # and wait for our next turn.
-        return if (!headers['Content-length'] && !read_size && !closed) || (response[:body].size < content_length)
+        return if has_body && ((!read_size && !closed) || (response[:body].size < content_length))
       end
 
       handle_success( socket )
@@ -550,6 +553,10 @@ class Client
     socket.close
     @pending_responses.delete( socket )
     [:reads, :writes].each { |state| @sockets[state].delete( socket ) }
+  end
+
+  def status_without_body?( status_code )
+    status_code.to_s.start_with?( '1' ) || [204, 304].include?( status_code.to_i )
   end
 
 end
