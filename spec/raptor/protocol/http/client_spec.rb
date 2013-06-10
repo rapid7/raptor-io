@@ -3,6 +3,7 @@ require 'spec_helper'
 describe Raptor::Protocol::HTTP::Client do
 
   before :all do
+    WebServers.start :client_close_connection
     WebServers.start :client
     @url = WebServers.url_for( :client )
   end
@@ -202,6 +203,13 @@ describe Raptor::Protocol::HTTP::Client do
 
     it 'returns the request' do
       client.request( '/blah/' ).should be_kind_of Raptor::Protocol::HTTP::Request
+    end
+
+    it 'treats a closed connection as a signal for end of a response' do
+      url = WebServers.url_for( :client_close_connection )
+      client.get( url, mode: :sync ).body.should == "Success\n.\n"
+      client.get( url, mode: :sync ).body.should == "Success\n.\n"
+      client.get( url, mode: :sync ).body.should == "Success\n.\n"
     end
 
     describe 'Content-Encoding' do

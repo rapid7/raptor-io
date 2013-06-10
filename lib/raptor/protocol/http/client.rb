@@ -237,7 +237,7 @@ class Client
   #
   # @param  [#write]  socket  Writable IO object.
   #
-  def write( socket )
+  def write( socket, retry_on_fail = true )
     request        = @sockets[:lookup_request][socket]
     request_string = request.to_s
 
@@ -245,16 +245,27 @@ class Client
     loop do
       begin
         bytes_written = socket.write( request_string )
+      # All hope is lost.
       rescue Errno::ECONNREFUSED => e
         error = Protocol::Error::ConnectionRefused.new( e.to_s )
         error.set_backtrace( e.backtrace )
         handle_error( request, error, socket )
         return
-      rescue Errno::EPIPE => e
-        error = Protocol::Error::BrokenPipe.new( e.to_s )
-        error.set_backtrace( e.backtrace )
-        handle_error( request, error, socket )
-        return
+
+      # Rhe connection has been closed so retry but only if the request is
+      # idempotent.
+      rescue Errno::EPIPE, Errno::ECONNRESET => e
+        if request.idempotent? && retry_on_fail
+          @sockets[:writes].delete( socket )
+
+          fresh_socket = refresh_connection( socket )
+          @sockets[:writes] << fresh_socket
+          return write( fresh_socket, false )
+        else
+          error = Protocol::Error::BrokenPipe.new( e.to_s )
+          error.set_backtrace( e.backtrace )
+          handle_error( request, error, socket )
+        end
       end
 
       break if bytes_written == request_string.size
@@ -293,16 +304,32 @@ class Client
             return
           end
       else
-        content_length = headers['Content-length'].to_i
-        if content_length > 0
+        # A Content-Type is not strictly necessary, the end of the response body
+        # can also be signaled by the server closing the connection. That's why
+        # the following code is so ugly.
+
+        read_size = nil
+        if (content_length = headers['Content-length'].to_i) > 0
           read_size = content_length - response[:body].size
-
-          response[:body] << socket.gets( read_size ).to_s
-
-          # Return back to the #select loop if there's more data to be read
-          # and wait for our next turn.
-          return if response[:body].size < content_length
         end
+
+        closed = false
+        if headers['Content-length'] != '0'
+          begin
+            if (line = socket.gets( *[read_size].compact ))
+              response[:body] << line
+            else
+              raise Errno::ECONNRESET
+            end
+          rescue Errno::ECONNRESET
+            closed = true
+            response[:force_no_keep_alive] = true
+          end
+        end
+
+        # Return back to the #select loop if there's more data to be read
+        # and wait for our next turn.
+        return if (!headers['Content-length'] && !read_size && !closed) || (response[:body].size < content_length)
       end
 
       handle_success( socket )
@@ -355,12 +382,24 @@ class Client
 
   # @param  [Request] request
   def connection_for_request( request )
-    # If there's an idling connection to that server, use it instead of opening
-    # a new one.
-    socket =  if connection_pool[request.connection_id].empty?
-                connect( request )
+    # If the request is idempotent grab a pool connection as we can risk a retry
+    # in case it has been closed...
+    socket =  if request.idempotent?
+                # If there's an idling connection to that server, use it instead of opening
+                # a new one.
+                if connection_pool[request.connection_id].empty?
+                  connect( request )
+                else
+                  connection_pool[request.connection_id].pop
+                end
+
+              # ...otherwise establish and use a new connection (and make room
+              # in the queue).
               else
-                connection_pool[request.connection_id].pop
+                if !connection_pool[request.connection_id].empty?
+                  connection_pool[request.connection_id].pop.close
+                end
+                connect( request )
               end
 
     @sockets[:done].delete( socket )
@@ -417,7 +456,7 @@ class Client
     response = Response.parse( "#{response_data[:headers]}#{HEADER_SEPARATOR}#{response_data[:body]}" )
     request  = @sockets[:lookup_request][socket]
 
-    if response.keep_alive?
+    if response.keep_alive? && !response_data[:force_no_keep_alive]
       connection_pool[request.connection_id] << socket
     else
       socket.close
@@ -499,6 +538,18 @@ class Client
           body: ''
       }
     end
+  end
+
+  def refresh_connection( socket )
+    request      = @sockets[:lookup_request].delete( socket )
+    fresh_socket = connection_for_request( request )
+
+    @sockets[:lookup_request][fresh_socket] = request
+    fresh_socket
+  ensure
+    socket.close
+    @pending_responses.delete( socket )
+    [:reads, :writes].each { |state| @sockets[state].delete( socket ) }
   end
 
 end

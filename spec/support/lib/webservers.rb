@@ -23,7 +23,7 @@ class WebServers
 
     server_info = data_for( name )
     server_info[:pid] = quite_fork {
-      exec 'ruby', server_info[:path], '-p ' + server_info[:port].to_s
+      exec 'ruby', server_info[:path], '-p',  server_info[:port].to_s
     }
 
     sleep 0.2 while !up?( name )
