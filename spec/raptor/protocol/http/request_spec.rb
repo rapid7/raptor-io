@@ -78,6 +78,20 @@ describe Raptor::Protocol::HTTP::Request do
     end
   end
 
+  describe '#idempotent?' do
+    context 'when http_method is post' do
+      it 'returns false' do
+        described_class.new( url: url, http_method: :post ).idempotent?.should be_false
+      end
+    end
+
+    context 'when http_method is not post' do
+      it 'returns true' do
+        described_class.new( url: url ).idempotent?.should be_true
+      end
+    end
+  end
+
   describe '#parameters' do
     it 'defaults to an empty Hash' do
       described_class.new( url: url ).parameters.should == {}

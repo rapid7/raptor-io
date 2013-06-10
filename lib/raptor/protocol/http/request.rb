@@ -137,6 +137,11 @@ class Request < Message
     @http_method = http_verb.to_s.downcase.to_sym
   end
 
+  # @return [Bool] `true` if the request if idempotent, `false` otherwise.
+  def idempotent?
+    http_method != :post
+  end
+
   # @return [String]
   #   String representation of the request, ready for HTTP transmission.
   def to_s
