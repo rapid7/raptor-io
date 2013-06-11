@@ -13,6 +13,14 @@ describe Raptor::Protocol::HTTP::Response do
 "More stuff\n"
   end
 
+  let(:response_cr) do
+    "HTTP/1.1 404 Not Found\n" +
+        "Content-Type: text/html;charset=utf-8\n" +
+        "Content-Length: 431\n\n" +
+        "<!DOCTYPE html>\n" +
+        "More stuff\n"
+  end
+
   describe '#code' do
     it 'returns the HTTP status code' do
       described_class.new( url: url, code: 200 ).code.should == 200
@@ -89,8 +97,21 @@ describe Raptor::Protocol::HTTP::Response do
   end
 
   describe '.parse' do
-    it 'parses an HTTP response string into a Response object' do
+    it 'supports CRLF terminators' do
       r = described_class.parse( response )
+      r.version.should == '1.1'
+      r.code.should == 404
+      r.message.should == 'Not Found'
+      r.body.should == "<!DOCTYPE html>\nMore stuff\n"
+      r.headers.should == {
+          'Content-Type'   => 'text/html;charset=utf-8',
+          'Content-Length' => '431'
+      }
+      r.to_s.should == response
+    end
+
+    it 'supports CR terminators' do
+      r = described_class.parse( response_cr )
       r.version.should == '1.1'
       r.code.should == 404
       r.message.should == 'Not Found'

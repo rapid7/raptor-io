@@ -297,13 +297,13 @@ class Client
       headers = (response[:parsed_headers] ||= response[:partial_response].headers)
 
       if headers['Transfer-Encoding'] == 'chunked'
-          read_size = socket.gets.to_s[0...-CRLF_SIZE]
-          return if read_size.empty?
+        read_size = socket.gets.to_s[0...-CRLF.size]
+        return if read_size.empty?
 
-          if (read_size = read_size.to_i( 16 )) > 0
-            response[:body] << socket.gets( read_size + CRLF_SIZE ).to_s[0...read_size]
-            return
-          end
+        if (read_size = read_size.to_i( 16 )) > 0
+          response[:body] << socket.gets( read_size + CRLF.size ).to_s[0...read_size]
+          return
+        end
       else
         # A Content-Type is not strictly necessary, the end of the response body
         # can also be signaled by the server closing the connection. That's why
@@ -314,7 +314,8 @@ class Client
           read_size = content_length - response[:body].size
         end
 
-        has_body = headers['Content-length'] != '0' && !status_without_body?( response[:partial_response].code )
+        has_body = headers['Content-length'] != '0' &&
+            !status_without_body?( response[:partial_response].code )
 
         closed = false
         if has_body
@@ -342,7 +343,7 @@ class Client
     response[:headers] << socket.gets.to_s
 
     # Keep going until we get all the headers.
-    return if !response[:headers].include?( HEADER_SEPARATOR )
+    return if !(response[:headers] =~ HEADER_SEPARATOR_PATTERN)
     response[:has_full_headers] = true
 
     headers = Response.parse( response[:headers] ).headers
@@ -352,7 +353,7 @@ class Client
     return read( socket ) if headers['Content-length'] == '0'
 
     # Some of the body may have gotten into the headers' buffer, sort them out.
-    response[:headers], response[:body] = response[:headers].split( HEADER_SEPARATOR, 2 )
+    response[:headers], response[:body] = response[:headers].split( HEADER_SEPARATOR_PATTERN, 2 )
 
     nil
   end
@@ -456,7 +457,7 @@ class Client
     response_data = @pending_responses.delete( socket )
     @sockets[:done] << @sockets[:reads].delete( socket )
 
-    response = Response.parse( "#{response_data[:headers]}#{HEADER_SEPARATOR}#{response_data[:body]}" )
+    response = Response.parse( "#{response_data[:headers]}\r\n\r\n#{response_data[:body]}" )
     request  = @sockets[:lookup_request][socket]
 
     if response.keep_alive? && !response_data[:force_no_keep_alive]

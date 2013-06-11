@@ -76,7 +76,7 @@ class Response < Message
   def self.parse( response )
     options ||= {}
 
-    headers_string, options[:body] = response.split( "\r\n\r\n", 2 )
+    headers_string, options[:body] = response.split( HEADER_SEPARATOR_PATTERN, 2 )
     request_line   = headers_string.to_s.lines.first.to_s.chomp
 
     options[:version], options[:code], options[:message] =
@@ -88,7 +88,7 @@ class Response < Message
 
     if !headers_string.to_s.empty?
       options[:headers] =
-          Headers.parse( headers_string.split( /[\r\n]+/ )[1..-1].join( "\r\n" ) )
+          Headers.parse( headers_string.split( CRLF_PATTERN )[1..-1].join( "\r\n" ) )
     else
       options[:headers] = Headers.new
     end

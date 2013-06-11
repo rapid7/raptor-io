@@ -40,9 +40,22 @@ describe Raptor::Protocol::HTTP::Headers do
       end
     end
 
-    it 'parses an HTTP headers string' do
+    it 'supports CRLF terminators' do
       headers_string = "content-Type: text/html;charset=utf-8\r\n" +
         "Content-length: 431\r\n\r\n"
+
+      headers = described_class.parse( headers_string )
+      headers.should ==
+          {
+              'Content-Type'      => 'text/html;charset=utf-8',
+              'Content-Length'    => '431'
+          }
+      headers.class.should == described_class
+    end
+
+    it 'supports CR terminators' do
+      headers_string = "content-Type: text/html;charset=utf-8\n" +
+          "Content-length: 431\n\n"
 
       headers = described_class.parse( headers_string )
       headers.should ==

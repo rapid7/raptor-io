@@ -59,7 +59,7 @@ class Headers < Hash
     headers = Headers.new
     return headers if headers_string.to_s.empty?
 
-    headers_string.split( /[\r\n]+/ ).each do |header|
+    headers_string.split( CRLF_PATTERN ).each do |header|
       k, v = header.split( ':', 2 )
       headers[k.to_s.strip] = v.to_s.strip
     end
