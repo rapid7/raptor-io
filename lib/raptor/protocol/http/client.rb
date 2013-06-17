@@ -293,8 +293,7 @@ class Client
     response = @pending_responses[socket]
 
     if response[:has_full_headers]
-      response[:partial_response] ||= Response.parse( response[:headers] )
-      headers = (response[:parsed_headers] ||= response[:partial_response].headers)
+      headers = response[:parsed_headers]
 
       if headers['Transfer-Encoding'] == 'chunked'
         read_size = socket.gets.to_s[0...-CRLF.size]
@@ -314,8 +313,7 @@ class Client
           read_size = content_length - response[:body].size
         end
 
-        has_body = headers['Content-length'] != '0' &&
-            !status_without_body?( response[:partial_response].code )
+        has_body = headers['Content-length'] != '0'
 
         closed = false
         if has_body
@@ -346,11 +344,16 @@ class Client
     return if !(response[:headers] =~ HEADER_SEPARATOR_PATTERN)
     response[:has_full_headers] = true
 
-    headers = Response.parse( response[:headers] ).headers
+    # Perform some preliminary parsing to make our lives easier.
+    response[:partial_response] = Response.parse( response[:headers] )
+    response[:parsed_headers]   = response[:partial_response].headers
 
-    # If we hit a content-length of 0, we're done.
-    # Directly call the #read handle to take care of the response.
-    return read( socket ) if headers['Content-length'] == '0'
+    # If there is no body to expect handle the response now.
+    if response[:partial_response].headers['Content-length'] == '0' ||
+        status_without_body?( response[:partial_response].code )
+      handle_success( socket )
+      return true
+    end
 
     # Some of the body may have gotten into the headers' buffer, sort them out.
     response[:headers], response[:body] = response[:headers].split( HEADER_SEPARATOR_PATTERN, 2 )
