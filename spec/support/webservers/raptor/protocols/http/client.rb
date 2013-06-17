@@ -44,6 +44,14 @@ helpers do
   end
 end
 
+get '/100' do
+  if env['HTTP_EXPECT'] == '100-continue'
+    100
+  else
+    request.body
+  end
+end
+
 get '/204' do
   204
 end

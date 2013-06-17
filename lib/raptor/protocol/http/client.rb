@@ -348,15 +348,15 @@ class Client
     response[:partial_response] = Response.parse( response[:headers] )
     response[:parsed_headers]   = response[:partial_response].headers
 
+    # Some of the body may have gotten into the headers' buffer, sort them out.
+    response[:headers], response[:body] = response[:headers].split( HEADER_SEPARATOR_PATTERN, 2 )
+
     # If there is no body to expect handle the response now.
     if response[:partial_response].headers['Content-length'] == '0' ||
         status_without_body?( response[:partial_response].code )
       handle_success( socket )
       return true
     end
-
-    # Some of the body may have gotten into the headers' buffer, sort them out.
-    response[:headers], response[:body] = response[:headers].split( HEADER_SEPARATOR_PATTERN, 2 )
 
     nil
   end
@@ -486,6 +486,13 @@ class Client
       else
         @redirections.delete( request )
       end
+    end
+
+    if response.code == 100 && request.continue?
+      request = request.dup
+      request.headers.delete 'expect'
+      queue( request.dup )
+      return
     end
 
     response.redirections = @redirections[request]

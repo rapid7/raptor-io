@@ -14,18 +14,22 @@ describe Raptor::Protocol::HTTP::Request do
           url: url,
           http_method: :get,
           parameters: { 'test' => 'blah' },
-          timeout: 10
+          timeout: 10,
+          continue: false
       }
       r = described_class.new( options )
-      r.url.should == url
+      r.url.should          == url
       r.http_method.should  == options[:http_method]
       r.parameters.should   == options[:parameters]
-      r.timeout.should   == options[:timeout]
+      r.timeout.should      == options[:timeout]
+      r.continue.should     == options[:continue]
     end
+
     it 'uses the setter methods when configuring' do
       options = { url: url, http_method: 'gEt', parameters: { 'test' => 'blah' } }
       described_class.new( options ).http_method.should == :get
     end
+
     context 'when no :url option has been provided' do
       it 'raises ArgumentError' do
         raised = false
@@ -51,6 +55,29 @@ describe Raptor::Protocol::HTTP::Request do
           described_class.new( url: 'http://stuff.com' ).connection_id
     end
   end
+
+  describe '#continue?' do
+    context 'default' do
+      it 'returns true' do
+        described_class.new( url: url ).continue?.should be_true
+      end
+    end
+
+    context 'when the continue option has been set to' do
+      context true do
+        it 'returns false' do
+          described_class.new( url: url, continue: true ).continue?.should be_true
+        end
+      end
+
+      context false do
+        it 'returns false' do
+          described_class.new( url: url, continue: false ).continue?.should be_false
+        end
+      end
+    end
+  end
+
 
   describe '#url' do
     it 'returns the configured value' do
@@ -199,6 +226,15 @@ describe Raptor::Protocol::HTTP::Request do
   end
 
   describe '#effective_body' do
+    context 'when the Expect header field has been set' do
+      it 'returns an empty string' do
+        described_class.new( url: url,
+                             body: 'stuff',
+                             headers: { 'Expect' => '100-continue' }
+        ).effective_body.should == ''
+      end
+    end
+
     context 'when no body has been provided' do
       it 'returns an empty string' do
         described_class.new( url: url ).effective_body.should == ''
@@ -599,6 +635,7 @@ describe Raptor::Protocol::HTTP::Request do
           described_class.new( options ).to_s.lines.first.should == "GET / HTTP/2\r\n"
         end
       end
+
       context 'has not been provided' do
         it 'defaults to 1.1' do
           described_class.new( url: url ).to_s.lines.first.should == "GET / HTTP/1.1\r\n"
@@ -624,7 +661,7 @@ describe Raptor::Protocol::HTTP::Request do
             "GET / HTTP/1.1\r\n" +
                 "Host: #{parsed_url.host}:#{parsed_url.port}\r\n" +
                 "Content-Length: 37\r\n\r\n" +
-                "fds+g45%23%24+6%40+%25y+%40%5E2%0D%0A\r\n\r\n"
+                "fds+g45%23%24+6%40+%25y+%40%5E2%0D%0A"
       end
     end
 

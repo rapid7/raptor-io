@@ -23,8 +23,13 @@ class Request < Message
   # @return [Hash]  Request parameters.
   attr_reader :parameters
 
-  # @return [Integer, Float] timeout Timeout in seconds.
+  # @return [Integer, Float] Timeout in seconds.
   attr_reader :timeout
+
+  # @note Defaults to `true`.
+  # @return [Bool]
+  #   Whether or not to automatically continue on responses with status 100.
+  attr_reader :continue
 
   #
   # @note This class' options are in addition to {Message#initialize}.
@@ -35,6 +40,9 @@ class Request < Message
   # @option options [Hash] :parameters ({})
   #   Parameters to send. If performing a GET request and the URL has parameters
   #   of its own they will be merged and overwritten.
+  # @option options [Bool]  :continue
+  #   Whether or not to automatically continue on responses with status 100.
+  #   Only applicable when the 'Expect' header has been set to '100-continue'.
   #
   # @see Message#initialize
   # @see #parameters=
@@ -49,6 +57,13 @@ class Request < Message
 
     @parameters   ||= {}
     @http_method  ||= :get
+    @continue     = true if @continue.nil?
+  end
+
+  # @return [Bool]
+  #   Whether or not to automatically continue on responses with status 100.
+  def continue?
+    !!@continue
   end
 
   def url=( uri )
@@ -106,6 +121,7 @@ class Request < Message
 
   # @return [String]  Response body to use.
   def effective_body
+    return '' if headers['Expect'] == '100-continue'
     return CGI.escape(body.to_s) if http_method != :post
 
     body_params = if !body.to_s.empty?
@@ -160,7 +176,7 @@ class Request < Message
 
     return request if body.to_s.empty?
 
-    request << "#{body}#{HEADER_SEPARATOR}"
+    request << body.to_s
   end
 
   CALLBACK_TYPES.each do |type|

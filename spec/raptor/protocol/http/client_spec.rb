@@ -153,7 +153,6 @@ describe Raptor::Protocol::HTTP::Client do
   end
 
   describe '#request' do
-
     it 'handle responses without body (1xx, 204, 304)' do
       client.get( "#{@url}/204", mode: :sync ).should be_kind_of Raptor::Protocol::HTTP::Response
     end
@@ -175,6 +174,49 @@ describe Raptor::Protocol::HTTP::Client do
     end
 
     describe 'option' do
+      describe :continue do
+        context 'default' do
+          it 'handles responses with status "100" automatically' do
+            body = 'stuff-here'
+            client.get( "#{@url}/100",
+                        headers:  {
+                            'Expect' => '100-continue'
+                        },
+                        body:     body,
+                        mode:     :sync
+            ).body.should == body
+          end
+        end
+
+        context true do
+          it 'handles responses with status "100" automatically' do
+            body = 'stuff-here'
+            client.get( "#{@url}/100",
+                        headers:  {
+                            'Expect' => '100-continue'
+                        },
+                        body:     body,
+                        continue: true,
+                        mode:     :sync
+            ).body.should == body
+          end
+        end
+
+        context false do
+          it 'does not handle responses with status "100" automatically' do
+            body = 'stuff-here'
+            client.get( "#{@url}/100",
+                        headers:  {
+                            'Expect' => '100-continue'
+                        },
+                        body:     body,
+                        continue: false,
+                        mode:     :sync
+            ).code.should == 100
+          end
+        end
+      end
+
       describe :timeout do
         context 'when a timeout occurs' do
           it 'raises Raptor::Error::Timeout', speed: :'slow' do
