@@ -40,6 +40,8 @@ class Request < Message
   # @option options [Hash] :parameters ({})
   #   Parameters to send. If performing a GET request and the URL has parameters
   #   of its own they will be merged and overwritten.
+  # @option options [Integer]  :timeout
+  #   Max time to wait for a response in seconds.
   # @option options [Bool]  :continue
   #   Whether or not to automatically continue on responses with status 100.
   #   Only applicable when the 'Expect' header has been set to '100-continue'.
