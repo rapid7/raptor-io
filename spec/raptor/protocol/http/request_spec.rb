@@ -1,3 +1,4 @@
+# coding: utf-8
 require 'spec_helper'
 require 'ostruct'
 
@@ -191,6 +192,17 @@ describe Raptor::Protocol::HTTP::Request do
       r.effective_url.to_s.should == 'http://test.com/?first=test%3Fblah%2F&second%2F%26=blah'
     end
 
+    it 'has UTF8 support' do
+      options = {
+          url: url_with_query,
+          parameters: {
+              'test' => 'τεστ'
+          }
+      }
+      described_class.new( options ).effective_url.to_s.should ==
+          "http://test.com/?id=1&stuff=blah&test=%CF%84%CE%B5%CF%83%CF%84"
+    end
+
     context 'when the request method is' do
       context 'GET' do
         context 'when no parameters have been provided as options' do
@@ -250,6 +262,10 @@ describe Raptor::Protocol::HTTP::Request do
         described_class.new( options ).effective_body.should ==
             'fds+g45%23%24+6%40+%25y+%40%5E2%0D%0A'
       end
+
+      it 'has UTF8 support' do
+        described_class.new( url: 'http://stuff', body: 'τεστ' ).effective_body.should == '%CF%84%CE%B5%CF%83%CF%84'
+      end
     end
 
     context 'when the request method is' do
@@ -278,6 +294,19 @@ describe Raptor::Protocol::HTTP::Request do
                   "id=2&stuff=blah"
             end
           end
+
+          it 'has UTF8 support' do
+            options = {
+                url: url_with_query,
+                http_method: :post,
+                parameters: {
+                    'test' => 'τεστ'
+                }
+            }
+            described_class.new( options ).effective_body.to_s.should ==
+                "test=%CF%84%CE%B5%CF%83%CF%84"
+          end
+
           context 'and there is a body' do
             it 'returns the body parameters merged with the options parameters' do
               options = {
