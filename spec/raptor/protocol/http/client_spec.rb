@@ -365,7 +365,7 @@ describe Raptor::Protocol::HTTP::Client do
       context 'in asynchronous mode' do
         context 'due to a closed port' do
           it 'passes the callback an empty response' do
-            url = 'http://localhost'
+            url = 'http://localhost:9696969'
 
             response = nil
             client.get( url ){ |r| response = r }
@@ -379,7 +379,7 @@ describe Raptor::Protocol::HTTP::Client do
           end
 
           it 'assigns Raptor::Protocol::Error::ConnectionRefused to #error' do
-            url = 'http://localhost'
+            url = 'http://localhost:9696969'
 
             response = nil
             client.get( url ){ |r| response = r }
