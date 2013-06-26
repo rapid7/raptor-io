@@ -149,23 +149,54 @@ class Client
       consume_requests
 
       while @sockets[:done].size != @sockets[:lookup_request].size
+        # We need to support individual #read timeouts for each request in an
+        # efficient manner and this is the reason why the following code is so weird.
+        # See comments for each step:
 
-        # Read sockets need individual timeouts (because requests have individual
-        # timeouts) so they get their own #select calls.
-        @sockets[:reads].dup.each do |socket|
-          request = @sockets[:lookup_request][socket]
-          res = select( [socket], nil, [socket], request.timeout )
+        # First of all, we need to sort the requests by timeout, ascending.
+        # This will allow us to progressively adjust the socket timeouts while
+        # reading and make sure that low-timeout connections fail first.
+        sorted_by_timeout = {}
+        @sockets[:reads].each do |socket|
+          stimeout = @sockets[:lookup_request][socket].timeout
+
+          sorted_by_timeout[stimeout] ||= []
+          next if sorted_by_timeout[stimeout].include? socket
+
+          sorted_by_timeout[stimeout] << socket
+        end
+        sorted_by_timeout = Hash[sorted_by_timeout.sort_by { |k, v| k }].values.flatten
+
+        # Go through each socket and read it individually so as to enforce per
+        # request timeouts.
+        sorted_by_timeout.each do |socket|
+
+          # We use the internal adjusted timeout of which we keep track ourselves
+          # instead of the user-set Request#timeout -- although its original
+          # value will be that of Request#timeout.
+          clock = Time.now
+          res = select( [socket], nil, [socket], @pending_responses[socket][:timeout] )
+          waiting_time = Time.now - clock
+
+          # Adjust the timeouts for *all* sockets since even though we only pass
+          # a single one to IO::select they all benefit from that waiting period.
+          #
+          # And that's the whole reason for keeping track of timeouts externally.
+          @pending_responses.each do |_, pending_response|
+            pending_response[:timeout] -= waiting_time
+            pending_response[:timeout]  = 0 if pending_response[:timeout] < 0
+          end
 
           # We either reached the timeout or the connection was reset.
           if !res
             error = Raptor::Error::Timeout.new( 'Request timed-out.' )
             error.set_backtrace( caller )
-            handle_error( request, error, socket )
+            handle_error( @sockets[:lookup_request][socket], error, socket )
             next
           end
 
           if res[2].any?
-            handle_error( request, nil, socket )
+            handle_error( @sockets[:lookup_request][socket], nil, socket )
             next
           end
 
@@ -240,6 +271,11 @@ class Client
   def write( socket, retry_on_fail = true )
     request        = @sockets[:lookup_request][socket]
     request_string = request.to_s
+
+    # We use this to keep track of timeouts per socket, this needs to be stored
+    # externally as we will decrement it in batches in the read socket handling
+    # part of #run.
+    @pending_responses[socket][:timeout] = request.timeout
 
     # Send out the request, **all** of it.
     loop do
@@ -469,6 +505,7 @@ class Client
       socket.close
     end
 
+    # Fix this, pass block instead.
     @redirections ||= Hash.new([])
 
     if response.redirect?
@@ -549,7 +586,10 @@ class Client
           headers: '',
 
           # Response body buffer.
-          body: ''
+          body: '',
+
+          # We use this to keep track of individual socket timeouts.
+          timeout: nil
       }
     end
   end

@@ -19,7 +19,7 @@ describe Raptor::Protocol::HTTP::Client do
       end
 
       context 'when a timeout occurs' do
-        it 'raises Raptor::Error::Timeout', speed: :'slow' do
+        it 'raises Raptor::Error::Timeout', speed: 'slow' do
           client = described_class.new( timeout: 1 )
           expect {
             client.get( "#{@url}/sleep", mode: :sync )
@@ -70,7 +70,7 @@ describe Raptor::Protocol::HTTP::Client do
         described_class.new( concurrency: 10 ).concurrency.should == 10
       end
 
-      it 'sets the amount of maximum open connections at any given time', speed: :'slow' do
+      it 'sets the amount of maximum open connections at any given time', speed: 'slow' do
         cnt   = 0
         times = 10
 
@@ -218,8 +218,47 @@ describe Raptor::Protocol::HTTP::Client do
       end
 
       describe :timeout do
+        it 'handles timeouts progressively and in groups', speed: 'slow' do
+
+          2.times do
+            client.get( "#{@url}/long-sleep", timeout: 20 ) do |response|
+              response.error.should be_nil
+            end
+          end
+
+          2.times do
+            client.get( "#{@url}/long-sleep", timeout: 2 ) do |response|
+              response.error.should be_kind_of Raptor::Error::Timeout
+            end
+          end
+
+          2.times do
+            client.get( "#{@url}/long-sleep", timeout: 3 ) do |response|
+              response.error.should be_kind_of Raptor::Error::Timeout
+            end
+          end
+
+          2.times do
+            client.get( "#{@url}/long-sleep", timeout: 7 ) do |response|
+              response.error.should be_nil
+            end
+          end
+
+          2.times do
+            client.get( "#{@url}/long-sleep", timeout: 10 ) do |response|
+              response.error.should be_nil
+            end
+          end
+
+          t = Time.now
+          client.run
+          runtime = Time.now - t
+
+          (runtime >= 5.0 || runtime < 6.0).should be_true
+        end
+
         context 'when a timeout occurs' do
-          it 'raises Raptor::Error::Timeout', speed: :'slow' do
+          it 'raises Raptor::Error::Timeout', speed: 'slow' do
             client = described_class.new( timeout: 1 )
             expect {
               client.get( "#{@url}/sleep", mode: :sync )
@@ -271,7 +310,7 @@ describe Raptor::Protocol::HTTP::Client do
 
     describe 'Content-Encoding' do
       context 'supports' do
-        it 'chunked', speed: :'slow' do
+        it 'chunked', speed: 'slow' do
           res = client.get( "#{@url}/chunked", mode: :sync )
           res.body.should == "foo\nbara\rbaraf\r\n"
           res.headers.should_not include 'Transfer-Encoding'
@@ -352,7 +391,7 @@ describe Raptor::Protocol::HTTP::Client do
         end
 
         context 'due to an invalid IP address' do
-          it 'passes the callback an empty response', speed: :'slow' do
+          it 'passes the callback an empty response', speed: 'slow' do
             url = 'http://10.11.12.13'
 
             response = nil
@@ -366,7 +405,7 @@ describe Raptor::Protocol::HTTP::Client do
             response.headers.should == {}
           end
 
-          it 'assigns Raptor::Protocol::Error::HostUnreachable to #error', speed: :'slow' do
+          it 'assigns Raptor::Protocol::Error::HostUnreachable to #error', speed: 'slow' do
             url = 'http://10.11.12.13'
 
             response = nil
