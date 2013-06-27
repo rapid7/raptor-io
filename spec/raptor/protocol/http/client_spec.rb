@@ -445,14 +445,18 @@ describe Raptor::Protocol::HTTP::Client do
 
       context 'in synchronous mode' do
         context 'due to a closed port' do
-          it 'raises an exception' do
-            expect { client.get( 'http://localhost', mode: :sync ) }.to raise_error
+          it 'raises Raptor::Protocol::Error::ConnectionRefused' do
+            expect {
+              client.get( 'http://localhost:858589', mode: :sync )
+            }.to raise_error Raptor::Protocol::Error::ConnectionRefused
           end
         end
 
         context 'due to an invalid address' do
-          it 'raises an exception' do
-            expect { client.get( 'http://stuffhereblahblahblah', mode: :sync ) }.to raise_error
+          it 'raises Raptor::Protocol::Error::CouldNotResolve' do
+            expect {
+              client.get( 'http://stuffhereblahblahblah', mode: :sync )
+            }.to raise_error Raptor::Protocol::Error::CouldNotResolve
           end
         end
       end
