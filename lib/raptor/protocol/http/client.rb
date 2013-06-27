@@ -44,6 +44,14 @@ class Client
   #   Amount of open sockets at any given time.
   # @option options [String] :user_agent ('Raptor::HTTP/<Raptor::VERSION>')
   #   User-agent string to include in the requests.
+  # @option options [Integer, Float] :timeout (10)
+  #   Timeout in seconds.
+  # @option options [Integer] :max_redirections (5)
+  #   Maximum redirection responses to follow.
+  # @option options [String] :username
+  #   Username to authenticate as.
+  # @option options [String] :password
+  #   Password to authenticate with.
   def initialize( options = {} )
     DEFAULT_OPTIONS.merge( options ).each do |k, v|
       begin
