@@ -31,6 +31,9 @@ class Request < Message
   #   Whether or not to automatically continue on responses with status 100.
   attr_reader :continue
 
+  # @private
+  attr_accessor :root_redirect_id
+
   #
   # @note This class' options are in addition to {Message#initialize}.
   #

@@ -511,22 +511,26 @@ class Client
     end
 
     # Fix this, pass block instead.
-    @redirections ||= Hash.new([])
+    @redirections ||= Hash.new { |h, k| h[k] = [] }
+
+    root_redirect_id = request.root_redirect_id ?
+        request.root_redirect_id : request.object_id
 
     if response.redirect?
-      if @redirections[request].size < max_redirections
-        (@redirections[request] ||= []) << response
+      if @redirections[root_redirect_id].size < max_redirections
+        @redirections[root_redirect_id] << response
 
-        request = request.dup
+        crequest = request.dup
+        crequest.root_redirect_id = root_redirect_id
 
         # RFC says the Location URI must be a full absolute URL however not
         # all webapps respect that.
-        request.url = request.parsed_url.merge( response.headers['Location'] ).to_s
+        crequest.url = crequest.parsed_url.merge( response.headers['Location'] ).to_s
 
-        queue( request.dup )
+        queue( crequest )
         return
       else
-        @redirections.delete( request )
+        response.redirections = @redirections.delete( root_redirect_id )
       end
     end
 
@@ -536,8 +540,6 @@ class Client
       queue( request.dup )
       return
     end
-
-    response.redirections = @redirections[request]
 
     request.handle_response response
   end
