@@ -1,3 +1,4 @@
+require 'webrick'
 require 'uri'
 
 module Raptor
@@ -42,28 +43,64 @@ class Headers < Hash
 
   # @note `field` will be capitalized appropriately before storing.
   # @param  [String]  field Field name
-  # @param  [String]  value Field value.
+  # @param  [Array<String>, String]  value Field value.
   # @return [String]  Field `value`.
   def []=( field, value )
-    super( format_field_name(field.to_s.downcase), value.to_s )
+    super format_field_name( field.to_s.downcase ),
+          value.is_a?( Array ) ? value : value.to_s
+  end
+
+  # @return [Array<String>]   Set-cookie strings.
+  def set_cookie
+    return [] if self['set-cookie'].to_s.empty?
+    [self['set-cookie']].flatten
+  end
+
+  # @return [Array<Hash>]   Cookies as hashes.
+  def cookies
+    return [] if set_cookie.empty?
+
+    set_cookie.map do |set_cookie_string|
+      WEBrick::Cookie.parse_set_cookies( set_cookie_string ).flatten.uniq.map do |cookie|
+        cookie_hash = {}
+        cookie.instance_variables.each do |var|
+          cookie_hash[var.to_s.gsub( /@/, '' ).to_sym] = cookie.instance_variable_get( var )
+        end
+
+        # Replace the string with a Time object.
+        cookie_hash[:expires] = cookie.expires
+
+        cookie_hash
+      end
+    end.flatten.compact
   end
 
   # @return [String]  HTTP headers formatted for transmission.
   def to_s
-    map { |k, v| "#{k}: #{v}" }.join( CRLF )
+    map do |k, v|
+      if v.is_a? Array
+        v.map do |cv|
+          "#{k}: #{cv}"
+        end
+      else
+        "#{k}: #{v}"
+      end
+    end.flatten.join( CRLF )
   end
 
   # @param  [String]  headers_string
   # @return [Headers]
   def self.parse( headers_string )
-    headers = Headers.new
-    return headers if headers_string.to_s.empty?
+    return Headers.new if headers_string.to_s.empty?
 
+    headers = Hash.new { |h, k| h[k] = [] }
     headers_string.split( CRLF_PATTERN ).each do |header|
       k, v = header.split( ':', 2 )
-      headers[k.to_s.strip] = v.to_s.strip
+      headers[k.to_s.strip] << v.to_s.strip
     end
-    headers
+
+    headers.each { |k, v| headers[k] = v.first if v.size == 1 }
+    new headers
   end
 
   private
