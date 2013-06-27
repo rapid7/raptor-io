@@ -67,6 +67,10 @@ get '/chunked' do
     end
 end
 
+get '/cookies' do
+  cookies.map { |k, v| k.to_s + '=' + v.to_s }.join( ';' )
+end
+
 get '/echo' do
   params.to_s
 end

@@ -174,6 +174,30 @@ describe Raptor::Protocol::HTTP::Client do
     end
 
     describe 'option' do
+      describe :cookies do
+        context Hash do
+          it 'formats and sets request cookies' do
+            client.get( "#{@url}/cookies",
+                        cookies:  {
+                            'name' => 'value',
+                            'name2' => 'value2'
+                        },
+                        mode:     :sync
+            ).body.should == 'name=value;name2=value2'
+          end
+        end
+
+        context String do
+          it 'sets request cookies' do
+            client.get( "#{@url}/cookies",
+                        cookies:  'name=value;name2=value2',
+                        mode:     :sync
+            ).body.should == 'name=value;name2=value2'
+          end
+        end
+
+      end
+
       describe :continue do
         context 'default' do
           it 'handles responses with status "100" automatically' do

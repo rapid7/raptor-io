@@ -84,6 +84,9 @@ class Client
   #   * `:sync`  -- Performs the request in a blocking manner and returns the
   #     {Response}.
   #
+  # @option options [Hash, String]  :cookies
+  #   Cookies as name=>pair values -- should already be escaped.
+  #
   # @param  [Block] block Callback to be passed the {Response}.
   #
   # @return [Request, Response]
@@ -104,6 +107,14 @@ class Client
 
     if @username && @password
       req.headers['Authorization'] = "Basic #{Base64.encode64("#{@username}:#{@password}").chomp}"
+    end
+
+    case options[:cookies]
+      when Hash
+        req.headers['Cookie'] =
+            options[:cookies].map { |k, v| "#{k}=#{v}" }.join( ';' )
+      when String
+        req.headers['Cookie'] = options[:cookies]
     end
 
     return sync_request( req ) if options[:mode] == :sync
