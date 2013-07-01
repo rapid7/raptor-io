@@ -7,6 +7,7 @@ module Protocol::HTTP
 # @author Tasos Laskos <tasos_laskos@rapid7.com>
 #
 class Request < Message
+  require_relative 'request/manipulators'
 
   # Acceptable response callback types.
   CALLBACK_TYPES = [:on_complete, :on_failure, :on_success]

@@ -8,6 +8,10 @@ describe Raptor::Protocol::HTTP::Client do
     @url = WebServers.url_for( :client )
   end
 
+  before( :each ) do
+    Raptor::Protocol::HTTP::Request::Manipulators.library = manipulator_fixtures_path
+  end
+
   let(:url) { 'http://test.com' }
   let(:client) { described_class.new }
 
@@ -174,6 +178,17 @@ describe Raptor::Protocol::HTTP::Client do
     end
 
     describe 'option' do
+      describe :manipulators do
+        it 'loads and configures the given manipulators' do
+          request = client.get( "#{@url}/",
+                      manipulators:  {
+                          fooer: { times: 10 }
+                      }
+          )
+          request.url.should == "#{@url}/" + ('foo' * 10)
+        end
+      end
+
       describe :cookies do
         context Hash do
           it 'formats and sets request cookies' do
@@ -374,6 +389,15 @@ describe Raptor::Protocol::HTTP::Client do
       request = Raptor::Protocol::HTTP::Request.new( url: url )
       client.queue(request).should == request
     end
+
+    describe :manipulators do
+      it 'loads and configures the given manipulators' do
+        request = Raptor::Protocol::HTTP::Request.new( url: "#{@url}/" )
+        client.queue( request, fooer: { times: 10 } )
+        request.url.should == "#{@url}/" + ('foo' * 10)
+      end
+    end
+
   end
 
   describe '#<<' do

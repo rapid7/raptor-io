@@ -87,6 +87,9 @@ class Client
   # @option options [Hash, String]  :cookies
   #   Cookies as name=>pair values -- should already be escaped.
   #
+  # @option options [Hash{Symbol=>Hash}]  :manipulators
+  #   Manipulator names for keys and their options as their values.
+  #
   # @param  [Block] block Callback to be passed the {Response}.
   #
   # @return [Request, Response]
@@ -120,7 +123,7 @@ class Client
     return sync_request( req ) if options[:mode] == :sync
 
     req.on_complete( &block ) if block_given?
-    queue( req )
+    queue( req, options[:manipulators] || {} )
     req
   end
 
@@ -153,9 +156,15 @@ class Client
   # Queues a {Request}.
   #
   # @param  [Request] request
+  # @param  [Hash{Symbol=>Hash}]  manipulators
+  #   Manipulator names for keys and their options as their values.
   # @return [Request] `request`
   #
-  def queue( request )
+  def queue( request, manipulators = {} )
+    manipulators.each do |manipulator, options|
+      Request::Manipulators.process( manipulator, self, request, options )
+    end
+
     @queue << request
     request
   end
