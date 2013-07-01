@@ -44,8 +44,10 @@ module Request::Manipulators
       #
       # @see Request::Manipulators#register
       def inherited( manipulator_klass )
-        manipulator_name = File.basename( caller.first.split( ':' ).first, '.rb' )
-        Request::Manipulators.register( manipulator_name, manipulator_klass )
+        Request::Manipulators.register(
+            Request::Manipulators.path_to_name( caller.first.split( ':' ).first ),
+            manipulator_klass
+        )
       end
     end
   end
@@ -159,8 +161,6 @@ module Request::Manipulators
       @library      = File.expand_path( File.dirname( __FILE__ ) + '/manipulators' ) + '/'
       @manipulators = {}
     end
-
-    private
 
     def path_to_name( path )
       normalize_name File.basename( path, '.rb' )
