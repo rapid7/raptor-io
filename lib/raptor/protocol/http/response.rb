@@ -105,6 +105,8 @@ class Response < Message
           options[:body] = inflate( options[:body] )
       end
 
+      options[:body] = options[:body].to_s.force_encoding( 'UTF-8' )
+
       if options[:headers].delete( 'content-encoding' ) ||
           options[:headers].delete( 'transfer-encoding' )
         options[:headers]['content-length'] = options[:body].size

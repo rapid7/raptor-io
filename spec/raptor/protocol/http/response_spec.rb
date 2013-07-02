@@ -7,18 +7,18 @@ describe Raptor::Protocol::HTTP::Response do
 
   let(:response) do
     "HTTP/1.1 404 Not Found\r\n" +
-"Content-Type: text/html;charset=utf-8\r\n" +
-"Content-Length: 431\r\n\r\n" +
-"<!DOCTYPE html>\n" +
-"More stuff\n"
+      "Content-Type: text/html;charset=utf-8\r\n" +
+      "Content-Length: 431\r\n\r\n" +
+      "<!DOCTYPE html>\n" +
+      "More stuff\n".force_encoding( 'ASCII-8BIT')
   end
 
   let(:response_cr) do
     "HTTP/1.1 404 Not Found\n" +
-        "Content-Type: text/html;charset=utf-8\n" +
-        "Content-Length: 431\n\n" +
-        "<!DOCTYPE html>\n" +
-        "More stuff\n"
+      "Content-Type: text/html;charset=utf-8\n" +
+      "Content-Length: 431\n\n" +
+      "<!DOCTYPE html>\n" +
+      "More stuff\n".force_encoding( 'ASCII-8BIT')
   end
 
   describe '#code' do
@@ -28,6 +28,16 @@ describe Raptor::Protocol::HTTP::Response do
 
     it 'defaults to 0' do
       described_class.new( url: url ).code.should == 0
+    end
+  end
+
+  describe '#body' do
+    it 'returns the HTTP response body' do
+      described_class.parse( response ).body.should == "<!DOCTYPE html>\nMore stuff\n"
+    end
+
+    it 'is forced to UTF8' do
+      described_class.parse( response ).body.encoding.to_s.should == 'UTF-8'
     end
   end
 
