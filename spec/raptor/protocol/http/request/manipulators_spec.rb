@@ -39,7 +39,7 @@ describe Raptor::Protocol::HTTP::Request::Manipulators do
   end
 
   describe '.library=' do
-    it 'sets the maniulators\' library directory' do
+    it 'sets the manipulators\' library directory' do
       described_class.library = '/tmp/'
       File.directory?( described_class.library ).should be_true
     end
@@ -56,14 +56,14 @@ describe Raptor::Protocol::HTTP::Request::Manipulators do
 
   describe '.available' do
     it 'returns the names of all available manipulators' do
-      described_class.available.should eq [ :niccolo_machiavelli, :fooer ]
+      described_class.available.sort.should eq [ 'niccolo_machiavelli', 'manifoolators/fooer' ].sort
     end
   end
 
   describe '.load' do
     it 'loads a manipulator by filename' do
       described_class.load( :niccolo_machiavelli )
-      described_class.loaded[:niccolo_machiavelli].should ==
+      described_class.loaded['niccolo_machiavelli'].should ==
           Raptor::Protocol::HTTP::Request::Manipulators::NiccoloMachiavelli
     end
     it 'returns the loaded manipulator' do
@@ -81,13 +81,13 @@ describe Raptor::Protocol::HTTP::Request::Manipulators do
   describe '.load_all' do
     it 'loads all manipulators' do
       described_class.load_all
-      described_class.loaded[:niccolo_machiavelli].should ==
+      described_class.loaded['niccolo_machiavelli'].should ==
           Raptor::Protocol::HTTP::Request::Manipulators::NiccoloMachiavelli
     end
     it 'returns the loaded manipulators' do
       described_class.load_all.should eq ({
-          fooer: Raptor::Protocol::HTTP::Request::Manipulators::Fooer,
-          niccolo_machiavelli: Raptor::Protocol::HTTP::Request::Manipulators::NiccoloMachiavelli
+        'manifoolators/fooer' => Raptor::Protocol::HTTP::Request::Manipulators::Manifoolators::Fooer,
+        'niccolo_machiavelli' => Raptor::Protocol::HTTP::Request::Manipulators::NiccoloMachiavelli
       })
     end
   end
@@ -111,7 +111,8 @@ describe Raptor::Protocol::HTTP::Request::Manipulators do
 
       described_class.unload_all
       described_class.loaded.should be_empty
-      described_class.constants.should == [:Base]
+      described_class.constants.should == [:Base, :Manifoolators]
+      described_class.const_get( :Manifoolators ).constants.should be_empty
     end
   end
 
