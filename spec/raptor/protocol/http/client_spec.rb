@@ -17,6 +17,27 @@ describe Raptor::Protocol::HTTP::Client do
 
   describe '#initialize' do
 
+    describe :manipulators do
+      it 'defaults to an empty Hash' do
+        described_class.new.manipulators.should == {}
+      end
+
+      it 'sets the manipulators option' do
+        manipulators = { fooer: { times: 15 } }
+        described_class.new( manipulators: manipulators ).manipulators.should == manipulators
+      end
+
+      context 'when a request is queued' do
+        it 'runs the configured manipulators' do
+          manipulators = { fooer: { times: 15 } }
+          client = described_class.new( manipulators: manipulators )
+
+          request = Raptor::Protocol::HTTP::Request.new( url: "#{@url}/" )
+          client.queue( request )
+          request.url.should == "#{@url}/" + ('foo' * 15)
+        end
+      end
+    end
     describe :timeout do
       it 'sets the timeout option' do
         described_class.new( timeout: 15 ).timeout.should == 15

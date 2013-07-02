@@ -30,13 +30,19 @@ class Client
   # @return [String]  Password to use for authentication.
   attr_accessor :password
 
+  # @return [Hash{Symbol=>Hash}]
+  #   Request manipulators, and their options, to be run against each
+  #   {#queue queued} request.
+  attr_reader :manipulators
+
   DEFAULT_OPTIONS = {
       concurrency:      20,
       user_agent:       "Raptor::HTTP/#{Raptor::VERSION}",
       max_redirections: 5, # RFC says 5 max.
       username:         nil,
       password:         nil,
-      timeout:          10
+      timeout:          10,
+      manipulators:     {}
   }
 
   # @param  [Hash]  options Request options.
@@ -52,6 +58,8 @@ class Client
   #   Username to authenticate as.
   # @option options [String] :password
   #   Password to authenticate with.
+  # @option options [Hash{Symbol=>Hash}] :manipulators
+  #   Request manipulators and their options.
   def initialize( options = {} )
     DEFAULT_OPTIONS.merge( options ).each do |k, v|
       begin
@@ -161,7 +169,7 @@ class Client
   # @return [Request] `request`
   #
   def queue( request, manipulators = {} )
-    manipulators.each do |manipulator, options|
+    @manipulators.merge( manipulators ).each do |manipulator, options|
       Request::Manipulators.process( manipulator, self, request, options )
     end
 
