@@ -9,7 +9,6 @@ describe Raptor::Protocol::HTTP::Client do
   end
 
   before( :each ) do
-    Raptor::Protocol::HTTP::Request::Manipulators.reset
     Raptor::Protocol::HTTP::Request::Manipulators.library = manipulator_fixtures_path
   end
 
@@ -24,13 +23,13 @@ describe Raptor::Protocol::HTTP::Client do
       end
 
       it 'sets the manipulators option' do
-        manipulators = { 'manifoolators/fooer' => { times: 15 } }
+        manipulators = { fooer: { times: 15 } }
         described_class.new( manipulators: manipulators ).manipulators.should == manipulators
       end
 
       context 'when a request is queued' do
         it 'runs the configured manipulators' do
-          manipulators = { 'manifoolators/fooer' => { times: 15 } }
+          manipulators = { fooer: { times: 15 } }
           client = described_class.new( manipulators: manipulators )
 
           request = Raptor::Protocol::HTTP::Request.new( url: "#{@url}/" )
@@ -204,7 +203,7 @@ describe Raptor::Protocol::HTTP::Client do
         it 'loads and configures the given manipulators' do
           request = client.get( "#{@url}/",
                       manipulators:  {
-                          'manifoolators/fooer' => { times: 10 }
+                          fooer: { times: 10 }
                       }
           )
           request.url.should == "#{@url}/" + ('foo' * 10)
@@ -415,7 +414,7 @@ describe Raptor::Protocol::HTTP::Client do
     describe :manipulators do
       it 'loads and configures the given manipulators' do
         request = Raptor::Protocol::HTTP::Request.new( url: "#{@url}/" )
-        client.queue( request, 'manifoolators/fooer' => { times: 10 } )
+        client.queue( request, fooer: { times: 10 } )
         request.url.should == "#{@url}/" + ('foo' * 10)
       end
     end

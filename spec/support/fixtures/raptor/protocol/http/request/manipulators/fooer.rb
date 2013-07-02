@@ -7,9 +7,7 @@ class Request
 #
 # @author Tasos Laskos <tasos_laskos@rapid7.com>
 #
-module Manipulators
-module Manifoolators
-class Fooer < Manipulators::Base
+class Manipulators::Fooer < Manipulators::Base
 
   def run
     request.url += ('foo' * options[:times])
@@ -17,8 +15,6 @@ class Fooer < Manipulators::Base
 
 end
 
-end
-end
 end
 end
 end
