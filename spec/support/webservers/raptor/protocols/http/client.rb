@@ -75,6 +75,10 @@ get '/echo' do
   params.to_s
 end
 
+get '/echo_body' do
+  request.body
+end
+
 get '/basic-auth' do
   protected!
   ''

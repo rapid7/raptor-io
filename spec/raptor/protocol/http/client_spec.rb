@@ -1,3 +1,4 @@
+#coding: utf-8
 require 'spec_helper'
 
 describe Raptor::Protocol::HTTP::Client do
@@ -180,6 +181,24 @@ describe Raptor::Protocol::HTTP::Client do
   describe '#request' do
     it 'handles responses without body (1xx, 204, 304)' do
       client.get( "#{@url}/204", mode: :sync ).should be_kind_of Raptor::Protocol::HTTP::Response
+    end
+
+    it 'properly transmits raw binary data' do
+      client.get( "#{@url}/echo_body",
+                  raw: true,
+                  mode: :sync,
+                  body: "\ff\ff"
+      ).body.should == "\ff\ff"
+    end
+
+    it 'properly transmits raw multibyte data' do
+      client.get( "#{@url}/echo_body",
+                  raw: true,
+                  mode: :sync,
+                  body: 'τεστ'
+      # The server will end up corrupting it but transmission will have been
+      # successful nonetheless.
+      ).body.should == "Ï\u0084ÎµÏ\u0083Ï\u0084"
     end
 
     it 'forwards the given options to the Request object' do
