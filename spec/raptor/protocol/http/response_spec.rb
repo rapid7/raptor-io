@@ -1,3 +1,4 @@
+#coding: utf-8
 require 'spec_helper'
 
 describe Raptor::Protocol::HTTP::Response do
@@ -19,6 +20,11 @@ describe Raptor::Protocol::HTTP::Response do
       "Content-Length: 431\n\n" +
       "<!DOCTYPE html>\n" +
       "More stuff\n".force_encoding( 'ASCII-8BIT')
+  end
+
+  it 'forces the body to UTF-8' do
+    described_class.parse( response ).body.encoding.to_s.should == 'UTF-8'
+    described_class.new( body: "stuff τεστblah" ).body.should == 'stuff τεστblah'
   end
 
   describe '#text?' do
