@@ -39,7 +39,7 @@ class Response < Message
   def initialize( options = {} )
     super( options )
 
-    @body = @body.unpack( 'C*' ).pack( 'U*' ).force_utf8! if text?
+    @body = @body.force_utf8 if text?
     @code ||= 0
 
     # Holds the redirection responses that eventually led to this one.

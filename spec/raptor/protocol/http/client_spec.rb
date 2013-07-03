@@ -196,9 +196,7 @@ describe Raptor::Protocol::HTTP::Client do
                   raw: true,
                   mode: :sync,
                   body: 'τεστ'
-      # The server will end up corrupting it but transmission will have been
-      # successful nonetheless.
-      ).body.should == "Ï\u0084ÎµÏ\u0083Ï\u0084"
+      ).body.should == 'τεστ'
     end
 
     it 'forwards the given options to the Request object' do
