@@ -16,7 +16,8 @@ describe Raptor::Protocol::HTTP::Request do
           http_method: :get,
           parameters: { 'test' => 'blah' },
           timeout: 10,
-          continue: false
+          continue: false,
+          raw: true
       }
       r = described_class.new( options )
       r.url.should          == url
@@ -24,6 +25,7 @@ describe Raptor::Protocol::HTTP::Request do
       r.parameters.should   == options[:parameters]
       r.timeout.should      == options[:timeout]
       r.continue.should     == options[:continue]
+      r.raw.should          == options[:raw]
     end
 
     it 'uses the setter methods when configuring' do
@@ -146,10 +148,30 @@ describe Raptor::Protocol::HTTP::Request do
   end
 
   describe '#query_parameters' do
-    it 'decodes the URL query parameters' do
-      weird_url = 'http://test.com/?first=test%3Fblah%2F&second%2F%26=blah'
-      r = described_class.new( url: weird_url, http_method: :other )
-      r.query_parameters.should == { 'first' => 'test?blah/', 'second/&' => 'blah' }
+    context 'when :raw option is' do
+      context true do
+        it 'does not decode the URL query parameters' do
+          weird_url = 'http://test.com/?first=test%3Fblah%2F&second%2F%26=blah'
+          r = described_class.new( raw: true, url: weird_url, http_method: :other )
+          r.query_parameters.should == { 'first' => 'test%3Fblah%2F', 'second%2F%26' => 'blah' }
+        end
+      end
+
+      context false do
+        it 'decodes the URL query parameters' do
+          weird_url = 'http://test.com/?first=test%3Fblah%2F&second%2F%26=blah'
+          r = described_class.new( raw: false, url: weird_url, http_method: :other )
+          r.query_parameters.should == { 'first' => 'test?blah/', 'second/&' => 'blah' }
+        end
+      end
+
+      context 'default' do
+        it 'decodes the URL query parameters' do
+          weird_url = 'http://test.com/?first=test%3Fblah%2F&second%2F%26=blah'
+          r = described_class.new( url: weird_url, http_method: :other )
+          r.query_parameters.should == { 'first' => 'test?blah/', 'second/&' => 'blah' }
+        end
+      end
     end
 
     context 'when the request method is' do
@@ -187,9 +209,27 @@ describe Raptor::Protocol::HTTP::Request do
   end
 
   describe '#effective_url' do
-    it 'encodes the URL query parameters' do
-      r = described_class.new( url: url, parameters: { 'first' => 'test?blah/', 'second/&' => 'blah' } )
-      r.effective_url.to_s.should == 'http://test.com/?first=test%3Fblah%2F&second%2F%26=blah'
+    context 'when :raw option is' do
+      context true do
+        it 'does not encode the URL query parameters' do
+          r = described_class.new( raw: true, url: url, parameters: { 'first' => 'test?blah/', 'second/&' => 'blah' } )
+          r.effective_url.to_s.should == 'http://test.com/?first=test?blah/&second/&=blah'
+        end
+      end
+
+      context false do
+        it 'encodes the URL query parameters' do
+          r = described_class.new( raw: false, url: url, parameters: { 'first' => 'test?blah/', 'second/&' => 'blah' } )
+          r.effective_url.to_s.should == 'http://test.com/?first=test%3Fblah%2F&second%2F%26=blah'
+        end
+      end
+
+      context 'default' do
+        it 'encodes the URL query parameters' do
+          r = described_class.new( url: url, parameters: { 'first' => 'test?blah/', 'second/&' => 'blah' } )
+          r.effective_url.to_s.should == 'http://test.com/?first=test%3Fblah%2F&second%2F%26=blah'
+        end
+      end
     end
 
     it 'has UTF8 support' do
@@ -254,13 +294,41 @@ describe Raptor::Protocol::HTTP::Request do
     end
 
     context 'when there is a body' do
-      it 'encodes it' do
-        options = {
-            url:  url,
-            body: "fds g45\#$ 6@ %y @^2\r\n"
-        }
-        described_class.new( options ).effective_body.should ==
-            'fds+g45%23%24+6%40+%25y+%40%5E2%0D%0A'
+      context 'when :raw option is' do
+        context true do
+          it 'does not encode it' do
+            options = {
+                raw:  true,
+                url:  url,
+                body: "fds g45\#$ 6@ %y @^2\r\n"
+            }
+            described_class.new( options ).effective_body.should ==
+                options[:body]
+          end
+        end
+
+        context false do
+          it 'encodes it' do
+            options = {
+                raw:  false,
+                url:  url,
+                body: "fds g45\#$ 6@ %y @^2\r\n"
+            }
+            described_class.new( options ).effective_body.should ==
+                'fds+g45%23%24+6%40+%25y+%40%5E2%0D%0A'
+          end
+        end
+
+        context 'default' do
+          it 'encodes it' do
+            options = {
+                url:  url,
+                body: "fds g45\#$ 6@ %y @^2\r\n"
+            }
+            described_class.new( options ).effective_body.should ==
+                'fds+g45%23%24+6%40+%25y+%40%5E2%0D%0A'
+          end
+        end
       end
 
       it 'has UTF8 support' do
@@ -271,28 +339,90 @@ describe Raptor::Protocol::HTTP::Request do
     context 'when the request method is' do
       context 'POST' do
         context 'when no parameters have been provided as options' do
-          it 'returns the original body' do
-            options = {
-                url: url_with_query,
-                http_method: :post,
-                body: 'stuff=1&blah=test'
-            }
-            described_class.new( options ).effective_body.should == options[:body]
+          context 'when :raw option is' do
+            context true do
+              it 'returns the original body' do
+                options = {
+                    raw: true,
+                    url: url_with_query,
+                    http_method: :post,
+                    body: 'stuff=/1&blah=/test'
+                }
+                described_class.new( options ).effective_body.should == options[:body]
+              end
+            end
+
+            context false do
+              it 'escapes and returns the body' do
+                options = {
+                    raw: false,
+                    url: url_with_query,
+                    http_method: :post,
+                    body: 'stuff=/1&blah=/test'
+                }
+                described_class.new( options ).effective_body.should == 'stuff=%2F1&blah=%2Ftest'
+              end
+            end
+
+            context 'default' do
+              it 'escapes and returns the body' do
+                options = {
+                    raw: false,
+                    url: url_with_query,
+                    http_method: :post,
+                    body: 'stuff=/1&blah=/test'
+                }
+                described_class.new( options ).effective_body.should == 'stuff=%2F1&blah=%2Ftest'
+              end
+            end
           end
         end
+
         context 'when there are parameters as options' do
-          let(:parameters) { { 'id' => '2', 'stuff' => 'blah' } }
+          let(:parameters) { { 'id/' => '2', 'stuff' => 'blah/' } }
 
           context 'and there is no body configured' do
-            it 'returns the escaped option parameters' do
-              options = {
-                  url: url_with_query,
-                  http_method: :post,
-                  parameters: parameters
-              }
-              described_class.new( options ).effective_body.to_s.should ==
-                  "id=2&stuff=blah"
+            context 'when :raw option is' do
+              context true do
+                it 'returns the option parameters' do
+                  options = {
+                      raw: true,
+                      url: url_with_query,
+                      http_method: :post,
+                      parameters: parameters
+                  }
+                  described_class.new( options ).effective_body.to_s.should ==
+                      "id/=2&stuff=blah/"
+                end
+              end
+
+              context false do
+                it 'returns the escaped option parameters' do
+                  options = {
+                      raw: false,
+                      url: url_with_query,
+                      http_method: :post,
+                      parameters: parameters
+                  }
+                  described_class.new( options ).effective_body.to_s.should ==
+                      "id%2F=2&stuff=blah%2F"
+                end
+              end
+
+              context 'default' do
+                it 'returns the escaped option parameters' do
+                  options = {
+                      raw: false,
+                      url: url_with_query,
+                      http_method: :post,
+                      parameters: parameters
+                  }
+                  described_class.new( options ).effective_body.to_s.should ==
+                      "id%2F=2&stuff=blah%2F"
+                end
+              end
             end
+
           end
 
           it 'has UTF8 support' do
@@ -316,30 +446,52 @@ describe Raptor::Protocol::HTTP::Request do
                   parameters: parameters
               }
               described_class.new( options ).effective_body.to_s.should ==
-                  "stuff+4354%25%2443=%24%23535%2135VWE+g4+%25yt5&stuff=blah&id=2"
+                  "stuff+4354%25%2443=%24%23535%2135VWE+g4+%25yt5&stuff=blah%2F&id%2F=2"
             end
           end
         end
       end
 
       context 'other' do
-        it 'returns the original body' do
-          options = {
-              url: url_with_query,
-              http_method: :other,
-              body: 'stuff'
-          }
-          described_class.new( options ).effective_body.should == options[:body]
+        context 'when :raw option is' do
+          context true do
+            it 'returns the original body' do
+              options = {
+                  raw: true,
+                  url: url_with_query,
+                  http_method: :other,
+                  body: 'stuff here #$^#46 %H# '
+              }
+              described_class.new( options ).effective_body.should == options[:body]
+            end
+          end
+
+          context false do
+            it 'escapes and returns the original body' do
+              options = {
+                  raw: false,
+                  url: url_with_query,
+                  http_method: :other,
+                  body: 'stuff here #$^#46 %H# '
+              }
+              described_class.new( options ).effective_body.should ==
+                  'stuff+here+%23%24%5E%2346+%25H%23+'
+            end
+          end
+
+          context 'default' do
+            it 'escapes and returns the original body' do
+              options = {
+                  url: url_with_query,
+                  http_method: :other,
+                  body: 'stuff here #$^#46 %H# '
+              }
+              described_class.new( options ).effective_body.should ==
+                  'stuff+here+%23%24%5E%2346+%25H%23+'
+            end
+          end
         end
-        it 'escapes the original body' do
-          options = {
-              url: url_with_query,
-              http_method: :other,
-              body: 'stuff here #$^#46 %H# '
-          }
-          described_class.new( options ).effective_body.should ==
-              'stuff+here+%23%24%5E%2346+%25H%23+'
-        end
+
       end
     end
   end

@@ -32,6 +32,11 @@ class Request < Message
   #   Whether or not to automatically continue on responses with status 100.
   attr_reader :continue
 
+  # @note Defaults to `false`.
+  # @return [Bool]
+  #   Whether or not encode any of the given data for HTTP transmission.
+  attr_accessor :raw
+
   # @private
   attr_accessor :root_redirect_id
 
@@ -49,6 +54,9 @@ class Request < Message
   # @option options [Bool]  :continue
   #   Whether or not to automatically continue on responses with status 100.
   #   Only applicable when the 'Expect' header has been set to '100-continue'.
+  # @option options [Bool]  :raw (false)
+  #   `true` to not encode any of the given data for HTTP transmission, `false`
+  #   otherwise.
   #
   # @see Message#initialize
   # @see #parameters=
@@ -61,9 +69,16 @@ class Request < Message
 
     fail ArgumentError, "Missing ':url' option." if !@url
 
-    @parameters   ||= {}
-    @http_method  ||= :get
-    @continue     = true if @continue.nil?
+    @parameters  ||= {}
+    @http_method ||= :get
+    @continue    = true  if @continue.nil?
+    @raw         = false if @raw.nil?
+  end
+
+  # @return [Bool]
+  #   Whether or not encode any of the given data for HTTP transmission.
+  def raw?
+    !!@raw
   end
 
   # @return [Bool]
@@ -108,7 +123,7 @@ class Request < Message
 
     qparams = query.split('&').inject({}) do |h, pair|
       k, v = pair.split('=', 2)
-      h.merge( CGI.unescape(k) => CGI.unescape(v) )
+      h.merge( decode_if_not_raw(k) => decode_if_not_raw(v) )
     end
     return qparams if http_method != :get
 
@@ -119,7 +134,7 @@ class Request < Message
   def effective_url
     cparsed_url = parsed_url.dup
     cparsed_url.query = query_parameters.map do |k, v|
-      "#{CGI.escape(k)}=#{CGI.escape(v)}"
+      "#{encode_if_not_raw(k)}=#{encode_if_not_raw(v)}"
     end.join('&') if query_parameters.any?
 
     cparsed_url.normalize
@@ -128,12 +143,12 @@ class Request < Message
   # @return [String]  Response body to use.
   def effective_body
     return '' if headers['Expect'] == '100-continue'
-    return CGI.escape(body.to_s) if http_method != :post
+    return encode_if_not_raw(body.to_s) if http_method != :post
 
     body_params = if !body.to_s.empty?
                     body.split('&').inject({}) do |h, pair|
                       k, v = pair.split('=', 2)
-                      h.merge( CGI.unescape(k) => CGI.unescape(v) )
+                      h.merge( decode_if_not_raw(k) => decode_if_not_raw(v) )
                     end
                   else
                     {}
@@ -142,7 +157,7 @@ class Request < Message
     return '' if body_params.empty? && parameters.empty?
 
     body_params.merge( parameters ).map do |k, v|
-      "#{CGI.escape(k)}=#{CGI.escape(v)}"
+      "#{encode_if_not_raw(k)}=#{encode_if_not_raw(v)}"
     end.join('&')
   end
 
@@ -219,6 +234,14 @@ class Request < Message
     @callbacks[type].each { |block| block.call response }
     @callbacks[:on_complete].each { |block| block.call response }
     true
+  end
+
+  def encode_if_not_raw( str )
+    raw? ? str : CGI.escape( str )
+  end
+
+  def decode_if_not_raw( str )
+    raw? ? str : CGI.unescape( str )
   end
 
   def dup
