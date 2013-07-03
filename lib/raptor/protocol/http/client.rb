@@ -308,7 +308,7 @@ class Client
   #
   def write( socket, retry_on_fail = true )
     request        = @sockets[:lookup_request][socket]
-    request_string = request.to_s
+    request_string = request.to_s.repack
 
     # Send out the request, **all** of it.
     loop do

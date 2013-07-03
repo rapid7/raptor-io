@@ -39,6 +39,7 @@ class Response < Message
   def initialize( options = {} )
     super( options )
 
+    @body = @body.unpack( 'C*' ).pack( 'U*' ).force_utf8! if text?
     @code ||= 0
 
     # Holds the redirection responses that eventually led to this one.
@@ -59,6 +60,24 @@ class Response < Message
   #   the `If-Modified-Since` request header field, `false` otherwise.
   def modified?
     code != 304
+  end
+
+  # @return [Bool]
+  #   `true` if the response body is textual in nature, `false` otherwise
+  #   (if binary).
+  def text?
+    return if !@body
+
+    if (type = headers['content-type'])
+      return true if type.start_with?( 'text/' )
+
+      # Non "application/" content types will surely not be text-based
+      # so bail out early.
+      return false if !type.start_with?( 'application/' )
+    end
+
+    # Last resort, more resource intensive binary detection.
+    !@body.binary?
   end
 
   # @return [String]

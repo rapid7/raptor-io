@@ -21,6 +21,72 @@ describe Raptor::Protocol::HTTP::Response do
       "More stuff\n".force_encoding( 'ASCII-8BIT')
   end
 
+  describe '#text?' do
+    context 'when the content-type is' do
+      context 'text/*' do
+        it 'returns true' do
+          h = {
+              headers: { 'Content-Type' => 'text/stuff' },
+              body:     "stuff"
+          }
+          described_class.new( h ).text?.should be_true
+        end
+      end
+
+      context 'application/*' do
+        context 'and the response body is' do
+          context 'binary' do
+            it 'returns false' do
+              h = {
+                  headers: { 'Content-Type' => 'application/stuff' },
+                  body:    "\00\00\00"
+              }
+              described_class.new( h ).text?.should be_false
+            end
+          end
+
+          context 'text' do
+            it 'returns true' do
+              h = {
+                  headers: { 'Content-Type' => 'application/stuff' },
+                  body:    "stuff"
+              }
+              described_class.new( h ).text?.should be_true
+            end
+          end
+        end
+      end
+
+      context 'other' do
+        it 'returns false' do
+          h = {
+              headers: { 'Content-Type' => 'blah/stuff' },
+              body:    "stuff"
+          }
+          described_class.new( h ).text?.should be_false
+        end
+      end
+
+      context nil do
+        context 'and the response body is' do
+          context 'binary' do
+            it 'returns false' do
+              h = { body: "\00\00\00" }
+              described_class.new( h ).text?.should be_false
+            end
+          end
+
+          context 'text' do
+            it 'returns true' do
+              h = { body: "stuff" }
+              described_class.new( h ).text?.should be_true
+            end
+          end
+        end
+      end
+    end
+  end
+
   describe '#code' do
     it 'returns the HTTP status code' do
       described_class.new( url: url, code: 200 ).code.should == 200
