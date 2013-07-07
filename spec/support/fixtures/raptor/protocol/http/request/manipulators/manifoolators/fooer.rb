@@ -2,13 +2,14 @@ module Raptor
 module Protocol::HTTP
 class Request
 
+module Manipulators
+module Manifoolators
+
 #
-# Test manipulator.
+# Test manipulator, shows that manipulators can be namespaced.
 #
 # @author Tasos Laskos <tasos_laskos@rapid7.com>
 #
-module Manipulators
-module Manifoolators
 class Fooer < Manipulators::Base
 
   def run
