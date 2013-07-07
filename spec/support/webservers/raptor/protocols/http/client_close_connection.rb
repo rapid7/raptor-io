@@ -5,26 +5,11 @@
 # indicate the end of the response body.
 
 require 'socket'
-require 'optparse'
+require_relative '../../../../../support/lib/webserver_option_parser'
 
 BODY = "Success\n.\n"
 
-options = {
-    address: '0.0.0.0',
-    port:    4567
-}
-
-OptionParser.new do |opts|
-
-  opts.on( '-o', '--addr [host]', "set the host (default is #{options[:address]})" ) do |address|
-    options[:address] = address
-  end
-
-  opts.on( '-p', '--port [port]', Integer, "set the port (default is #{options[:port]})" ) do |port|
-    options[:port] = port
-  end
-
-end.parse!
+options = WebServerOptionParser.parse
 
 server = TCPServer.new( options[:address], options[:port] )
 @requests = Hash.new { |h, k| h[k] = '' }

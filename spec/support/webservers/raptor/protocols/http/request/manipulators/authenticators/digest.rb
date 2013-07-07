@@ -1,5 +1,5 @@
-require 'optparse'
 require 'sinatra/base'
+require_relative '../../../../../../../../support/lib/webserver_option_parser'
 
 class Protected < Sinatra::Base
 
@@ -18,21 +18,5 @@ class Protected < Sinatra::Base
   end
 end
 
-options = {
-    address: '0.0.0.0',
-    port:    4567
-}
-
-OptionParser.new do |opts|
-
-  opts.on( '-o', '--addr [host]', "set the host (default is #{options[:address]})" ) do |address|
-    options[:address] = address
-  end
-
-  opts.on( '-p', '--port [port]', Integer, "set the port (default is #{options[:port]})" ) do |port|
-    options[:port] = port
-  end
-
-end.parse!
-
+options = WebServerOptionParser.parse
 Rack::Handler::Thin.run( Protected.new, Port: options[:port], Address: options[:address] )
