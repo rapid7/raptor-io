@@ -128,9 +128,10 @@ class Client
         req.headers['Cookie'] = options[:cookies]
     end
 
-    return sync_request( req ) if options[:mode] == :sync
+    return sync_request( req, options[:manipulators] || {} ) if options[:mode] == :sync
 
     req.on_complete( &block ) if block_given?
+
     queue( req, options[:manipulators] || {} )
     req
   end
@@ -279,7 +280,7 @@ class Client
 
   # @param  [Request] request Request to perform in blocking mode.
   # @return [Response]  HTTP response.
-  def sync_request( request )
+  def sync_request( request, manipulators = {} )
     client = self.class.new(
         max_redirections: max_redirections,
         user_agent:       user_agent,
@@ -288,7 +289,7 @@ class Client
 
     res = nil
     request.on_complete { |r| res = r }
-    client.queue( request )
+    client.queue( request, manipulators )
     client.run
 
     raise res.error if res.error
