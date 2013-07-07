@@ -72,12 +72,12 @@ module Request::Manipulators
 
     # @param  [String]  directory Directory including manipulators.
     def library=( directory )
-      @library = directory.end_with?( '/' ) ? directory : "#{directory}/"
+      @library = File.expand_path( directory ) + '/'
     end
 
     # @return [Array<String>] Paths of all manipulators.
     def paths
-      Dir.glob( "#{library}*.rb" )
+      Dir.glob( "#{library}**/*.rb" )
     end
 
     # @return [Array<Symbol>] Names of all manipulators.
@@ -93,7 +93,7 @@ module Request::Manipulators
       manipulator = normalize_name( manipulator )
       return @manipulators[manipulator] if @manipulators.include? manipulator
 
-      Kernel.load "#{library}/#{manipulator}.rb"
+      Kernel.load name_to_path( manipulator )
       @manipulators[manipulator]
     end
 
@@ -115,7 +115,15 @@ module Request::Manipulators
       klass = @manipulators.delete( normalize_name( manipulator ) )
       return false if !klass
 
-      remove_const klass.to_s.split( ':' ).last.to_sym
+      container = self
+      klass.to_s.gsub( "#{self}::", '' ).split( '::' )[0...-1].each do |c|
+        container = container.const_get( c.to_sym )
+      end
+
+      container.instance_eval do
+        remove_const klass.to_s.split( ':' ).last.to_sym
+      end
+
       true
     end
 
@@ -163,11 +171,15 @@ module Request::Manipulators
     end
 
     def path_to_name( path )
-      normalize_name File.basename( path, '.rb' )
+      normalize_name path.gsub( library, '' ).gsub( /(.+)\.rb$/, '\1' )
+    end
+
+    def name_to_path( name )
+      File.expand_path "#{library}/#{name}.rb"
     end
 
     def normalize_name( name )
-      name.to_sym
+      name.to_s
     end
   end
   reset
