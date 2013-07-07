@@ -37,7 +37,16 @@ module Request::Manipulators
     def run
     end
 
+    # @return [Hash]  Persistent storage -- per {HTTP::Client} instance.
+    def datastore
+      client.datastore[self.class.shortname]
+    end
+
     class <<self
+
+      def shortname
+        @shortname ||= Request::Manipulators.class_to_name( self )
+      end
 
       # Registers {Request::Manipulators::Base manipulators} which inherit from
       # this base class.
@@ -124,6 +133,15 @@ module Request::Manipulators
         remove_const klass.to_s.split( ':' ).last.to_sym
       end
 
+      # Remove the container namespaces themselves if they're now empty.
+      container = self
+      klass.to_s.gsub( "#{self}::", '' ).split( '::' )[0...-1].each do |c|
+        container = container.const_get( c.to_sym )
+        if container != self && container.constants.empty?
+          remove_const container.to_s.split( ':' ).last.to_sym
+        end
+      end
+
       true
     end
 
@@ -172,6 +190,11 @@ module Request::Manipulators
 
     def path_to_name( path )
       normalize_name path.gsub( library, '' ).gsub( /(.+)\.rb$/, '\1' )
+    end
+
+    def class_to_name( klass )
+      @manipulators.select { |name, k| return name if k == klass }
+      nil
     end
 
     def name_to_path( name )

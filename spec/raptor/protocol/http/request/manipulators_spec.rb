@@ -10,14 +10,25 @@ describe Raptor::Protocol::HTTP::Request::Manipulators do
     described_class.should be_kind_of Enumerable
   end
 
+  describe '.class_to_name' do
+    it 'returns the name of a loaded manipulator based on its class' do
+      described_class.load_all
+      described_class.class_to_name( Raptor::Protocol::HTTP::Request::Manipulators::NiccoloMachiavelli ).should ==
+          'niccolo_machiavelli'
+    end
+  end
+
   describe '.process' do
     it 'processes the given request and client with the given manipulator' do
       client  = Raptor::Protocol::HTTP::Client.new
       request = Raptor::Protocol::HTTP::Request.new( url: 'http://test/' )
       options = { stuff: 1 }
 
+      datastore = client.datastore['niccolo_machiavelli']
+      datastore['stuff'] = 'blah'
+
       described_class.process( :niccolo_machiavelli, client, request, options ).should ==
-          [client, request, options]
+          [client, request, options, datastore]
     end
 
     context 'when given a non-existent manipulator' do
@@ -33,7 +44,7 @@ describe Raptor::Protocol::HTTP::Request::Manipulators do
   end
 
   describe '.library' do
-    it 'returns the directory of the maniulators\' library' do
+    it 'returns the directory of the manipulators\' library' do
       File.directory?( described_class.library ).should be_true
     end
   end
@@ -111,8 +122,7 @@ describe Raptor::Protocol::HTTP::Request::Manipulators do
 
       described_class.unload_all
       described_class.loaded.should be_empty
-      described_class.constants.should == [:Base, :Manifoolators]
-      described_class.const_get( :Manifoolators ).constants.should be_empty
+      described_class.constants.should == [:Base]
     end
   end
 

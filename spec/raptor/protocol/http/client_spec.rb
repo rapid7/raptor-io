@@ -137,6 +137,16 @@ describe Raptor::Protocol::HTTP::Client do
     end
   end
 
+  describe '#datastore' do
+    it 'returns a hash' do
+      client.datastore.should == {}
+    end
+
+    it 'has empty hashes as default values' do
+      client.datastore['stuff'].should == {}
+    end
+  end
+
   describe '#concurrency=' do
     it 'sets the concurrency option' do
       client.concurrency.should_not == 10

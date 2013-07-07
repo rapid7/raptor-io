@@ -10,7 +10,7 @@ class Request
 class Manipulators::NiccoloMachiavelli < Manipulators::Base
 
   def run
-    [client, request, options]
+    [client, request, options, datastore]
   end
 
 end

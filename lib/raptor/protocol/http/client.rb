@@ -29,6 +29,9 @@ class Client
   #   {#queue queued} request.
   attr_reader :manipulators
 
+  # @return [Hash]  Persistent storage for the manipulators..
+  attr_reader :datastore
+
   DEFAULT_OPTIONS = {
       concurrency:      20,
       user_agent:       "Raptor::HTTP/#{Raptor::VERSION}",
@@ -63,6 +66,9 @@ class Client
 
     # Holds Request objects.
     @queue = []
+
+    # Persistent storage for request manipulators.
+    @datastore = Hash.new { |h, k| h[k] = {} }
 
     reset_sockets
     reset_pending_responses

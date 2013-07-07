@@ -26,10 +26,16 @@ RSpec.configure do |config|
   config.order = 'random'
 
   config.before( :all ) do
+    Raptor::Protocol::HTTP::Request::Manipulators.reset
     WebServers.killall
   end
 
+  config.after( :all ) do
+    Raptor::Protocol::HTTP::Request::Manipulators.reset
+  end
+
   config.after( :suite ) do
+    Raptor::Protocol::HTTP::Request::Manipulators.reset
     WebServers.killall
   end
 
