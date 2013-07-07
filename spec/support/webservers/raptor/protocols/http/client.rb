@@ -30,20 +30,6 @@ module Sinatra::Helpers
   end
 end
 
-helpers do
-  def protected!
-    return if authorized?
-    headers['WWW-Authenticate'] = 'Basic realm="Restricted Area"'
-    halt 401, "Not authorized\n"
-  end
-
-  def authorized?
-    @auth ||=  Rack::Auth::Basic::Request.new( request.env )
-    @auth.provided? && @auth.basic? && @auth.credentials &&
-        @auth.credentials == ['admin', 'secret']
-  end
-end
-
 get '/100' do
   if env['HTTP_EXPECT'] == '100-continue'
     100
@@ -77,11 +63,6 @@ end
 
 get '/echo_body' do
   request.body
-end
-
-get '/basic-auth' do
-  protected!
-  ''
 end
 
 get '/gzip' do

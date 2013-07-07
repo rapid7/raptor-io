@@ -24,12 +24,6 @@ class Client
   # @return [Integer] Maximum redirection responses to follow.
   attr_accessor :max_redirections
 
-  # @return [String]  User name to authenticate as.
-  attr_accessor :username
-
-  # @return [String]  Password to use for authentication.
-  attr_accessor :password
-
   # @return [Hash{Symbol=>Hash}]
   #   Request manipulators, and their options, to be run against each
   #   {#queue queued} request.
@@ -39,8 +33,6 @@ class Client
       concurrency:      20,
       user_agent:       "Raptor::HTTP/#{Raptor::VERSION}",
       max_redirections: 5, # RFC says 5 max.
-      username:         nil,
-      password:         nil,
       timeout:          10,
       manipulators:     {}
   }
@@ -54,10 +46,6 @@ class Client
   #   Timeout in seconds.
   # @option options [Integer] :max_redirections (5)
   #   Maximum redirection responses to follow.
-  # @option options [String] :username
-  #   Username to authenticate as.
-  # @option options [String] :password
-  #   Password to authenticate with.
   # @option options [Hash{Symbol=>Hash}] :manipulators
   #   Request manipulators and their options.
   def initialize( options = {} )
@@ -115,10 +103,6 @@ class Client
     req = Request.new( options.merge( url: url ) )
 
     req.headers['User-Agent'] = @user_agent if !@user_agent.to_s.empty?
-
-    if @username && @password
-      req.headers['Authorization'] = "Basic #{Base64.encode64("#{@username}:#{@password}").chomp}"
-    end
 
     case options[:cookies]
       when Hash
