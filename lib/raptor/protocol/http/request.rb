@@ -179,25 +179,27 @@ class Request < Message
     http_method != :post
   end
 
+  def resource
+    req_resource  = "#{effective_url.path}"
+    req_resource << "?#{effective_url.query}" if effective_url.query
+    req_resource
+  end
+
   # @return [String]
   #   String representation of the request, ready for HTTP transmission.
   def to_s
-    req_url       = effective_url
-    req_resource  = "#{req_url.path}"
-    req_resource << "?#{req_url.query}" if req_url.query
+    final_body = effective_body
 
-    body = effective_body
+    computed_headers = Headers.new( 'Host' => "#{effective_url.host}:#{effective_url.port}" )
+    computed_headers['Content-Length'] = final_body.size.to_s if !final_body.to_s.empty?
 
-    computed_headers = Headers.new( 'Host' => "#{req_url.host}:#{req_url.port}" )
-    computed_headers['Content-Length'] = body.size.to_s if !body.to_s.empty?
-
-    request = "#{http_method.to_s.upcase} #{req_resource} HTTP/#{version}#{CRLF}"
+    request = "#{http_method.to_s.upcase} #{resource} HTTP/#{version}#{CRLF}"
     request << computed_headers.merge(headers).to_s
     request << HEADER_SEPARATOR
 
-    return request if body.to_s.empty?
+    return request if final_body.to_s.empty?
 
-    request << body.to_s
+    request << final_body.to_s
   end
 
   CALLBACK_TYPES.each do |type|

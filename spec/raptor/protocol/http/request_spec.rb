@@ -208,6 +208,13 @@ describe Raptor::Protocol::HTTP::Request do
     end
   end
 
+  describe '#resource' do
+    it 'returns the resource to be requested' do
+      r = described_class.new( url: url, parameters: { 'first' => 'test?blah/', 'second/&' => 'blah' } )
+      r.resource.to_s.should == '/?first=test%3Fblah%2F&second%2F%26=blah'
+    end
+  end
+
   describe '#effective_url' do
     context 'when :raw option is' do
       context true do
