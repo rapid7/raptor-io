@@ -1,4 +1,4 @@
-require'digest/md5'
+require 'digest'
 
 module Raptor
 module Protocol::HTTP
@@ -27,16 +27,48 @@ class Digest < Manipulators::Base
         nc:                  nc,
         cnonce:              cnonce,
         response:            response,
+        algorithm:           algorithm_name,
         opaque:              challenge[:opaque]
     }.map { |k, v| "#{k}=\"#{v}\"" }.join( ', ' )
   end
 
+  def algorithm_klass
+    if challenge[:algorithm].to_s =~ /(.+)(-sess)?$/
+      case $1
+        when 'MD5' then ::Digest::MD5
+        when 'SHA1' then ::Digest::SHA1
+        when 'SHA2' then ::Digest::SHA2
+        when 'SHA256' then ::Digest::SHA256
+        when 'SHA384' then ::Digest::SHA384
+        when 'SHA512' then ::Digest::SHA512
+        when 'RMD160' then ::Digest::RMD160
+        else raise Error, "Unknown algorithm \"#{$1}\"."
+      end
+    else
+      ::Digest::MD5
+    end
+  end
+
+  def algorithm_name
+    algorithm_klass.to_s.split( '::' ).last
+  end
+
+  def sess?
+    challenge[:algorithm].to_s.include? '-sess'
+  end
+
   def H( data )
-    ::Digest::MD5.hexdigest( data )
+    algorithm_klass.hexdigest( data )
   end
 
   def A1
-    [ username, challenge[:realm], password ] * ':'
+    without_sess = [ username, challenge[:realm], password ] * ':'
+
+    if sess?
+      H( [without_sess, challenge[:nonce], cnonce ] * ':' )
+    else
+      without_sess
+    end
   end
 
   def A2
