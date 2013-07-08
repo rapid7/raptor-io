@@ -274,7 +274,8 @@ class Client
     client = self.class.new(
         max_redirections: max_redirections,
         user_agent:       user_agent,
-        timeout:          timeout
+        timeout:          timeout,
+        manipulators:     @manipulators
     )
 
     res = nil
