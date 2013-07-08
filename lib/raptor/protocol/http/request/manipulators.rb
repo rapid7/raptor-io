@@ -37,6 +37,10 @@ module Request::Manipulators
     def run
     end
 
+    def delegate( manipulator, opts = options )
+      Request::Manipulators.process( manipulator, client, request, opts )
+    end
+
     # @return [Hash]  Persistent storage -- per {HTTP::Client} instance.
     def datastore
       client.datastore[self.class.shortname]
