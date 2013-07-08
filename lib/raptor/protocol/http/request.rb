@@ -37,6 +37,8 @@ class Request < Message
   #   Whether or not encode any of the given data for HTTP transmission.
   attr_accessor :raw
 
+  attr_accessor :callbacks
+
   # @private
   attr_accessor :root_redirect_id
 
@@ -65,7 +67,7 @@ class Request < Message
   def initialize( options = {} )
     super( options )
 
-    @callbacks = CALLBACK_TYPES.inject( {} ) { |h, type| h[type] = []; h }
+    clear_callbacks
 
     fail ArgumentError, "Missing ':url' option." if !@url
 
@@ -73,6 +75,12 @@ class Request < Message
     @http_method ||= :get
     @continue    = true  if @continue.nil?
     @raw         = false if @raw.nil?
+  end
+
+  # Clears all callbacks.
+  def clear_callbacks
+    @callbacks = CALLBACK_TYPES.inject( {} ) { |h, type| h[type] = []; h }
+    nil
   end
 
   # @return [Bool]
@@ -204,8 +212,13 @@ class Request < Message
 
   CALLBACK_TYPES.each do |type|
     define_method type, ->( &block ) do
-      fail ArgumentError, 'Missing block.' if !block
+      return @callbacks[type] if !block
       @callbacks[type] << block
+      self
+    end
+
+    define_method "#{type}=" do |callbacks|
+      @callbacks[type] = [callbacks].flatten.compact
       self
     end
   end

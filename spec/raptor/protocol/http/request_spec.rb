@@ -503,96 +503,147 @@ describe Raptor::Protocol::HTTP::Request do
     end
   end
 
-  describe '#on_complete' do
-    it 'adds a callback block to be passed the response' do
+  describe '#clear_callbacks' do
+    it 'clears all callbacks' do
       request = described_class.new( url: url )
 
-      passed_response = nil
-      request.on_complete { |res| passed_response = res }
+      request.on_complete { |res| res }
+      request.on_complete.size.should == 1
 
-      response = Raptor::Protocol::HTTP::Response.new( url: url )
-      request.handle_response( response )
+      request.on_success { |res| res }
+      request.on_success.size.should == 1
 
-      passed_response.should == response
+      request.on_failure { |res| res }
+      request.on_failure.size.should == 1
+
+      request.clear_callbacks
+
+      request.on_complete.should be_empty
+      request.on_success.should be_empty
+      request.on_failure.should be_empty
     end
+  end
 
-    it 'can add multiple callbacks' do
-      request = described_class.new( url: url )
+  describe '#on_complete' do
+    context 'when passed a block' do
+      it 'adds it as a callback to be passed the response' do
+        request = described_class.new( url: url )
 
-      passed_responses = []
+        passed_response = nil
+        request.on_complete { |res| passed_response = res }
 
-      2.times do
-        request.on_complete { |res| passed_responses << res }
+        response = Raptor::Protocol::HTTP::Response.new( url: url )
+        request.handle_response( response )
+
+        passed_response.should == response
       end
 
-      response = Raptor::Protocol::HTTP::Response.new( url: url )
-      request.handle_response( response )
+      it 'can add multiple callbacks' do
+        request = described_class.new( url: url )
 
-      passed_responses.size.should == 2
-      passed_responses.uniq.size.should == 1
-      passed_responses.uniq.first.should == response
+        passed_responses = []
+
+        2.times do
+          request.on_complete { |res| passed_responses << res }
+        end
+
+        response = Raptor::Protocol::HTTP::Response.new( url: url )
+        request.handle_response( response )
+
+        passed_responses.size.should == 2
+        passed_responses.uniq.size.should == 1
+        passed_responses.uniq.first.should == response
+      end
+    end
+
+    it 'returns all relevant callbacks' do
+      request = described_class.new( url: url )
+      2.times do
+        request.on_complete { |res| res }
+      end
+      request.on_complete.size.should == 2
     end
   end
 
   describe '#on_success' do
-    it 'adds a callback block to be called on a successful request' do
-      request = described_class.new( url: url )
+    context 'when passed a block' do
+      it 'adds it as a callback to be called on a successful request' do
+        request = described_class.new( url: url )
 
-      passed_response = nil
-      request.on_success { |res| passed_response = res }
+        passed_response = nil
+        request.on_success { |res| passed_response = res }
 
-      response = Raptor::Protocol::HTTP::Response.new( url: url, code: 200 )
-      request.handle_response( response )
+        response = Raptor::Protocol::HTTP::Response.new( url: url, code: 200 )
+        request.handle_response( response )
 
-      passed_response.should == response
-    end
-
-    it 'can add multiple callbacks' do
-      request = described_class.new( url: url )
-
-      passed_responses = []
-
-      2.times do
-        request.on_success { |res| passed_responses << res }
+        passed_response.should == response
       end
 
-      response = Raptor::Protocol::HTTP::Response.new( url: url, code: 200 )
-      request.handle_response( response )
+      it 'can add multiple callbacks' do
+        request = described_class.new( url: url )
 
-      passed_responses.size.should == 2
-      passed_responses.uniq.size.should == 1
-      passed_responses.uniq.first.should == response
+        passed_responses = []
+
+        2.times do
+          request.on_success { |res| passed_responses << res }
+        end
+
+        response = Raptor::Protocol::HTTP::Response.new( url: url, code: 200 )
+        request.handle_response( response )
+
+        passed_responses.size.should == 2
+        passed_responses.uniq.size.should == 1
+        passed_responses.uniq.first.should == response
+      end
+    end
+
+    it 'returns all relevant callbacks' do
+      request = described_class.new( url: url )
+      2.times do
+        request.on_success { |res| res }
+      end
+      request.on_success.size.should == 2
     end
   end
 
   describe '#on_failure' do
-    it 'adds a callback block to be called on a failed request' do
-      request = described_class.new( url: url )
+    context 'when passed a block' do
+      it 'adds a callback block to be called on a failed request' do
+        request = described_class.new( url: url )
 
-      passed_response = nil
-      request.on_failure { |res| passed_response = res }
+        passed_response = nil
+        request.on_failure { |res| passed_response = res }
 
-      response = Raptor::Protocol::HTTP::Response.new( url: url, code: 0 )
-      request.handle_response( response )
+        response = Raptor::Protocol::HTTP::Response.new( url: url, code: 0 )
+        request.handle_response( response )
 
-      passed_response.should == response
-    end
-
-    it 'can add multiple callbacks' do
-      request = described_class.new( url: url )
-
-      passed_responses = []
-
-      2.times do
-        request.on_failure { |res| passed_responses << res }
+        passed_response.should == response
       end
 
-      response = Raptor::Protocol::HTTP::Response.new( url: url, code: 0 )
-      request.handle_response( response )
+      it 'can add multiple callbacks' do
+        request = described_class.new( url: url )
 
-      passed_responses.size.should == 2
-      passed_responses.uniq.size.should == 1
-      passed_responses.uniq.first.should == response
+        passed_responses = []
+
+        2.times do
+          request.on_failure { |res| passed_responses << res }
+        end
+
+        response = Raptor::Protocol::HTTP::Response.new( url: url, code: 0 )
+        request.handle_response( response )
+
+        passed_responses.size.should == 2
+        passed_responses.uniq.size.should == 1
+        passed_responses.uniq.first.should == response
+      end
+    end
+
+    it 'returns all relevant callbacks' do
+      request = described_class.new( url: url )
+      2.times do
+        request.on_failure { |res| res }
+      end
+      request.on_failure.size.should == 2
     end
   end
 
