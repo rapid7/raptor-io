@@ -22,7 +22,7 @@ class Authenticator < Manipulator
     request.on_complete do |response|
       auth_type = type( response )
 
-      if response.code == 401 && [:basic, :digest].include?( auth_type )
+      if response.code == 401 && supported?( auth_type )
         retry_with_auth( auth_type, response )
       else
         request.callbacks = callbacks
@@ -45,6 +45,10 @@ class Authenticator < Manipulator
 
   def skip?
     !!options[:skip]
+  end
+
+  def supported?( type )
+    Request::Manipulators.exist? "authenticators/#{type}"
   end
 
   def remove_client_authenticators
