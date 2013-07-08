@@ -14,18 +14,36 @@ module Manipulators
 class Authenticator < Manipulators::Base
 
   def run
-    return if response.code != 401
-    return if ![:basic, :digest].include? type
+    return if skip?
 
-    delegate "authenticators/#{type}"
+    callbacks = request.callbacks.dup
+    request.clear_callbacks
+
+    request.on_complete do |response|
+      auth_type = type( response )
+
+      if response.code == 401 && [:basic, :digest].include?( auth_type )
+        retry_with_auth( auth_type, response )
+      else
+        request.callbacks = callbacks
+        request.handle_response response
+      end
+    end
   end
 
-  def type
-    @type ||= response.headers['www-authenticate'].split( ' ' ).first.downcase.to_sym
+  def retry_with_auth( type, response )
+    client.manipulators.merge!({
+      "authenticators/#{type}" => options.merge( response: response )
+    })
+    client.queue( request, self.class.shortname => { skip: true } )
   end
 
-  def response
-    options[:response]
+  def type( response )
+    response.headers['www-authenticate'].to_s.split( ' ' ).first.to_s.downcase.to_s.to_sym
+  end
+
+  def skip?
+    !!options[:skip]
   end
 
 end

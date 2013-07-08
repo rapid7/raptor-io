@@ -13,36 +13,27 @@ describe 'Raptor::Protocol::HTTP::Request::Manipulators::Authenticator' do
     Raptor::Protocol::HTTP::Request::Manipulators.reset
   end
 
-  let(:client) { Raptor::Protocol::HTTP::Client.new }
-
-  it 'provides Basic authentication' do
-    opts = {
-        mode: :sync, manipulators: {
+  let(:client) do
+    Raptor::Protocol::HTTP::Client.new(
+        manipulators: {
             'authenticator' =>
                 {
-                    response: client.get( @basic_url, mode: :sync ),
                     username: 'admin',
                     password: 'secret'
                 }
         }
-    }
+    )
+  end
 
+  it 'provides Basic authentication' do
+    opts = { mode: :sync }
     2.times do
       client.get( @basic_url, opts ).code.should == 200
     end
   end
 
   it 'provides Digest authentication' do
-    opts = {
-        mode: :sync, manipulators: {
-            'authenticator' =>
-                {
-                    response: client.get( @digest_url, mode: :sync ),
-                    username: 'admin',
-                    password: 'secret'
-                }
-        }
-    }
+    opts = { mode: :sync }
 
     2.times do
       client.get( @digest_url, opts ).code.should == 200
