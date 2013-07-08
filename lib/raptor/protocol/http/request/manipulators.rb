@@ -138,6 +138,10 @@ module Manipulators
       @manipulators = {}
     end
 
+    def exist?( name )
+      File.exist? name_to_path( name )
+    end
+
     def path_to_name( path )
       normalize_name path.gsub( library, '' ).gsub( /(.+)\.rb$/, '\1' )
     end

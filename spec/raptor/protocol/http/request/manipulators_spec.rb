@@ -65,6 +65,20 @@ describe Raptor::Protocol::HTTP::Request::Manipulators do
     end
   end
 
+  describe '.exist?' do
+    context 'when a manipulator exists' do
+      it 'returns true' do
+        described_class.exist?( 'niccolo_machiavelli' ).should be_true
+      end
+    end
+
+    context 'when a manipulator does not exist' do
+      it 'returns false' do
+        described_class.exist?( 'stuffer_stufferson' ).should be_false
+      end
+    end
+  end
+
   describe '.available' do
     it 'returns the names of all available manipulators' do
       described_class.available.sort.should eq [ 'niccolo_machiavelli', 'manifoolators/fooer' ].sort
