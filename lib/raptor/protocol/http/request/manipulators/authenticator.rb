@@ -1,5 +1,3 @@
-require 'digest'
-
 module Raptor
 module Protocol::HTTP
 class Request
