@@ -122,7 +122,7 @@ describe Raptor::Protocol::HTTP::Request::Manipulators do
 
       described_class.unload_all
       described_class.loaded.should be_empty
-      described_class.constants.should == [:Base]
+      described_class.constants.should be_empty
     end
   end
 

@@ -11,7 +11,7 @@ module Manipulators
 #
 # @author Tasos Laskos
 #
-class Authenticator < Manipulators::Base
+class Authenticator < Manipulator
 
   def run
     return if skip?
@@ -32,6 +32,7 @@ class Authenticator < Manipulators::Base
   end
 
   def retry_with_auth( type, response )
+    remove_client_authenticators
     client.manipulators.merge!({
       "authenticators/#{type}" => options.merge( response: response )
     })
@@ -44,6 +45,10 @@ class Authenticator < Manipulators::Base
 
   def skip?
     !!options[:skip]
+  end
+
+  def remove_client_authenticators
+    client.manipulators.reject!{ |k, _| k.start_with? 'authenticator' }
   end
 
 end

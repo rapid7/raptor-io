@@ -172,7 +172,6 @@ class Client
   # Runs the {#queue queued} {Request}.
   def run
     while @queue.any?
-
       # Get us some seeds.
       consume_requests
 
@@ -472,6 +471,13 @@ class Client
 
     @sockets[:done].delete( socket )
     socket
+  end
+
+  def self.reset
+    connection_pool.each do |_, q|
+      q.pop.close while !q.empty?
+    end
+    nil
   end
 
   def self.connection_pool

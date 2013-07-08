@@ -10,7 +10,7 @@ module Authenticators
 #
 # @author Tasos Laskos
 #
-class Basic < Manipulators::Base
+class Basic < Manipulator
 
   def run
     request.headers['Authorization'] =

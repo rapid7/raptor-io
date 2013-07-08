@@ -7,7 +7,7 @@ class Request
 #
 # @author Tasos Laskos <tasos_laskos@rapid7.com>
 #
-class Manipulators::NiccoloMachiavelli < Manipulators::Base
+class Manipulators::NiccoloMachiavelli < Manipulator
 
   def run
     [client, request, options, datastore]
