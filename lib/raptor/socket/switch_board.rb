@@ -1,6 +1,8 @@
 # -*- coding: binary -*-
 
 require 'thread'
+require 'ipaddr'
+require 'raptor/ruby/ipaddr'
 
 ###
 #
@@ -20,7 +22,7 @@ class Raptor::Socket::SwitchBoard
 
   include Enumerable
 
-  DEFAULT_ROUTE = Route.new("0.0.0.0", "0.0.0.0", Raptor::Socket::Comm::Local)
+  DEFAULT_ROUTE = Route.new("0.0.0.0", "0.0.0.0", Raptor::Socket::Comm::Local.new)
 
   attr_reader :routes
 
@@ -29,14 +31,20 @@ class Raptor::Socket::SwitchBoard
     @mutex  = Mutex.new
   end
 
-  #
   # Adds a route for a given subnet and netmask destined through a given comm
   # instance.
   #
   # @param (see Raptor::Socket::SwitchBoard::Route#new)
-  # @return [Boolean] Whether the route already {#route_exists? existed}.
+  # @return [Boolean] Whether the route was added. This may fail if a
+  #   route already {#route_exists? existed} or if the given `comm` does
+  #   not support the address family of the `subnet` (e.g., an IPv6
+  #   address for a comm that does not support IPv6)
   def add_route(subnet, netmask, comm)
     rv = true
+    subnet = IPAddr.parse(subnet)
+    if subnet.ipv6? and comm.respond_to?(:support_ipv6?)
+      return false unless comm.support_ipv6?
+    end
 
     @mutex.synchronize {
       # If the route already exists, return false to the caller.
@@ -50,16 +58,17 @@ class Raptor::Socket::SwitchBoard
     rv
   end
 
-  #
   # Finds the best possible comm for the supplied target address.
   #
-  # @param addr [String,IPAddr]
+  # @param addr [String,IPAddr] The address to which we want to talk
   # @return [Comm]
   def best_comm(addr)
-    addr = addr.kind_of?(IPAddr) ? addr : IPAddr.new(addr)
+    addr = IPAddr.parse(addr)
 
     addr_nbo = addr.to_i
 
+    # Find the most specific route that this address fits in. If none,
+    # use the default, i.e., local.
     best_route = reduce(DEFAULT_ROUTE) { |best, route|
       if route.subnet.include?(addr) && route.netmask >= best.netmask
         route
@@ -71,7 +80,6 @@ class Raptor::Socket::SwitchBoard
     best_route.comm
   end
 
-  #
   # Enumerates each entry in the routing table.
   #
   def each(&block)
@@ -80,8 +88,7 @@ class Raptor::Socket::SwitchBoard
 
   alias each_route each
 
-  #
-  # Flushes all established routes.
+  # Clears all established routes.
   #
   # @return [void]
   def flush_routes
@@ -145,10 +152,6 @@ class Raptor::Socket::SwitchBoard
 
     false
   end
-
-protected
-
-  attr_writer :routes # :nodoc:
 
 end
 

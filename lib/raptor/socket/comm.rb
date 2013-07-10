@@ -1,105 +1,90 @@
 # -*- coding: binary -*-
 require 'raptor/socket'
+require 'ipaddr'
+require 'raptor/ruby/ipaddr'
 
 ###
 #
-# This mixin provides the basic interface that a derived class must implement
-# in order to be a compatible comm class.  The base comm class also supports
-# registering event handlers that can be notified when sockets are being
-# created and have been created.  This allows code to extend sockets on
-# creation from the single point that they are created.
+# Provides the basic interface that a derived class must implement
+# in order to be a routable socket creator.
+#
+# See {Raptor::Socket::Comm::Local} for an implementation using sockets
+# created with standard Ruby Socket classes.
+#
+# Subclasses must implement the following methods:
+#
+#   * `create_tcp`
+#   * `create_tcp_server`
+#   * `create_udp`
+#   * `create_udp_server`
+#   * `support_ipv6?`
 #
 ###
-module Raptor::Socket::Comm
+class Raptor::Socket::Comm
   require 'raptor/socket/comm/local'
 
-  ###
+  # Creates a socket on this Comm based on the supplied uniform
+  # parameters.
   #
-  # This mixin provides stubs for event notification handlers that can be
-  # registered with a Comm factory to be called when various events occur,
-  # such as socket instantiation.
-  #
-  ###
-  module Events
+  # @option opts :switch_board [SwitchBoard]
+  # @option opts :port [Fixnum] Optional based on proto
+  # @return [Raptor::Socket]
+  def create(opts)
+    opts = opts.dup
+    opts[:peer_host] = IPAddr.parse(opts[:peer_host])
 
-    #
-    # This callback is notified when a socket is being created and is passed
-    # the parameters that will be used to create it.
-    #
-    def on_before_socket_create(comm, param)
-    end
+    sock = case opts.delete(:proto)
+           when :tcp then opts[:server] ? create_tcp_server(opts) : create_tcp(opts)
+           when :udp then opts[:server] ? create_udp_server(opts) : create_udp(opts)
+           end
 
-    #
-    # This callback is notified when a new socket is created and the
-    # parameters that were used to create it.  This provides the callback
-    # with a chance to extend or otherwise modify the socket before it's
-    # passed on to the actual requestor.
-    #
-    def on_socket_created(comm, sock, param)
-    end
-
+    sock
   end
 
+  # Connect to a host over TCP.
   #
-  # Creates a compatible socket based on the supplied uniform parameters.
+  # @abstract
   #
-  def self.create(param)
+  # @option opts :peer_host [String,IPAddr]
+  # @option opts :peer_port [Fixnum]
+  # @option opts :local_host [String,IPAddr]
+  # @option opts :local_port [Fixnum]
+  def create_tcp(opts)
     raise NotImplementedError
   end
 
+  # Create a UDP socket bound to the given :peer_host
   #
-  # Registers an event handler that implements the Rex::Socket::Comm::Event
-  # interface in at least some fashion.  Event handlers are notified when
-  # sockets are created through the Comm instance that they register against.
+  # @abstract
   #
-  def register_event_handler(handler)
-    if (handlers == nil)
-      self.handlers        = []
-    end
-
-    self.handlers << handler
+  # @option opts :peer_host [String,IPAddr]
+  # @option opts :peer_port [Fixnum]
+  # @option opts :local_host [String,IPAddr]
+  # @option opts :local_port [Fixnum]
+  def create_udp(opts)
+    raise NotImplementedError
   end
 
+  # Create a TCP server listening on :local_port
   #
-  # Deregisters a previously registered event handler.
+  # @abstract
   #
-  def deregister_event_handler(handler)
-    if (handlers)
-      handlers.delete(handler)
-    end
+  # @option opts :local_host [String,IPAddr]
+  # @option opts :local_port [Fixnum]
+  def create_tcp_server(opts)
+    raise NotImplementedError
   end
 
+  # Create a UDP server listening on :local_port
   #
-  # Enumerates each registered event handler so that they can be notified of
-  # an event.
+  # @abstract
   #
-  def each_event_handler(&block)
-    if (handlers)
-      handlers.each(&block)
-    end
+  # @option opts :local_host [String,IPAddr]
+  # @option opts :local_port [Fixnum]
+  def create_udp_server(opts)
+    raise NotImplementedError
   end
 
-  #
-  # Notifies handlers of the before socket create event.
-  #
-  def notify_before_socket_create(comm, param)
-    each_event_handler() { |handler|
-      handler.on_before_socket_create(comm, param)
-    }
-  end
-
-  #
-  # Notifies handlers of the socket created event.
-  #
-  def notify_socket_created(comm, sock, param)
-    each_event_handler() { |handler|
-      handler.on_socket_created(comm, sock, param)
-    }
-  end
-
-  protected
-
-  attr_accessor :handlers # :nodoc:
 
 end
 

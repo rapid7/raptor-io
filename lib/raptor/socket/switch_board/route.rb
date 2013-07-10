@@ -1,4 +1,5 @@
 require 'ipaddr'
+require 'raptor/ruby/ipaddr'
 
 #
 # A logical switch board route.
@@ -13,10 +14,9 @@ class Raptor::Socket::SwitchBoard::Route
   # @param comm [Comm] The endpoint where sockets for this route
   #   should be created.
   def initialize(subnet, netmask, comm)
-    self.netmask     = netmask.kind_of?(IPAddr) ? netmask : IPAddr.new(netmask)
-    self.subnet      = (subnet.kind_of?(IPAddr) ? subnet  : IPAddr.new(subnet)).mask netmask.to_s
-
-    self.comm        = comm
+    self.netmask = IPAddr.parse(netmask)
+    self.subnet  = IPAddr.parse(subnet).mask netmask.to_s
+    self.comm    = comm
   end
 
   #

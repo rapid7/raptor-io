@@ -1,6 +1,7 @@
 require 'rubygems'
 require 'bundler/setup'
 
+# Smaller, more agile, and it can open doors.
 module Raptor
 end
 
