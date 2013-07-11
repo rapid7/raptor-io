@@ -21,9 +21,6 @@ class Client
   # @return [String]  User-agent string to use.
   attr_accessor :user_agent
 
-  # @return [Integer] Maximum redirection responses to follow.
-  attr_accessor :max_redirections
-
   # @return [Hash{Symbol=>Hash}]
   #   Request manipulators, and their options, to be run against each
   #   {#queue queued} request.
@@ -35,7 +32,6 @@ class Client
   DEFAULT_OPTIONS = {
       concurrency:      20,
       user_agent:       "Raptor::HTTP/#{Raptor::VERSION}",
-      max_redirections: 5, # RFC says 5 max.
       timeout:          10,
       manipulators:     {}
   }.freeze
@@ -47,8 +43,6 @@ class Client
   #   User-agent string to include in the requests.
   # @option options [Integer, Float] :timeout (10)
   #   Timeout in seconds.
-  # @option options [Integer] :max_redirections (5)
-  #   Maximum redirection responses to follow.
   # @option options [Hash{Symbol=>Hash}] :manipulators
   #   Request manipulators and their options.
   #
@@ -287,7 +281,6 @@ class Client
   # @return [Response]  HTTP response.
   def sync_request( request, manipulators = {} )
     client = self.class.new(
-        max_redirections: max_redirections,
         user_agent:       user_agent,
         timeout:          timeout,
         manipulators:     @manipulators
@@ -551,29 +544,6 @@ class Client
       connection_pool[request.connection_id] << socket
     else
       socket.close
-    end
-
-    @redirections ||= Hash.new { |h, k| h[k] = [] }
-
-    root_redirect_id = request.root_redirect_id ?
-        request.root_redirect_id : request.object_id
-
-    if response.redirect?
-      if @redirections[root_redirect_id].size < max_redirections
-        @redirections[root_redirect_id] << response
-
-        crequest = request.dup
-        crequest.root_redirect_id = root_redirect_id
-
-        # RFC says the Location URI must be a full absolute URL however not
-        # all webapps respect that.
-        crequest.url = crequest.parsed_url.merge( response.headers['Location'] ).to_s
-
-        queue( crequest )
-        return
-      else
-        response.redirections = @redirections.delete( root_redirect_id )
-      end
     end
 
     if response.code == 100 && request.continue?

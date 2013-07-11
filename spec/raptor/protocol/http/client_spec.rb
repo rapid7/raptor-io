@@ -69,23 +69,6 @@ describe Raptor::Protocol::HTTP::Client do
       end
     end
 
-    describe :max_redirects do
-      it 'sets the max_redirects option' do
-        described_class.new( max_redirections: 10 ).max_redirections.should == 10
-      end
-
-      it 'sets the limit on how many stacked redirections to follow' do
-        client = described_class.new( max_redirections: 6 )
-        response = client.get( "#{@url}/redirect_10_times", mode: :sync )
-        response.redirections.size.should == 6
-        response.headers['Location'].should == "#{@url}/redirect_3_times"
-      end
-
-      it 'defaults to 5' do
-        described_class.new.max_redirections.should == 5
-      end
-    end
-
     describe :concurrency do
       it 'sets the request concurrency option' do
         described_class.new( concurrency: 10 ).concurrency.should == 10

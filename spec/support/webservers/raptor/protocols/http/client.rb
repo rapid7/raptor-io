@@ -98,13 +98,3 @@ get '/long-sleep' do
   sleep 5
   'Blah...'
 end
-
-get /\/redirect_(\d+)_times/ do
-  num = params[:captures].first.to_i - 1
-
-  if num == 0
-    'End of the line...'
-  else
-    redirect "/redirect_#{num}_times"
-  end
-end
