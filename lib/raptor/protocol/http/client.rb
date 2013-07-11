@@ -38,7 +38,7 @@ class Client
       max_redirections: 5, # RFC says 5 max.
       timeout:          10,
       manipulators:     {}
-  }
+  }.freeze
 
   # @param  [Hash]  options Request options.
   # @option options [Integer] :concurrency (20)
@@ -56,13 +56,11 @@ class Client
       begin
         send( "#{k}=", v )
       rescue NoMethodError
-        instance_variable_set( "@#{k}".to_sym, v )
+        instance_variable_set( "@#{k}".to_sym, v.dup )
       end
     end
 
-    if [@username.to_s, @password.to_s].reject( &:empty? ).size == 1
-      fail ArgumentError, 'Both \':username\' and \':password\' options are required.'
-    end
+    validate_manipulators!( manipulators )
 
     # Holds Request objects.
     @queue = []
@@ -72,6 +70,19 @@ class Client
 
     reset_sockets
     reset_pending_responses
+  end
+
+  #
+  # Updates the client {#manipulators} and perform and sanity check on their
+  # options.
+  #
+  # @param  [Hash{String=>Hash}]  manipulators
+  #   Manipulators and their options.
+  #
+  # #raise  Raptor::Protocol::HTTP::Request::Manipulator::Error::InvalidOptions
+  def update_manipulators( manipulators )
+    validate_manipulators!( manipulators )
+    @manipulators.merge!( manipulators )
   end
 
   #
@@ -160,6 +171,8 @@ class Client
   # @return [Request] `request`
   #
   def queue( request, manipulators = {} )
+    validate_manipulators!( manipulators )
+
     @manipulators.merge( manipulators ).each do |manipulator, options|
       Request::Manipulators.process( manipulator, self, request, options )
     end
@@ -537,7 +550,6 @@ class Client
       socket.close
     end
 
-    # Fix this, pass block instead.
     @redirections ||= Hash.new { |h, k| h[k] = [] }
 
     root_redirect_id = request.root_redirect_id ?
@@ -642,6 +654,14 @@ class Client
 
   def status_without_body?( status_code )
     status_code.to_s.start_with?( '1' ) || [204, 304].include?( status_code.to_i )
+  end
+
+  def validate_manipulators!( manipulators )
+    Request::Manipulators.validate_batch_options!( manipulators, self )
+  end
+
+  def validate_manipulators( manipulators )
+    Request::Manipulators.validate_batch_options( manipulators, self )
   end
 
 end

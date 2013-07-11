@@ -17,16 +17,53 @@ module Manipulators
     # @return [String]  Directory of the manipulators' repository.
     attr_reader :library
 
-    # @param  [Symbol]  manipulator
+    # @param  [String]  manipulator
     #   Manipulator to run -- will be loaded if needed.
     # @param  [HTTP::Client]  client
-    #   HTTP client which will handle the request.
+    #   Applicable client.
     # @param  [HTTP::Request]  request
     #   Request to process.
     # @param  [Hash]  options
     #   Manipulator options.
     def process( manipulator, client, request, options = {} )
       load( manipulator ).new( client, request, options ).run
+    end
+
+    # Performs batch validation of manipulator options.
+    #
+    # @param  [Hash{String=>Hash}]  manipulators
+    #   Manipulators for keys and their options as values.
+    # @param  [HTTP::Client]  client
+    #   Applicable client.
+    #
+    # @return [Hash{String=>Hash}]
+    #   Manipulators for keys and error hashes as values.
+    #
+    def validate_batch_options( manipulators, client )
+      errors = {}
+      manipulators.each do |manipulator, options|
+        errors[manipulator] =
+            validate_options( manipulator, options, client )
+      end
+      errors.reject { |_, errs| errs.empty? }
+    end
+
+    def validate_batch_options!( manipulators, client )
+      errors = validate_batch_options( manipulators, client )
+      if errors.any?
+        fail Request::Manipulator::Error::InvalidOptions, errors.to_s
+      end
+      nil
+    end
+
+    # @param  [String]  manipulator
+    # @param  [Hash]  options Manipulator options.
+    # @param  [HTTP::Client]  client  Applicable client.
+    #
+    # @return [Hash{Symbol=>Array<String>}]
+    #   Option names keys for and error messages for values.
+    def validate_options( manipulator, options, client )
+      load( manipulator ).validate_options!( options, client )
     end
 
     # @param  [String]  directory Directory including manipulators.

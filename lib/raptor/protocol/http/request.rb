@@ -7,6 +7,17 @@ module Protocol::HTTP
 # @author Tasos Laskos <tasos_laskos@rapid7.com>
 #
 class Request < Message
+
+  #
+  # {HTTP::Request} error namespace.
+  #
+  # All {HTTP::Request} errors inherit from and live under it.
+  #
+  # @author Tasos "Zapotek" Laskos
+  #
+  class Error < Protocol::HTTP::Error
+  end
+
   require_relative 'request/manipulators'
 
   # Acceptable response callback types.

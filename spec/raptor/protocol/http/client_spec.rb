@@ -24,6 +24,16 @@ describe Raptor::Protocol::HTTP::Client do
         described_class.new.manipulators.should == {}
       end
 
+      context 'when the options are invalid' do
+        it 'raises Raptor::Protocol::HTTP::Request::Manipulator::Error::InvalidOptions' do
+          expect do
+            described_class.new(
+                manipulators: {options_validator: { mandatory_string: 12 }}
+            )
+          end.to raise_error Raptor::Protocol::HTTP::Request::Manipulator::Error::InvalidOptions
+        end
+      end
+
       it 'sets the manipulators option' do
         manipulators = { 'manifoolators/fooer' => { times: 15 } }
         described_class.new( manipulators: manipulators ).manipulators.should == manipulators
@@ -137,6 +147,22 @@ describe Raptor::Protocol::HTTP::Client do
     end
   end
 
+  describe '#update_manipulators' do
+    context 'when the options are invalid' do
+      it 'raises Raptor::Protocol::HTTP::Request::Manipulator::Error::InvalidOptions' do
+        expect do
+          client.update_manipulators( options_validator: { mandatory_string: 12 } )
+        end.to raise_error Raptor::Protocol::HTTP::Request::Manipulator::Error::InvalidOptions
+      end
+    end
+
+    it 'updates the client-wide manipulators' do
+      manipulators = { 'manifoolators/fooer' => { times: 16 } }
+      client.update_manipulators( manipulators )
+      client.manipulators.should == manipulators
+    end
+  end
+
   describe '#datastore' do
     it 'returns a hash' do
       client.datastore.should == {}
@@ -203,11 +229,21 @@ describe Raptor::Protocol::HTTP::Client do
 
     describe 'option' do
       describe :manipulators do
+        context 'when the options are invalid' do
+          it 'raises Raptor::Protocol::HTTP::Request::Manipulator::Error::InvalidOptions' do
+            expect do
+              client.get( "#{@url}/",
+                          manipulators: { options_validator: { mandatory_string: 12 } }
+              )
+            end.to raise_error Raptor::Protocol::HTTP::Request::Manipulator::Error::InvalidOptions
+          end
+        end
+
         it 'loads and configures the given manipulators' do
           request = client.get( "#{@url}/",
-                      manipulators:  {
-                          'manifoolators/fooer' => { times: 10 }
-                      }
+                                manipulators:  {
+                                    'manifoolators/fooer' => { times: 10 }
+                                }
           )
           request.url.should == "#{@url}/" + ('foo' * 10)
         end
@@ -415,6 +451,15 @@ describe Raptor::Protocol::HTTP::Client do
     end
 
     describe :manipulators do
+      context 'when the options are invalid' do
+        it 'raises Raptor::Protocol::HTTP::Request::Manipulator::Error::InvalidOptions' do
+          expect do
+            request = Raptor::Protocol::HTTP::Request.new( url: "#{@url}/" )
+            client.queue( request, options_validator: { mandatory_string: 12 } )
+          end.to raise_error Raptor::Protocol::HTTP::Request::Manipulator::Error::InvalidOptions
+        end
+      end
+
       it 'loads and configures the given manipulators' do
         request = Raptor::Protocol::HTTP::Request.new( url: "#{@url}/" )
         client.queue( request, 'manifoolators/fooer' => { times: 10 } )

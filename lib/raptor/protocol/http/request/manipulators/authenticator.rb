@@ -11,6 +11,17 @@ module Manipulators
 #
 class Authenticator < Manipulator
 
+  validate_options do |options, _|
+    errors = {}
+    next errors if options[:skip]
+
+    [:username, :password].each do |option|
+      errors[option] = [ "Can't be blank." ] if options[option].to_s.empty?
+    end
+
+    errors
+  end
+
   def run
     return if skip?
 

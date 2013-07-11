@@ -43,6 +43,52 @@ describe Raptor::Protocol::HTTP::Request::Manipulators do
     end
   end
 
+  describe '.validate_options' do
+    context 'when the options are invalid' do
+      it 'returns a Hash with errors' do
+        described_class.validate_options(
+            :options_validator,
+            { mandatory_string: 12 },
+            Raptor::Protocol::HTTP::Client.new
+        ).should eq({
+            mandatory_string: 'Must be string.'
+        })
+      end
+    end
+
+    context 'when the options are valid' do
+      it 'returns an empty Hash' do
+        described_class.validate_options(
+            :options_validator,
+            { mandatory_string: 'Stuff' },
+            Raptor::Protocol::HTTP::Client.new
+        ).should be_empty
+      end
+    end
+  end
+
+  describe '.validate_batch_options' do
+    context 'when the options are invalid' do
+      it 'returns a Hash with errors' do
+        described_class.validate_batch_options(
+            { options_validator: { mandatory_string: 12 } },
+            Raptor::Protocol::HTTP::Client.new
+        ).should eq({
+          options_validator: { mandatory_string: 'Must be string.' }
+        })
+      end
+    end
+
+    context 'when the options are valid' do
+      it 'returns an empty Hash' do
+        described_class.validate_batch_options(
+            { options_validator: { mandatory_string: 'Stuff' } },
+            Raptor::Protocol::HTTP::Client.new
+        ).should be_empty
+      end
+    end
+  end
+
   describe '.library' do
     it 'returns the directory of the manipulators\' library' do
       File.directory?( described_class.library ).should be_true
@@ -81,7 +127,7 @@ describe Raptor::Protocol::HTTP::Request::Manipulators do
 
   describe '.available' do
     it 'returns the names of all available manipulators' do
-      described_class.available.sort.should eq [ 'niccolo_machiavelli', 'manifoolators/fooer' ].sort
+      described_class.available.sort.should eq [ 'niccolo_machiavelli', 'manifoolators/fooer', 'options_validator' ].sort
     end
   end
 
@@ -112,7 +158,8 @@ describe Raptor::Protocol::HTTP::Request::Manipulators do
     it 'returns the loaded manipulators' do
       described_class.load_all.should eq ({
         'manifoolators/fooer' => Raptor::Protocol::HTTP::Request::Manipulators::Manifoolators::Fooer,
-        'niccolo_machiavelli' => Raptor::Protocol::HTTP::Request::Manipulators::NiccoloMachiavelli
+        'niccolo_machiavelli' => Raptor::Protocol::HTTP::Request::Manipulators::NiccoloMachiavelli,
+        'options_validator' => Raptor::Protocol::HTTP::Request::Manipulators::OptionsValidator
       })
     end
   end
