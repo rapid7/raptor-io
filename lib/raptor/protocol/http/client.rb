@@ -51,6 +51,9 @@ class Client
   #   Maximum redirection responses to follow.
   # @option options [Hash{Symbol=>Hash}] :manipulators
   #   Request manipulators and their options.
+  #
+  # @raise  Raptor::Protocol::HTTP::Request::Manipulator::Error::InvalidOptions
+  #   On invalid manipulator options.
   def initialize( options = {} )
     DEFAULT_OPTIONS.merge( options ).each do |k, v|
       begin
