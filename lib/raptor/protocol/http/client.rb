@@ -79,7 +79,7 @@ class Client
   # @param  [Hash{String=>Hash}]  manipulators
   #   Manipulators and their options.
   #
-  # #raise  Raptor::Protocol::HTTP::Request::Manipulator::Error::InvalidOptions
+  # @raise  Raptor::Protocol::HTTP::Request::Manipulator::Error::InvalidOptions
   def update_manipulators( manipulators )
     validate_manipulators!( manipulators )
     @manipulators.merge!( manipulators )
