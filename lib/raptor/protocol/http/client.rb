@@ -174,6 +174,7 @@ class Client
       Request::Manipulators.process( manipulator, self, request, options )
     end
 
+    request.timeout ||= timeout
     @queue << request
     request
   end

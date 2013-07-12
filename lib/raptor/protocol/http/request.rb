@@ -36,7 +36,7 @@ class Request < Message
   attr_reader :parameters
 
   # @return [Integer, Float] Timeout in seconds.
-  attr_reader :timeout
+  attr_accessor :timeout
 
   # @note Defaults to `true`.
   # @return [Bool]
