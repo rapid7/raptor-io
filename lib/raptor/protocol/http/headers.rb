@@ -60,7 +60,7 @@ class Headers < Hash
   def cookies
     return [] if set_cookie.empty?
 
-    set_cookie.map do |set_cookie_string|
+    set_cookie.map { |set_cookie_string|
       WEBrick::Cookie.parse_set_cookies( set_cookie_string ).flatten.uniq.map do |cookie|
         cookie_hash = {}
         cookie.instance_variables.each do |var|
@@ -72,12 +72,12 @@ class Headers < Hash
 
         cookie_hash
       end
-    end.flatten.compact
+    }.flatten.compact
   end
 
   # @return [String]  HTTP headers formatted for transmission.
   def to_s
-    map do |k, v|
+    map { |k, v|
       if v.is_a? Array
         v.map do |cv|
           "#{k}: #{cv}"
@@ -85,7 +85,7 @@ class Headers < Hash
       else
         "#{k}: #{v}"
       end
-    end.flatten.join( CRLF )
+    }.flatten.join( CRLF )
   end
 
   # @param  [String]  headers_string
