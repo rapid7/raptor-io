@@ -170,11 +170,12 @@ class Client
   def queue( request, manipulators = {} )
     validate_manipulators!( manipulators )
 
+    request.timeout ||= timeout
+
     @manipulators.merge( manipulators ).each do |manipulator, options|
       Request::Manipulators.process( manipulator, self, request, options )
     end
 
-    request.timeout ||= timeout
     @queue << request
     request
   end
