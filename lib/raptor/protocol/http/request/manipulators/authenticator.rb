@@ -23,11 +23,16 @@ class Authenticator < Manipulator
   end
 
   def run
+    datastore[:tries] ||= 0
     return if skip?
 
     callbacks = request.callbacks.dup
     request.clear_callbacks
 
+    # We need to block until authentication is complete, that's why we requeue
+    # and run.
+
+    requeue
     request.on_complete do |response|
       auth_type = type( response )
 
@@ -38,13 +43,20 @@ class Authenticator < Manipulator
         request.handle_response response
       end
     end
+    client.run
   end
 
   def retry_with_auth( type, response )
+    datastore[:tries] += 1
+
     remove_client_authenticators
     client.manipulators.merge!({
       "authenticators/#{type}" => options.merge( response: response )
     })
+    requeue
+  end
+
+  def requeue
     client.queue( request, self.class.shortname => { skip: true } )
   end
 
