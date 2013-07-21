@@ -8,6 +8,18 @@ module Protocol::HTTP
 #
 class Request < Message
 
+  #
+  # {HTTP::Request} error namespace.
+  #
+  # All {HTTP::Request} errors inherit from and live under it.
+  #
+  # @author Tasos "Zapotek" Laskos
+  #
+  class Error < Protocol::HTTP::Error
+  end
+
+  require_relative 'request/manipulators'
+
   # Acceptable response callback types.
   CALLBACK_TYPES = [:on_complete, :on_failure, :on_success]
 
@@ -23,8 +35,23 @@ class Request < Message
   # @return [Hash]  Request parameters.
   attr_reader :parameters
 
-  # @return [Integer, Float] timeout Timeout in seconds.
-  attr_reader :timeout
+  # @return [Integer, Float] Timeout in seconds.
+  attr_accessor :timeout
+
+  # @note Defaults to `true`.
+  # @return [Bool]
+  #   Whether or not to automatically continue on responses with status 100.
+  attr_reader :continue
+
+  # @note Defaults to `false`.
+  # @return [Bool]
+  #   Whether or not encode any of the given data for HTTP transmission.
+  attr_accessor :raw
+
+  attr_accessor :callbacks
+
+  # @private
+  attr_accessor :root_redirect_id
 
   #
   # @note This class' options are in addition to {Message#initialize}.
@@ -35,6 +62,14 @@ class Request < Message
   # @option options [Hash] :parameters ({})
   #   Parameters to send. If performing a GET request and the URL has parameters
   #   of its own they will be merged and overwritten.
+  # @option options [Integer]  :timeout
+  #   Max time to wait for a response in seconds.
+  # @option options [Bool]  :continue
+  #   Whether or not to automatically continue on responses with status 100.
+  #   Only applicable when the 'Expect' header has been set to '100-continue'.
+  # @option options [Bool]  :raw (false)
+  #   `true` to not encode any of the given data for HTTP transmission, `false`
+  #   otherwise.
   #
   # @see Message#initialize
   # @see #parameters=
@@ -43,18 +78,43 @@ class Request < Message
   def initialize( options = {} )
     super( options )
 
-    @callbacks = CALLBACK_TYPES.inject( {} ) { |h, type| h[type] = []; h }
+    clear_callbacks
 
     fail ArgumentError, "Missing ':url' option." if !@url
 
-    @parameters   ||= {}
-    @http_method  ||= :get
+    @parameters  ||= {}
+    @http_method ||= :get
+    @continue    = true  if @continue.nil?
+    @raw         = false if @raw.nil?
+  end
+
+  # Clears all callbacks.
+  def clear_callbacks
+    @callbacks = CALLBACK_TYPES.inject( {} ) { |h, type| h[type] = []; h }
+    nil
+  end
+
+  # @return [Bool]
+  #   Whether or not encode any of the given data for HTTP transmission.
+  def raw?
+    !!@raw
+  end
+
+  # @return [Bool]
+  #   Whether or not to automatically continue on responses with status 100.
+  def continue?
+    !!@continue
   end
 
   def url=( uri )
     @url = uri
     @parsed_url= URI(@url)
     @url
+  end
+
+  # @return [Integer] Identification for the remote host:port.
+  def connection_id
+    "#{parsed_url.host}:#{parsed_url.port}".hash
   end
 
   #
@@ -82,7 +142,7 @@ class Request < Message
 
     qparams = query.split('&').inject({}) do |h, pair|
       k, v = pair.split('=', 2)
-      h.merge( CGI.unescape(k) => CGI.unescape(v) )
+      h.merge( decode_if_not_raw(k) => decode_if_not_raw(v) )
     end
     return qparams if http_method != :get
 
@@ -93,7 +153,7 @@ class Request < Message
   def effective_url
     cparsed_url = parsed_url.dup
     cparsed_url.query = query_parameters.map do |k, v|
-      "#{CGI.escape(k)}=#{CGI.escape(v)}"
+      "#{encode_if_not_raw(k)}=#{encode_if_not_raw(v)}"
     end.join('&') if query_parameters.any?
 
     cparsed_url.normalize
@@ -101,12 +161,13 @@ class Request < Message
 
   # @return [String]  Response body to use.
   def effective_body
-    return CGI.escape(body.to_s) if http_method != :post
+    return '' if headers['Expect'] == '100-continue'
+    return encode_if_not_raw(body.to_s) if http_method != :post
 
     body_params = if !body.to_s.empty?
                     body.split('&').inject({}) do |h, pair|
                       k, v = pair.split('=', 2)
-                      h.merge( CGI.unescape(k) => CGI.unescape(v) )
+                      h.merge( decode_if_not_raw(k) => decode_if_not_raw(v) )
                     end
                   else
                     {}
@@ -115,7 +176,7 @@ class Request < Message
     return '' if body_params.empty? && parameters.empty?
 
     body_params.merge( parameters ).map do |k, v|
-      "#{CGI.escape(k)}=#{CGI.escape(v)}"
+      "#{encode_if_not_raw(k)}=#{encode_if_not_raw(v)}"
     end.join('&')
   end
 
@@ -132,31 +193,43 @@ class Request < Message
     @http_method = http_verb.to_s.downcase.to_sym
   end
 
+  # @return [Bool] `true` if the request if idempotent, `false` otherwise.
+  def idempotent?
+    http_method != :post
+  end
+
+  def resource
+    req_resource  = "#{effective_url.path}"
+    req_resource << "?#{effective_url.query}" if effective_url.query
+    req_resource
+  end
+
   # @return [String]
   #   String representation of the request, ready for HTTP transmission.
   def to_s
-    req_url       = effective_url
-    req_resource  = "#{req_url.path}"
-    req_resource << "?#{req_url.query}" if req_url.query
+    final_body = effective_body
 
-    body = effective_body
+    computed_headers = Headers.new( 'Host' => "#{effective_url.host}:#{effective_url.port}" )
+    computed_headers['Content-Length'] = final_body.size.to_s if !final_body.to_s.empty?
 
-    computed_headers = Headers.new( 'Host' => "#{req_url.host}:#{req_url.port}" )
-    computed_headers['Content-Length'] = body.size.to_s if !body.to_s.empty?
-
-    request = "#{http_method.to_s.upcase} #{req_resource} HTTP/#{version}\r\n"
+    request = "#{http_method.to_s.upcase} #{resource} HTTP/#{version}#{CRLF}"
     request << computed_headers.merge(headers).to_s
-    request << "\r\n\r\n"
+    request << HEADER_SEPARATOR
 
-    return request if body.to_s.empty?
+    return request if final_body.to_s.empty?
 
-    request << "#{body}\r\n\r\n"
+    request << final_body.to_s
   end
 
   CALLBACK_TYPES.each do |type|
     define_method type, ->( &block ) do
-      fail ArgumentError, 'Missing block.' if !block
+      return @callbacks[type] if !block
       @callbacks[type] << block
+      self
+    end
+
+    define_method "#{type}=" do |callbacks|
+      @callbacks[type] = [callbacks].flatten.compact
       self
     end
   end
@@ -187,6 +260,14 @@ class Request < Message
     @callbacks[type].each { |block| block.call response }
     @callbacks[:on_complete].each { |block| block.call response }
     true
+  end
+
+  def encode_if_not_raw( str )
+    raw? ? str : CGI.escape( str )
+  end
+
+  def decode_if_not_raw( str )
+    raw? ? str : CGI.unescape( str )
   end
 
   def dup

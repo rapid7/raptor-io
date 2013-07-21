@@ -8,7 +8,10 @@ require 'raptor'
 
 # Requires supporting ruby files with custom matchers and macros, etc,
 # in spec/support/ and its subdirectories.
-Dir["#{File.dirname(__FILE__)}/support/**/*.rb"].each { |f| require f }
+Dir["#{File.dirname(__FILE__)}/support/**/*.rb"].each do |f|
+  next if f.include? '/webservers/'
+  require f
+end
 
 # See http://rubydoc.info/gems/rspec-core/RSpec/Core/Configuration
 RSpec.configure do |config|
@@ -23,10 +26,19 @@ RSpec.configure do |config|
   config.order = 'random'
 
   config.before( :all ) do
+    Raptor::Protocol::HTTP::Client.reset
+    Raptor::Protocol::HTTP::Request::Manipulators.reset
     WebServers.killall
   end
 
+  config.after( :all ) do
+    Raptor::Protocol::HTTP::Client.reset
+    Raptor::Protocol::HTTP::Request::Manipulators.reset
+  end
+
   config.after( :suite ) do
+    Raptor::Protocol::HTTP::Client.reset
+    Raptor::Protocol::HTTP::Request::Manipulators.reset
     WebServers.killall
   end
 

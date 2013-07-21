@@ -40,6 +40,15 @@ class Message
     @version ||= '1.1'
   end
 
+  # @return [Bool]
+  #   `true` if the connections should be reused, `false` otherwise.
+  def keep_alive?
+    connection = headers['Connection'].to_s.downcase
+
+    return connection == 'keep-alive' if version.to_f < 1.1
+    connection != 'close'
+  end
+
   # @return [Boolean]
   #   `true` when {#version} is `1.1`, `false` otherwise.
   def http_1_1?

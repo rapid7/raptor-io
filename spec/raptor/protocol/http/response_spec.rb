@@ -1,3 +1,4 @@
+#coding: utf-8
 require 'spec_helper'
 
 describe Raptor::Protocol::HTTP::Response do
@@ -7,10 +8,89 @@ describe Raptor::Protocol::HTTP::Response do
 
   let(:response) do
     "HTTP/1.1 404 Not Found\r\n" +
-"Content-Type: text/html;charset=utf-8\r\n" +
-"Content-Length: 431\r\n\r\n" +
-"<!DOCTYPE html>\n" +
-"More stuff\n"
+      "Content-Type: text/html;charset=utf-8\r\n" +
+      "Content-Length: 431\r\n\r\n" +
+      "<!DOCTYPE html>\n" +
+      "More stuff\n".force_encoding( 'ASCII-8BIT')
+  end
+
+  let(:response_cr) do
+    "HTTP/1.1 404 Not Found\n" +
+      "Content-Type: text/html;charset=utf-8\n" +
+      "Content-Length: 431\n\n" +
+      "<!DOCTYPE html>\n" +
+      "More stuff\n".force_encoding( 'ASCII-8BIT')
+  end
+
+  it 'forces the body to UTF-8' do
+    described_class.parse( response ).body.encoding.to_s.should == 'UTF-8'
+    described_class.new( body: "stuff τεστblah" ).body.should == 'stuff τεστblah'
+  end
+
+  describe '#text?' do
+    context 'when the content-type is' do
+      context 'text/*' do
+        it 'returns true' do
+          h = {
+              headers: { 'Content-Type' => 'text/stuff' },
+              body:     "stuff"
+          }
+          described_class.new( h ).text?.should be_true
+        end
+      end
+
+      context 'application/*' do
+        context 'and the response body is' do
+          context 'binary' do
+            it 'returns false' do
+              h = {
+                  headers: { 'Content-Type' => 'application/stuff' },
+                  body:    "\00\00\00"
+              }
+              described_class.new( h ).text?.should be_false
+            end
+          end
+
+          context 'text' do
+            it 'returns true' do
+              h = {
+                  headers: { 'Content-Type' => 'application/stuff' },
+                  body:    "stuff"
+              }
+              described_class.new( h ).text?.should be_true
+            end
+          end
+        end
+      end
+
+      context 'other' do
+        it 'returns false' do
+          h = {
+              headers: { 'Content-Type' => 'blah/stuff' },
+              body:    "stuff"
+          }
+          described_class.new( h ).text?.should be_false
+        end
+      end
+
+      context nil do
+        context 'and the response body is' do
+          context 'binary' do
+            it 'returns false' do
+              h = { body: "\00\00\00" }
+              described_class.new( h ).text?.should be_false
+            end
+          end
+
+          context 'text' do
+            it 'returns true' do
+              h = { body: "stuff" }
+              described_class.new( h ).text?.should be_true
+            end
+          end
+        end
+      end
+    end
   end
 
   describe '#code' do
@@ -20,6 +100,16 @@ describe Raptor::Protocol::HTTP::Response do
 
     it 'defaults to 0' do
       described_class.new( url: url ).code.should == 0
+    end
+  end
+
+  describe '#body' do
+    it 'returns the HTTP response body' do
+      described_class.parse( response ).body.should == "<!DOCTYPE html>\nMore stuff\n"
+    end
+
+    it 'is forced to UTF8' do
+      described_class.parse( response ).body.encoding.to_s.should == 'UTF-8'
     end
   end
 
@@ -89,8 +179,21 @@ describe Raptor::Protocol::HTTP::Response do
   end
 
   describe '.parse' do
-    it 'parses an HTTP response string into a Response object' do
+    it 'supports CRLF terminators' do
       r = described_class.parse( response )
+      r.version.should == '1.1'
+      r.code.should == 404
+      r.message.should == 'Not Found'
+      r.body.should == "<!DOCTYPE html>\nMore stuff\n"
+      r.headers.should == {
+          'Content-Type'   => 'text/html;charset=utf-8',
+          'Content-Length' => '431'
+      }
+      r.to_s.should == response
+    end
+
+    it 'supports CR terminators' do
+      r = described_class.parse( response_cr )
       r.version.should == '1.1'
       r.code.should == 404
       r.message.should == 'Not Found'

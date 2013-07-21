@@ -35,4 +35,7 @@ Gem::Specification.new do |spec|
 
   # Markdown dependency for YARD.
   spec.add_development_dependency 'redcarpet'
+
+  # Pretty-dumps objects to the screen.
+  spec.add_development_dependency 'awesome_print'
 end

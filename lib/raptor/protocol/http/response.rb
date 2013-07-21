@@ -39,6 +39,7 @@ class Response < Message
   def initialize( options = {} )
     super( options )
 
+    @body = @body.force_utf8 if text?
     @code ||= 0
 
     # Holds the redirection responses that eventually led to this one.
@@ -61,11 +62,27 @@ class Response < Message
     code != 304
   end
 
+  # @return [Bool]
+  #   `true` if the response body is textual in nature, `false` otherwise
+  #   (if binary).
+  def text?
+    return if !@body
+
+    if (type = headers['content-type'])
+      return true if type.start_with?( 'text/' )
+
+      # Non "application/" content types will surely not be text-based
+      # so bail out early.
+      return false if !type.start_with?( 'application/' )
+    end
+
+    # Last resort, more resource intensive binary detection.
+    !@body.binary?
+  end
+
   # @return [String]
   #   String representation of the response.
   def to_s
-    return @original if @original
-
     r = "HTTP/#{version} #{code}"
     r <<  " #{message}" if message
     r <<  "\r\n"
@@ -78,10 +95,7 @@ class Response < Message
   def self.parse( response )
     options ||= {}
 
-    # Since we've got the original response store it to be returned by {#to_s}.
-    options[:original] = response
-
-    headers_string, options[:body] = response.split( "\r\n\r\n", 2 )
+    headers_string, options[:body] = response.split( HEADER_SEPARATOR_PATTERN, 2 )
     request_line   = headers_string.to_s.lines.first.to_s.chomp
 
     options[:version], options[:code], options[:message] =
@@ -93,16 +107,27 @@ class Response < Message
 
     if !headers_string.to_s.empty?
       options[:headers] =
-          Headers.parse( headers_string.split( /[\r\n]+/ )[1..-1].join( "\r\n" ) )
+          Headers.parse( headers_string.split( CRLF_PATTERN )[1..-1].join( "\r\n" ) )
     else
       options[:headers] = Headers.new
     end
 
-    case options[:headers]['content-encoding'].to_s.downcase
-      when 'gzip', 'x-gzip'
-        options[:body] = unzip( options[:body] )
-      when 'deflate', 'compress', 'x-compress'
-        options[:body] = inflate( options[:body] )
+    if !options[:body].to_s.empty?
+
+      # If any encoding has been applied to the body, remove all evidence of it
+      # and adjust the content-length accordingly.
+
+      case options[:headers]['content-encoding'].to_s.downcase
+        when 'gzip', 'x-gzip'
+          options[:body] = unzip( options[:body] )
+        when 'deflate', 'compress', 'x-compress'
+          options[:body] = inflate( options[:body] )
+      end
+
+      if options[:headers].delete( 'content-encoding' ) ||
+          options[:headers].delete( 'transfer-encoding' )
+        options[:headers]['content-length'] = options[:body].size
+      end
     end
 
     new( options )
@@ -126,12 +151,6 @@ class Response < Message
     s << gz.read
     gz.close
     s
-  end
-
-  protected
-
-  def original=( response )
-    @original = response
   end
 
 end

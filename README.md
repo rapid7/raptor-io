@@ -2,6 +2,9 @@
 
 Smaller, more agile, and it can open doors.
 
+
+![](http://images1.wikia.nocookie.net/__cb20080319170331/dinocrisis/images/d/d5/Velociraptor.JPG)
+
 ## Installation
 
 ### Source

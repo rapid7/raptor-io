@@ -23,6 +23,39 @@ shared_examples_for 'Raptor::Protocol::HTTP::Message' do
     end
   end
 
+  describe '#keep_alive?' do
+    context 'when the protocol version is 1.1 or higher' do
+      context 'and connection-token is set to \'close\'' do
+        it 'returns false' do
+          described_class.new( url: url,
+                               version: '1.1',
+                               headers: { 'connection' => 'close' }
+          ).keep_alive?.should be_false
+        end
+      end
+
+      it 'returns true' do
+        described_class.new( url: url, version: '1.1' ).keep_alive?.should be_true
+        described_class.new( url: url, version: '1.2' ).keep_alive?.should be_true
+      end
+    end
+
+    context 'when the protocol version is lower than 1.1' do
+      context 'and connection-token is set to \'keep-alive\'' do
+        it 'returns false' do
+          described_class.new( url: url,
+                               version: '1.0',
+                               headers: { 'connection' => 'keep-alive' }
+          ).keep_alive?.should be_true
+        end
+      end
+
+      it 'returns false' do
+        described_class.new( url: url, version: '1.0' ).keep_alive?.should be_false
+      end
+    end
+  end
+
   describe '#http_1_1?' do
     context 'when the protocol version is 1.1' do
       it 'returns true' do
