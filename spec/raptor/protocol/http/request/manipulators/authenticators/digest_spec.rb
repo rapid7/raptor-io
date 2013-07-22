@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'raptor/socket'
 
 describe 'Raptor::Protocol::HTTP::Request::Manipulators::Authenticators::Digest' do
   before :all do
@@ -11,7 +12,10 @@ describe 'Raptor::Protocol::HTTP::Request::Manipulators::Authenticators::Digest'
     Raptor::Protocol::HTTP::Request::Manipulators.reset
   end
 
-  let(:client) { Raptor::Protocol::HTTP::Client.new }
+  let(:client) do
+    sb = Raptor::Socket::SwitchBoard.new
+    Raptor::Protocol::HTTP::Client.new(switch_board: sb)
+  end
 
   def response( algo )
     Raptor::Protocol::HTTP::Response.parse "HTTP/1.1 401 Unauthorized

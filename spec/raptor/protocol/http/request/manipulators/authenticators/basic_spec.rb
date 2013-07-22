@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'raptor/socket'
 
 describe 'Raptor::Protocol::HTTP::Request::Manipulators::Authenticators::Basic' do
   before :all do
@@ -10,7 +11,7 @@ describe 'Raptor::Protocol::HTTP::Request::Manipulators::Authenticators::Basic' 
     Raptor::Protocol::HTTP::Request::Manipulators.reset
   end
 
-  let(:client) { Raptor::Protocol::HTTP::Client.new }
+  let(:client) { Raptor::Protocol::HTTP::Client.new(switch_board:Raptor::Socket::SwitchBoard.new) }
 
   it 'provides Basic authentication' do
     opts = {

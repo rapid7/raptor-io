@@ -15,6 +15,7 @@ describe 'Raptor::Protocol::HTTP::Request::Manipulators::Authenticator' do
 
   let(:client) do
     Raptor::Protocol::HTTP::Client.new(
+        switch_board: Raptor::Socket::SwitchBoard.new,
         manipulators: {
             'authenticator' =>
                 {

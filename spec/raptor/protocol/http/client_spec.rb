@@ -1,5 +1,6 @@
 #coding: utf-8
 require 'spec_helper'
+require 'raptor/socket'
 
 describe Raptor::Protocol::HTTP::Client do
 
@@ -15,117 +16,153 @@ describe Raptor::Protocol::HTTP::Client do
   end
 
   let(:url) { 'http://test.com' }
-  let(:client) { described_class.new }
+  let(:switch_board) { Raptor::Socket::SwitchBoard.new }
+  let(:options) { {} }
+  subject(:client) do
+    described_class.new(
+      { switch_board:switch_board }.merge(options)
+    )
+  end
 
   describe '#initialize' do
 
     describe :manipulators do
       it 'defaults to an empty Hash' do
-        described_class.new.manipulators.should == {}
+        client.manipulators.should == {}
       end
 
       context 'when the options are invalid' do
         it 'raises Raptor::Protocol::HTTP::Request::Manipulator::Error::InvalidOptions' do
           expect do
             described_class.new(
-                manipulators: {options_validator: { mandatory_string: 12 }}
+                switch_board: switch_board,
+                manipulators: {
+                  options_validator: { mandatory_string: 12 }
+                }
             )
           end.to raise_error Raptor::Protocol::HTTP::Request::Manipulator::Error::InvalidOptions
         end
       end
 
-      it 'sets the manipulators option' do
-        manipulators = { 'manifoolators/fooer' => { times: 15 } }
-        described_class.new( manipulators: manipulators ).manipulators.should == manipulators
-      end
+      context 'with manipulators' do
+        let(:manipulators) do
+          { 'manifoolators/fooer' => { times: 15 } }
+        end
+        let(:options) do
+          { manipulators: manipulators }
+        end
+        it 'sets the manipulators option' do
+          client.manipulators.should == manipulators
+        end
 
-      context 'when a request is queued' do
-        it 'runs the configured manipulators' do
-          manipulators = { 'manifoolators/fooer' => { times: 15 } }
-          client = described_class.new( manipulators: manipulators )
-
-          request = Raptor::Protocol::HTTP::Request.new( url: "#{@url}/" )
-          client.queue( request )
-          request.url.should == "#{@url}/" + ('foo' * 15)
+        context 'when a request is queued' do
+          it 'runs the configured manipulators' do
+            request = Raptor::Protocol::HTTP::Request.new( url: "#{@url}/" )
+            client.queue( request )
+            request.url.should == "#{@url}/" + ('foo' * 15)
+          end
         end
       end
     end
-    describe :timeout do
-      it 'sets the timeout option' do
-        described_class.new( timeout: 15 ).timeout.should == 15
-      end
 
-      context 'when a timeout occurs' do
-        it 'raises Raptor::Error::Timeout', speed: 'slow' do
-          client = described_class.new( timeout: 1 )
-          expect {
-            client.get( "#{@url}/sleep", mode: :sync )
-          }.to raise_error Raptor::Error::Timeout
+    describe :timeout do
+      context 'without a value' do
+        it 'defaults to 10' do
+          client.timeout.should == 10
         end
       end
 
-      it 'defaults to 10' do
-        described_class.new.timeout.should == 10
+      context 'with a value' do
+        let(:options) do
+          { timeout: 1 }
+        end
+
+        it 'sets the timeout option' do
+          client.timeout.should == 1
+        end
+
+        context 'when a timeout occurs' do
+          it 'raises Raptor::Error::Timeout', speed: 'slow' do
+            expect {
+              client.get( "#{@url}/sleep", mode: :sync )
+            }.to raise_error Raptor::Error::Timeout
+          end
+        end
       end
+
     end
 
     describe :concurrency do
-      it 'sets the request concurrency option' do
-        described_class.new( concurrency: 10 ).concurrency.should == 10
+      context 'without a value' do
+        it 'defaults to 20' do
+          client.concurrency.should == 20
+        end
       end
-
-      it 'sets the amount of maximum open connections at any given time', speed: 'slow' do
-        cnt   = 0
-        times = 10
-
-        url = "#{@url}/sleep"
-
-        client.concurrency = 1
-        times.times do
-          client.get url do
-            cnt += 1
-          end
+      context 'with a value' do
+        let(:options) do
+          { concurrency: 10 }
         end
 
-        t = Time.now
-        client.run
-        runtime_1 = Time.now - t
-        cnt.should == times
-
-        cnt = 0
-        client.concurrency = 20
-        times.times do
-          client.get url do
-            cnt += 1
-          end
+        it 'sets the request concurrency option' do
+          client.concurrency.should == 10
         end
 
-        t = Time.now
-        client.run
-        runtime_2 =  Time.now - t
+        it 'sets the amount of maximum open connections at any given time', speed: 'slow' do
+          cnt   = 0
+          times = 10
 
-        cnt.should == times
-        runtime_1.should > runtime_2
-      end
+          url = "#{@url}/sleep"
 
-      it 'defaults to 20' do
-        client.concurrency.should == 20
+          client.concurrency = 1
+          times.times do
+            client.get url do
+              cnt += 1
+            end
+          end
+
+          t = Time.now
+          client.run
+          runtime_1 = Time.now - t
+          cnt.should == times
+
+          cnt = 0
+          client.concurrency = 20
+          times.times do
+            client.get url do
+              cnt += 1
+            end
+          end
+
+          t = Time.now
+          client.run
+          runtime_2 =  Time.now - t
+
+          cnt.should == times
+          runtime_1.should > runtime_2
+        end
       end
     end
 
     describe :user_agent do
-      it 'sets the user-agent option' do
-        described_class.new( user_agent: 'Stuff' ).user_agent.should == 'Stuff'
+      context 'without a value' do
+        it "defaults to 'Raptor::HTTP/#{Raptor::VERSION}'" do
+          client.user_agent.should == "Raptor::HTTP/#{Raptor::VERSION}"
+        end
       end
 
-      it 'sets the User-Agent for the requests' do
-        ua = 'Stuff'
-        client = described_class.new( user_agent: ua )
-        client.request( @url ).headers['User-Agent'].should == ua
-      end
+      context 'with a value' do
+        let(:ua) { 'Stuff' }
+        let(:options) do
+          { user_agent: ua }
+        end
+        it 'sets the user-agent option' do
+          client.user_agent.should == ua
+        end
 
-      it "defaults to 'Raptor::HTTP/#{Raptor::VERSION}'" do
-        client.user_agent.should == "Raptor::HTTP/#{Raptor::VERSION}"
+        it 'sets the User-Agent for the requests' do
+          client.request( @url ).headers['User-Agent'].should == ua
+        end
+
       end
     end
   end
@@ -340,8 +377,10 @@ describe Raptor::Protocol::HTTP::Client do
         end
 
         context 'when a timeout occurs' do
+          let (:options) do
+            { timeout: 1 }
+          end
           it 'raises Raptor::Error::Timeout', speed: 'slow' do
-            client = described_class.new( timeout: 1 )
             expect {
               client.get( "#{@url}/sleep", mode: :sync )
             }.to raise_error Raptor::Error::Timeout
@@ -478,14 +517,14 @@ describe Raptor::Protocol::HTTP::Client do
             response.headers.should == {}
           end
 
-          it 'assigns Raptor::Protocol::Error::ConnectionRefused to #error' do
+          it 'assigns Raptor::Socket::ConnectionError to #error' do
             url = 'http://localhost:9696969'
 
             response = nil
             client.get( url ){ |r| response = r }
             client.run
 
-            response.error.should be_kind_of Raptor::Protocol::Error::ConnectionRefused
+            response.error.should be_kind_of Raptor::Socket::ConnectionError
           end
 
         end
@@ -505,14 +544,14 @@ describe Raptor::Protocol::HTTP::Client do
             response.headers.should == {}
           end
 
-          it 'assigns Raptor::Protocol::Error::HostUnreachable to #error', speed: 'slow' do
+          it 'assigns Raptor::Socket::ConnectionError to #error', speed: 'slow' do
             url = 'http://10.11.12.13'
 
             response = nil
             client.get( url ){ |r| response = r }
             client.run
 
-            response.error.should be_kind_of Raptor::Protocol::Error::HostUnreachable
+            response.error.should be_kind_of Raptor::Socket::ConnectionError
           end
         end
 

@@ -22,8 +22,14 @@ class Raptor::Socket::SwitchBoard
 
   include Enumerable
 
+  # If no route matches the host/netmask when searching for
+  # {#best_comm}, this will be the fallback - always route through the
+  # local machine creating Ruby ::Sockets.
   DEFAULT_ROUTE = Route.new("0.0.0.0", "0.0.0.0", Raptor::Socket::Comm::Local.new)
 
+  # The list of routes this swithboard knows about
+  #
+  # @return [Array<Route>]
   attr_reader :routes
 
   def initialize
@@ -151,6 +157,15 @@ class Raptor::Socket::SwitchBoard
     }
 
     false
+  end
+
+  # Create a TCP client socket on the {#best_comm best comm} available
+  # for `:peer_host`.
+  #
+  # @param (see Comm#create_tcp)
+  # @option opts (see Comm#create_tcp)
+  def create_tcp(opts)
+    best_comm(opts[:peer_host]).create_tcp(opts)
   end
 
 end

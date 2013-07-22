@@ -19,8 +19,10 @@ describe Raptor::Protocol::HTTP::Request::Manipulators do
   end
 
   describe '.process' do
+    let(:client) do
+      Raptor::Protocol::HTTP::Client.new(switch_board:Raptor::Socket::SwitchBoard.new)
+    end
     it 'processes the given request and client with the given manipulator' do
-      client  = Raptor::Protocol::HTTP::Client.new
       request = Raptor::Protocol::HTTP::Request.new( url: 'http://test/' )
       options = { stuff: 1 }
 
@@ -33,7 +35,6 @@ describe Raptor::Protocol::HTTP::Request::Manipulators do
 
     context 'when given a non-existent manipulator' do
       it 'raises LoadError' do
-        client  = Raptor::Protocol::HTTP::Client.new
         request = Raptor::Protocol::HTTP::Request.new( url: 'http://test/' )
 
         expect do
@@ -49,7 +50,7 @@ describe Raptor::Protocol::HTTP::Request::Manipulators do
         described_class.validate_options(
             :options_validator,
             { mandatory_string: 12 },
-            Raptor::Protocol::HTTP::Client.new
+            nil
         ).should eq({
             mandatory_string: 'Must be string.'
         })
@@ -61,7 +62,7 @@ describe Raptor::Protocol::HTTP::Request::Manipulators do
         described_class.validate_options(
             :options_validator,
             { mandatory_string: 'Stuff' },
-            Raptor::Protocol::HTTP::Client.new
+            nil
         ).should be_empty
       end
     end
@@ -72,7 +73,7 @@ describe Raptor::Protocol::HTTP::Request::Manipulators do
       it 'returns a Hash with errors' do
         described_class.validate_batch_options(
             { options_validator: { mandatory_string: 12 } },
-            Raptor::Protocol::HTTP::Client.new
+            nil
         ).should eq({
           options_validator: { mandatory_string: 'Must be string.' }
         })
@@ -83,7 +84,7 @@ describe Raptor::Protocol::HTTP::Request::Manipulators do
       it 'returns an empty Hash' do
         described_class.validate_batch_options(
             { options_validator: { mandatory_string: 'Stuff' } },
-            Raptor::Protocol::HTTP::Client.new
+            nil
         ).should be_empty
       end
     end

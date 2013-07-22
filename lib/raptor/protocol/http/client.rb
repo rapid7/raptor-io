@@ -29,6 +29,10 @@ class Client
   # @return [Hash]  Persistent storage for the manipulators..
   attr_reader :datastore
 
+  # @return [SwitchBoard] The routing table from which this {Client}
+  #   will {Socket::SwitchBoard#create_tcp make new TCP connections}.
+  attr_reader :switch_board
+
   DEFAULT_OPTIONS = {
       concurrency:      20,
       user_agent:       "Raptor::HTTP/#{Raptor::VERSION}",
@@ -45,10 +49,17 @@ class Client
   #   Timeout in seconds.
   # @option options [Hash{Symbol=>Hash}] :manipulators
   #   Request manipulators and their options.
+  # @option options [Socket::SwitchBoard] :switch_board The switch board
+  #   from which we can create new connections.
   #
   # @raise  Raptor::Protocol::HTTP::Request::Manipulator::Error::InvalidOptions
   #   On invalid manipulator options.
   def initialize( options = {} )
+    @switch_board = options.delete(:switch_board)
+    unless @switch_board.is_a?(::Raptor::Socket::SwitchBoard)
+      raise ArgumentError, "Must provide a :switch_board"
+    end
+
     DEFAULT_OPTIONS.merge( options ).each do |k, v|
       begin
         send( "#{k}=", v )
@@ -283,6 +294,7 @@ class Client
   # @return [Response]  HTTP response.
   def sync_request( request, manipulators = {} )
     client = self.class.new(
+        switch_board:     @switch_board,
         user_agent:       user_agent,
         timeout:          timeout,
         manipulators:     @manipulators
@@ -508,8 +520,10 @@ class Client
 
     host = request.parsed_url.host
     port = request.parsed_url.port
+    # XXX: Have to handle ssl at some point
+    #ssl  = (request.parsed_url.proto == 'https') ? true : false
 
-    address =  begin
+    addrinfo = begin
       (@address[request.connection_id] ||= ::Socket.getaddrinfo( host, nil ))
     rescue Errno::ENOENT => e
       error = Protocol::Error::CouldNotResolve.new( e.to_s )
@@ -518,17 +532,16 @@ class Client
       return
     end
 
-    socket = ::Socket.new( ::Socket.const_get( address[0][0] ), ::Socket::SOCK_STREAM, 0 )
-
     begin
-      socket.connect_nonblock( ::Socket.pack_sockaddr_in( port, address[0][3] ) )
-    rescue Errno::EINPROGRESS
-      if select( nil, [socket], nil, @timeout ).nil?
-        error = Protocol::Error::HostUnreachable.new
-        error.set_backtrace( caller )
-        handle_error( request, error, nil )
-        return
-      end
+      socket = @switch_board.create_tcp(
+        peer_host: addrinfo[0][3],
+        peer_port: port,
+        connect_timeout: @timeout,
+        #ssl: ssl,
+      )
+    rescue Raptor::Socket::ConnectionError => e
+      handle_error( request, e )
+      return
     end
 
     socket

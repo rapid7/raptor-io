@@ -12,9 +12,10 @@ shared_examples "a comm" do
     it "should create a TCP socket" do
       sock = comm.create_tcp(peer_host: peer_host, peer_port: tcp_port)
       sock.should be_a(Raptor::Socket::Tcp)
-      raddr = sock.peeraddr(false)
-      raddr[2].should == peer_host
-      raddr[1].should == tcp_port
+      raddr = sock.remote_address
+      raddr.should be_a(::Addrinfo)
+      raddr.ip_address.should == peer_host
+      raddr.ip_port.should == tcp_port
     end
   end
 

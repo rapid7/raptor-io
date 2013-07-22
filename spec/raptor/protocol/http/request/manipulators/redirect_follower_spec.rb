@@ -10,12 +10,19 @@ describe 'Raptor::Protocol::HTTP::Request::Manipulators::RedirectFollower' do
     Raptor::Protocol::HTTP::Request::Manipulators.reset
   end
 
-  let(:client) do
+  subject(:client) do
     Raptor::Protocol::HTTP::Client.new(
-        manipulators: {
-            redirect_follower: { max: 6 }
-        }
+      {
+        switch_board: Raptor::Socket::SwitchBoard.new
+      }.merge(options)
     )
+  end
+  let(:options) do
+    {
+      manipulators: {
+        redirect_follower: { max: 6 }
+      }
+    }
   end
 
   it 'sets the limit on how many stacked redirections to follow' do
@@ -24,17 +31,21 @@ describe 'Raptor::Protocol::HTTP::Request::Manipulators::RedirectFollower' do
     response.headers['Location'].should == "#{@url}/3"
   end
 
-  it 'defaults to 5' do
-    client = Raptor::Protocol::HTTP::Client.new(
+  context 'without a :max' do
+    let(:options) do
+      {
         manipulators: {
-            redirect_follower:   {}
+          redirect_follower: {}
         }
-    )
+      }
+    end
+    it 'defaults to 5' do
 
-    response = client.get( "#{@url}/10", mode: :sync )
-    response.redirections.size.should == 5
-    response.headers['Location'].should == "#{@url}/4"
+      response = client.get( "#{@url}/10", mode: :sync )
+      response.redirections.size.should == 5
+      response.headers['Location'].should == "#{@url}/4"
+    end
+
   end
 
 end
-

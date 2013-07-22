@@ -3,6 +3,7 @@
 # stdlib's BasicSocket
 class Raptor::Socket
 
+  require 'raptor/socket/error'
   require 'raptor/socket/switch_board'
   require 'raptor/socket/tcp'
   require 'raptor/socket/tcp_server'
