@@ -23,6 +23,7 @@ class Authenticator < Manipulator
   end
 
   def run
+    datastore[:tries] ||= 0
     return if skip?
 
     callbacks = request.callbacks.dup
@@ -35,21 +36,25 @@ class Authenticator < Manipulator
     request.on_complete do |response|
       auth_type = type( response )
 
-      if response.code == 401 && supported?( auth_type )
+      if !failed? && response.code == 401 && supported?( auth_type )
         retry_with_auth( auth_type, response )
       else
         request.callbacks = callbacks
         request.handle_response response
+        request.clear_callbacks
       end
     end
     client.run
   end
 
+  def failed?
+    !!datastore[:failed]
+  end
+
   def retry_with_auth( type, response )
-    datastore[:tries] ||= 0
     datastore[:tries] += 1
 
-    remove_client_authenticators
+    remove_client_authenticators if ![:ntlm, :negotiate].include?( type )
     client.manipulators.merge!({
       "authenticators/#{type}" => options.merge( response: response )
     })
@@ -57,7 +62,7 @@ class Authenticator < Manipulator
   end
 
   def requeue
-    client.queue( request, self.class.shortname => { skip: true } )
+    client.queue( request, shortname => { skip: true } )
   end
 
   def type( response )
@@ -65,7 +70,7 @@ class Authenticator < Manipulator
   end
 
   def skip?
-    !!options[:skip]
+    failed? || !!options[:skip]
   end
 
   def supported?( type )
