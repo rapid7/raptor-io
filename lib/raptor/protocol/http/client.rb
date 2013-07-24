@@ -24,10 +24,10 @@ class Client
   # @return [Hash{Symbol=>Hash}]
   #   Request manipulators, and their options, to be run against each
   #   {#queue queued} request.
-  attr_reader :manipulators
+  attr_accessor :manipulators
 
   # @return [Hash]  Persistent storage for the manipulators..
-  attr_reader :datastore
+  attr_accessor :datastore
 
   DEFAULT_OPTIONS = {
       concurrency:      20,
@@ -51,9 +51,9 @@ class Client
   def initialize( options = {} )
     DEFAULT_OPTIONS.merge( options ).each do |k, v|
       begin
-        send( "#{k}=", v )
+        send( "#{k}=", try_dup( v ) )
       rescue NoMethodError
-        instance_variable_set( "@#{k}".to_sym, v.dup )
+        instance_variable_set( "@#{k}".to_sym, try_dup( v ) )
       end
     end
 
@@ -284,9 +284,13 @@ class Client
   def sync_request( request, manipulators = {} )
     client = self.class.new(
         user_agent:       user_agent,
-        timeout:          timeout,
-        manipulators:     @manipulators
+        timeout:          timeout
     )
+
+    # The normal and sync clients should share these structures, that's why
+    # we're not passing them via the initializer.
+    client.manipulators = @manipulators
+    client.datastore    = @datastore
 
     res = nil
     request.on_complete { |r| res = r }
@@ -637,6 +641,10 @@ class Client
 
   def validate_manipulators( manipulators )
     Request::Manipulators.validate_batch_options( manipulators, self )
+  end
+
+  def try_dup( value )
+    value.dup rescue value
   end
 
 end
