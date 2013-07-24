@@ -56,7 +56,11 @@ class Manipulator
 
   # @return [Hash]  Persistent storage -- per {HTTP::Client} instance.
   def datastore
-    client.datastore[self.class.shortname]
+    client.datastore[shortname]
+  end
+
+  def shortname
+    self.class.shortname
   end
 
   # @return [Hash{Symbol=>Array<String>}]
