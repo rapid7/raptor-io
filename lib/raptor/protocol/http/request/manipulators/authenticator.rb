@@ -23,7 +23,6 @@ class Authenticator < Manipulator
   end
 
   def run
-    datastore[:tries] ||= 0
     return if skip?
 
     callbacks = request.callbacks.dup
@@ -47,6 +46,7 @@ class Authenticator < Manipulator
   end
 
   def retry_with_auth( type, response )
+    datastore[:tries] ||= 0
     datastore[:tries] += 1
 
     remove_client_authenticators
