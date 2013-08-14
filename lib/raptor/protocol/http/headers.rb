@@ -57,7 +57,7 @@ class Headers < Hash
   end
 
   # @return [Array<Hash>]   Cookies as hashes.
-  def cookies
+  def parsed_set_cookie
     return [] if set_cookie.empty?
 
     set_cookie.map { |set_cookie_string|
@@ -73,6 +73,22 @@ class Headers < Hash
         cookie_hash
       end
     }.flatten.compact
+  end
+
+  def cookies
+    return [] if !self['cookie']
+
+    WEBrick::Cookie.parse( self['cookie'] ).flatten.uniq.map do |cookie|
+      cookie_hash = {}
+      cookie.instance_variables.each do |var|
+        cookie_hash[var.to_s.gsub( /@/, '' ).to_sym] = cookie.instance_variable_get( var )
+      end
+
+      # Replace the string with a Time object.
+      cookie_hash[:expires] = cookie.expires
+
+      cookie_hash
+    end
   end
 
   # @return [String]  HTTP headers formatted for transmission.
