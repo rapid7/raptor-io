@@ -21,8 +21,14 @@ class Raptor::Socket
   # Delegate to @sock
   def method_missing(meth, *args, &block)
     if @sock.respond_to?(meth)
-      # not send() because that sends a packet.  =)
-      @sock.__send__(meth, *args, &block)
+      begin
+        # not send() because that sends a packet.  =)
+        @sock.__send__(meth, *args, &block)
+      rescue ::Errno::EPIPE, ::Errno::ECONNRESET => e
+        raise Raptor::Socket::Error::BrokenPipe, e.to_s
+      rescue ::Errno::ECONNREFUSED => e
+        raise Raptor::Socket::Error::ConnectionRefused, e.to_s
+      end
     else
       super
     end

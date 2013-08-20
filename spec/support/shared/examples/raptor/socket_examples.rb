@@ -8,6 +8,55 @@ shared_examples "a socket" do
   #it { should respond_to(:read_nonblock) }
   #it { should respond_to(:write_nonblock) }
   it { should respond_to(:close) }
+
+  describe "#gets" do
+    it "should convert Errno::ECONNRESET to BrokenPipe" do
+      io.stub(:gets).and_raise(Errno::ECONNRESET)
+      expect {
+        subject.gets(1)
+      }.to raise_error(Raptor::Socket::Error::BrokenPipe)
+    end
+
+    it "should convert Errno::EPIPE to BrokenPipe" do
+      io.stub(:gets).and_raise(Errno::EPIPE)
+      expect {
+        subject.gets(1)
+      }.to raise_error(Raptor::Socket::Error::BrokenPipe)
+    end
+  end
+
+  describe "#read" do
+    it "should convert Errno::ECONNRESET to BrokenPipe" do
+      io.stub(:read).and_raise(Errno::ECONNRESET)
+      expect {
+        subject.read(1)
+      }.to raise_error(Raptor::Socket::Error::BrokenPipe)
+    end
+
+    it "should convert Errno::EPIPE to BrokenPipe" do
+      io.stub(:read).and_raise(Errno::EPIPE)
+      expect {
+        subject.read(1)
+      }.to raise_error(Raptor::Socket::Error::BrokenPipe)
+    end
+  end
+
+  describe "#write" do
+    it "should convert Errno::ECONNRESET to BrokenPipe" do
+      io.stub(:write).and_raise(Errno::ECONNRESET)
+      expect {
+        subject.write("asdf")
+      }.to raise_error(Raptor::Socket::Error::BrokenPipe)
+    end
+
+    it "should convert Errno::EPIPE to BrokenPipe" do
+      io.stub(:write).and_raise(Errno::EPIPE)
+      expect {
+        subject.write("asdf")
+      }.to raise_error(Raptor::Socket::Error::BrokenPipe)
+    end
+  end
+
 end
 
 shared_examples "a client socket" do

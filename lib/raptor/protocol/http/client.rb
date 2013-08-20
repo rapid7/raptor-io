@@ -329,15 +329,13 @@ class Client
       begin
         bytes_written = socket.write( request_string )
       # All hope is lost.
-      rescue Errno::ECONNREFUSED => e
-        error = Protocol::Error::ConnectionRefused.new( e.to_s )
-        error.set_backtrace( e.backtrace )
+      rescue Raptor::Socket::Error::ConnectionError => error
         handle_error( request, error, socket )
         return
 
-      # Rhe connection has been closed so retry but only if the request is
+      # The connection has been closed so retry but only if the request is
       # idempotent.
-      rescue Errno::EPIPE, Errno::ECONNRESET => e
+      rescue Raptor::Socket::Error::BrokenPipe => e
         if request.idempotent? && retry_on_fail
           @sockets[:writes].delete( socket )
 
@@ -404,9 +402,9 @@ class Client
             if (line = socket.gets( *[read_size].compact ))
               response[:body] << line
             else
-              raise Errno::ECONNRESET
+              raise Raptor::Socket::Error::BrokenPipe
             end
-          rescue Errno::ECONNRESET
+          rescue Raptor::Socket::Error::BrokenPipe
             closed = true
             response[:force_no_keep_alive] = true
           end
@@ -539,7 +537,7 @@ class Client
         connect_timeout: @timeout,
         #ssl: ssl,
       )
-    rescue Raptor::Socket::ConnectionError => e
+    rescue Raptor::Socket::Error::ConnectionError => e
       handle_error( request, e )
       return
     end

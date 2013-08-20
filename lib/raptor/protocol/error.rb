@@ -17,26 +17,10 @@ class Protocol::Error < Error
   class ConnectionRefused < Error
   end
 
-  # {Protocol} broken-pipe error.
-  #
-  # Occurs when a connection dies while unexpectedly.
-  #
-  # @author Tasos "Zapotek" Laskos <tasos.laskos@gmail.com>
-  class BrokenPipe < Error
-  end
-
   # {Protocol} hostname resolution error.
   #
   # @author Tasos "Zapotek" Laskos <tasos.laskos@gmail.com>
   class CouldNotResolve < Error
-  end
-
-  # {Protocol} host reachability error.
-  #
-  # Occurs when the remote host cannot be reached..
-  #
-  # @author Tasos "Zapotek" Laskos <tasos.laskos@gmail.com>
-  class HostUnreachable < Error
   end
 
 end

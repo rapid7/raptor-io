@@ -517,14 +517,14 @@ describe Raptor::Protocol::HTTP::Client do
             response.headers.should == {}
           end
 
-          it 'assigns Raptor::Socket::ConnectionError to #error' do
+          it 'assigns Raptor::Socket::Error::ConnectionError to #error' do
             url = 'http://localhost:9696969'
 
             response = nil
             client.get( url ){ |r| response = r }
             client.run
 
-            response.error.should be_kind_of Raptor::Socket::ConnectionError
+            response.error.should be_kind_of Raptor::Socket::Error::ConnectionError
           end
 
         end
@@ -544,14 +544,14 @@ describe Raptor::Protocol::HTTP::Client do
             response.headers.should == {}
           end
 
-          it 'assigns Raptor::Socket::ConnectionError to #error', speed: 'slow' do
+          it 'assigns Raptor::Socket::Error::ConnectionError to #error', speed: 'slow' do
             url = 'http://10.11.12.13'
 
             response = nil
             client.get( url ){ |r| response = r }
             client.run
 
-            response.error.should be_kind_of Raptor::Socket::ConnectionError
+            response.error.should be_kind_of Raptor::Socket::Error::ConnectionError
           end
         end
 
@@ -584,10 +584,10 @@ describe Raptor::Protocol::HTTP::Client do
 
       context 'in synchronous mode' do
         context 'due to a closed port' do
-          it 'raises Raptor::Protocol::Error::ConnectionRefused' do
+          it 'raises Raptor::Socket::Error::ConnectionRefused' do
             expect {
               client.get( 'http://localhost:858589', mode: :sync )
-            }.to raise_error Raptor::Protocol::Error::ConnectionRefused
+            }.to raise_error Raptor::Socket::Error::ConnectionRefused
           end
         end
 

@@ -48,14 +48,14 @@ class Raptor::Socket::Comm::Local < Raptor::Socket::Comm
     begin
       sock.connect_nonblock(::Socket.pack_sockaddr_in(opts[:peer_port], phost.to_s))
     rescue Errno::ECONNREFUSED, Errno::ECONNRESET
-      raise Raptor::Socket::ConnectionRefused
+      raise Raptor::Socket::Error::ConnectionRefused
     rescue Errno::EINPROGRESS
       # This should almost always be raised with a call to
       # connect_nonblock. When the socket finishes connecting it
       # becomes available for writing.
       res = select(nil, [sock], nil, opts[:connect_timeout] || 2)
       if res.nil?
-        raise Raptor::Socket::ConnectionTimeout
+        raise Raptor::Socket::Error::ConnectionTimeout
       end
     end
 
