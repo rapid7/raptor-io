@@ -18,6 +18,7 @@ describe 'Raptor::Protocol::HTTP::Request::Manipulators::Authenticator' do
     Raptor::Protocol::HTTP::Client.reset
   end
 
+
   let(:client) do
     Raptor::Protocol::HTTP::Client.new(
         manipulators: {

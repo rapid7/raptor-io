@@ -281,7 +281,7 @@ class Request < Message
   def self.parse( request )
     data = {}
     first_line, headers_and_body = request.split( CRLF_PATTERN, 2 )
-    data[:method], data[:url], data[:version] = first_line.scan( /([A-Z]+)\s+(.*)\s+HTTP\/([0-9\.]+)/ ).flatten
+    data[:http_method], data[:url], data[:version] = first_line.scan( /([A-Z]+)\s+(.*)\s+HTTP\/([0-9\.]+)/ ).flatten
     headers, data[:body] = headers_and_body.split( HEADER_SEPARATOR_PATTERN, 2 )
 
     # Use Host to fill in the parsed_uri stuff.

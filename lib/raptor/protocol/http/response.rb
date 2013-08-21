@@ -83,6 +83,8 @@ class Response < Message
   # @return [String]
   #   String representation of the response.
   def to_s
+    headers['Content-Length'] = body.to_s.size
+
     r = "HTTP/#{version} #{code}"
     r <<  " #{message}" if message
     r <<  "\r\n"
