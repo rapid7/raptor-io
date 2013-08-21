@@ -37,7 +37,7 @@ class Server
   # @param  [Hash]  options
   # @option options [String] :address ('0.0.0.0')
   #   Address to bind to.
-  # @option options [Integer] :port (80)
+  # @option options [Integer] :port (4567)
   #   Port number to listen on.
   # @option options [Integer] :request_mtu (512)
   #   Buffer size for request reading -- only applies to requests with a
