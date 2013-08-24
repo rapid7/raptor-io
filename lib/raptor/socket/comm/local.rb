@@ -38,7 +38,9 @@ class Raptor::Socket::Comm::Local < Raptor::Socket::Comm
   def create_tcp(opts)
     phost = IPAddr.parse(opts[:peer_host])
 
-    sock = ::Socket.new(phost.family, ::Socket::SOCK_STREAM, ::Socket::IPPROTO_TCP)
+    # Passing an explicit ::Socket::IPPROTO_TCP is broken on jruby
+    #  See https://github.com/jruby/jruby/issues/785
+    sock = ::Socket.new(phost.family, ::Socket::SOCK_STREAM, 0)
     sock.do_not_reverse_lookup = true
 
     if opts[:local_port] || opts[:local_host]
