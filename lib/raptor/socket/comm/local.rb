@@ -5,10 +5,6 @@ require 'socket'
 # Local communication using Ruby `::Socket`s
 class Raptor::Socket::Comm::Local < Raptor::Socket::Comm
 
-  # Cache our IPv6 support flag
-  @support_ipv6 = nil
-
-  #
   # Determine whether we support IPv6
   #
   # We attempt to discover this by creating an unbound UDP socket with
