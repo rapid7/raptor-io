@@ -1,22 +1,32 @@
 
+require 'forwardable'
+
 # A basic class for specific transports to inherit from. Analogous to
 # stdlib's BasicSocket
 class Raptor::Socket
+  extend Forwardable
 
   require 'raptor/socket/error'
   require 'raptor/socket/switch_board'
   require 'raptor/socket/tcp'
   require 'raptor/socket/tcp_server'
 
+  # Configuration for this socket.
+  #
+  # @return [Hash<Symbol,Object>]
+  attr_accessor :config
+
   # @param sock [IO]
-  def initialize(sock)
+  # @param config [Hash] Configuration options. See {#config}
+  def initialize(sock, config={})
     @sock = sock
+    @config = config
   end
 
-  # Used by Kernel.select
-  def to_io
-    @sock
-  end
+  # @!method to_io
+  #   Used by Kernel.select
+  #   @return [IO]
+  def_delegator :@sock, :to_io, :to_io
 
   # Delegate to @sock
   def method_missing(meth, *args, &block)

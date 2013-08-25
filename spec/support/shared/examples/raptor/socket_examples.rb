@@ -4,10 +4,8 @@ shared_examples "a socket" do
   it { should respond_to(:sysread) }
   it { should respond_to(:read) }
   it { should respond_to(:write) }
-  # Don't exist on JRuby, may need to revisit
-  #it { should respond_to(:read_nonblock) }
-  #it { should respond_to(:write_nonblock) }
   it { should respond_to(:close) }
+  it { should respond_to(:closed?) }
 
   describe "#gets" do
     it "should convert Errno::ECONNRESET to BrokenPipe" do

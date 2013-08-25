@@ -10,4 +10,5 @@ describe Raptor::Socket::Tcp do
   let(:io) { io = StringIO.new }
 
   it_behaves_like "a client socket"
+
 end

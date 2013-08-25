@@ -57,7 +57,7 @@ class Raptor::Socket::Comm::Local < Raptor::Socket::Comm
       end
     end
 
-    Raptor::Socket::Tcp.new(sock)
+    Raptor::Socket::Tcp.new(sock, opts)
   end
 
   # Listen locally on `:local_port`
