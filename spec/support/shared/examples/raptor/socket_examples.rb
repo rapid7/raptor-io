@@ -1,24 +1,25 @@
 shared_examples "a socket" do
-  it { should respond_to(:to_io) }
-  it { should respond_to(:syswrite) }
-  it { should respond_to(:sysread) }
-  it { should respond_to(:read) }
-  it { should respond_to(:write) }
-  it { should respond_to(:close) }
-  it { should respond_to(:closed?) }
+  it "has important methods of IO" do
+    expect(subject).to respond_to(:to_io)
+    expect(subject).to respond_to(:read)
+    expect(subject).to respond_to(:readpartial)
+    expect(subject).to respond_to(:write)
+    expect(subject).to respond_to(:close)
+    expect(subject).to respond_to(:closed?)
+  end
 
   describe "#gets" do
     it "should convert Errno::ECONNRESET to BrokenPipe" do
       io.stub(:gets).and_raise(Errno::ECONNRESET)
       expect {
-        subject.gets(1)
+        subject.gets
       }.to raise_error(Raptor::Socket::Error::BrokenPipe)
     end
 
     it "should convert Errno::EPIPE to BrokenPipe" do
       io.stub(:gets).and_raise(Errno::EPIPE)
       expect {
-        subject.gets(1)
+        subject.gets
       }.to raise_error(Raptor::Socket::Error::BrokenPipe)
     end
   end

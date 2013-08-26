@@ -16,7 +16,7 @@ class Raptor::Socket
   # @return [Hash<Symbol,Object>]
   attr_accessor :config
 
-  # @param sock [IO]
+  # @param sock [IO] An already-connected socket
   # @param config [Hash] Configuration options. See {#config}
   def initialize(sock, config={})
     @sock = sock
