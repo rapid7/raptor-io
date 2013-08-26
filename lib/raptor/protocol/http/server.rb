@@ -34,6 +34,12 @@ class Server
   # @return [Integer]  MTU for sending responses.
   attr_reader :response_mtu
 
+  # @return [Integer]  Configured connection timeout.
+  attr_reader :timeout
+
+  # @return [Integer]  Amount of timed out connections.
+  attr_reader :timeouts
+
   # @param  [Hash]  options
   # @option options [String] :address ('0.0.0.0')
   #   Address to bind to.
@@ -50,7 +56,7 @@ class Server
   # @option options [Integer] :logger_level (Logger::INFO)
   #   Level of message severity for the `:logger`.
   # @option options [Integer, Float] :timeout (10)
-  #   Timeout in seconds.
+  #   Timeout (in seconds) for incoming requests.
   def initialize( options = {} )
     DEFAULT_OPTIONS.merge( options ).each do |k, v|
       begin
@@ -84,7 +90,9 @@ class Server
 
           # Amount of the request body read, buffered to improve responsiveness
           # when handling large requests based on the :request_mtu option.
-          body_bytes_read: 0
+          body_bytes_read: 0,
+
+          timeout:         @timeout
       }
     end
 
@@ -100,8 +108,9 @@ class Server
       }
     end
 
-    @stop    = false
-    @running = false
+    @timeouts = 0
+    @stop     = false
+    @running  = false
   end
 
   # Starts the server.
@@ -110,9 +119,32 @@ class Server
     synchronize { @running = true }
 
     while !stop?
+      clock = Time.now
       sockets = select( [@server] | @sockets[:reads], @sockets[:writes],
                         open_sockets, @timeout )
-      next if !sockets
+      waiting_time = Time.now - clock
+
+      # Adjust the timeouts for *all* sockets.
+      @pending_requests.each do |_, pending_request|
+        pending_request[:timeout] -= waiting_time
+        pending_request[:timeout]  = 0 if pending_request[:timeout] < 0
+      end
+
+      # One or more sockets timed out, find them and KILL them! Muahahaha!
+      if !sockets
+        @sockets[:reads].each do |socket|
+          # Close the socket if the client has exceeded their allotted time to
+          # make contact.
+          next if waiting_time < @pending_requests[socket][:timeout]
+
+          close socket
+          @timeouts += 1
+
+          log 'Timeout', :debug, socket
+        end
+
+        next
+      end
 
       # Go through the sockets which are available for reading.
       sockets[0].each do |socket|
@@ -132,14 +164,13 @@ class Server
 
       # Handle sockets which are ready to be written to.
       sockets[1].each do |socket|
-        next if socket == @server
         write socket
       end
 
       # Close sockets with errors.
       sockets[2].each do |socket|
         log 'Connection error', :error, socket
-        close( socket )
+        close socket
       end
     end
 
@@ -147,8 +178,21 @@ class Server
   end
 
   def run_nonblock
-    Thread.new { run }
+    ex = nil
+    Thread.new {
+      begin
+        run
+      rescue => e
+        synchronize { @running = true }
+        ex = e
+      end
+    }
     sleep 0.1 while !running?
+
+    if ex
+      @running = false
+      raise ex
+    end
   end
 
   def running?
@@ -162,10 +206,10 @@ class Server
     synchronize { @stop = true }
     sleep 0.1 while running?
 
-    @server.close
+    close @server
     @server = nil
 
-    @sockets.values.flatten.each { |socket| close socket }
+    open_sockets.each { |socket| close socket }
 
     true
   end
@@ -186,6 +230,7 @@ class Server
 
   def listen
     server = Socket.new( Socket::Constants::AF_INET, Socket::Constants::SOCK_STREAM, 0 )
+    server.setsockopt( Socket::Option.bool( :INET, :SOCKET, :REUSEADDR, true ) )
     server.bind( Socket.sockaddr_in( @port, @address ) )
     server.listen( LISTEN_BACKLOG )
 
@@ -273,7 +318,7 @@ class Server
     @sockets[:reads].delete( socket )
     @sockets[:writes].delete( socket )
     @sockets[:client_info].delete( socket )
-    socket.close rescue nil
+    socket.close
   end
 
   def synchronize( &block )
@@ -283,7 +328,10 @@ class Server
   def log( message, severity = :info, socket = nil )
     return if !@logger
 
-    message += " [#{@sockets[:client_info][socket].inspect_sockaddr}]" if socket
+    if socket && @sockets[:client_info].include?( socket )
+      message += " [#{@sockets[:client_info][socket].inspect_sockaddr}]"
+    end
+
     @logger.send severity, message
   end
 

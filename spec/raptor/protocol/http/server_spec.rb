@@ -77,6 +77,46 @@ describe Raptor::Protocol::HTTP::Server do
       end
     end
 
+    describe :timeout do
+      it 'defaults to 10', speed: 'slow' do
+        @server = described_class.new
+        @server.timeout.should == 10
+        @server.run_nonblock
+
+        @server.timeouts.should == 0
+
+        socket = Socket.new( Socket::Constants::AF_INET, Socket::Constants::SOCK_STREAM, 0 )
+        sockaddr = Socket.pack_sockaddr_in( @server.port, @server.address )
+        socket.connect( sockaddr )
+
+        sleep 9
+
+        @server.timeouts.should == 0
+
+        sleep 11
+        socket.close
+
+        @server.timeouts.should == 1
+      end
+
+      it 'sets the request timeout' do
+        @server = described_class.new( timeout: 1 )
+        @server.timeout.should == 1
+        @server.run_nonblock
+
+        @server.timeouts.should == 0
+
+        socket = Socket.new( Socket::Constants::AF_INET, Socket::Constants::SOCK_STREAM, 0 )
+        sockaddr = Socket.pack_sockaddr_in( @server.port, @server.address )
+        socket.connect( sockaddr )
+
+        sleep 2
+        socket.close
+
+        @server.timeouts.should == 1
+      end
+    end
+
     describe :request_mtu do
       it 'reads bodies larger than :request_mtu in :request_mtu sized chunks' do
         @server = described_class.new( request_mtu: 1 )
