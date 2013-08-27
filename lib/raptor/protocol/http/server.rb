@@ -57,7 +57,11 @@ class Server
   #   Level of message severity for the `:logger`.
   # @option options [Integer, Float] :timeout (10)
   #   Timeout (in seconds) for incoming requests.
-  def initialize( options = {} )
+  #
+  # @param  [#call] handler
+  #   Handler to be passed each {Request} and populate an empty {Response}
+  #   object.
+  def initialize( options = {}, &handler )
     DEFAULT_OPTIONS.merge( options ).each do |k, v|
       begin
         send( "#{k}=", try_dup( v ) )
@@ -111,6 +115,8 @@ class Server
     @timeouts = 0
     @stop     = false
     @running  = false
+
+    @handler = handler
   end
 
   # Starts the server.
@@ -273,12 +279,17 @@ class Server
   end
 
   def handle_request( request )
-    Response.new(
-        code:    418,
-        message: "I'm a teapot",
-        body:    request.body,
-        request: request
-    )
+    response = Response.new( request: request )
+
+    if @handler
+      @handler.call( request, response )
+    else
+      response.code    = 418
+      response.message = "I'm a teapot"
+      response.body    = request.body
+    end
+
+    response
   end
 
   def write( socket )

@@ -136,6 +136,26 @@ describe Raptor::Protocol::HTTP::Server do
         test_request_with_body @server
       end
     end
+
+    describe :handler do
+      it 'passes each request to the given handler' do
+        request = nil
+
+        @server = described_class.new do |req, response|
+          request       = req
+          response.code = 200
+          response.body = 'Success!'
+        end
+
+        @server.run_nonblock
+
+        response = request( @server )
+        response.code.should == '200'
+        response.body.should == 'Success!'
+
+        request.should be_kind_of Raptor::Protocol::HTTP::Request
+      end
+    end
   end
 
   describe '#run' do
