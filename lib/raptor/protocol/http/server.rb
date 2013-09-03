@@ -121,6 +121,8 @@ class Server
 
   # Starts the server.
   def run
+    return if @server
+
     @server  = listen
     synchronize { @running = true }
 
