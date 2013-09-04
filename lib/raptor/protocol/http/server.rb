@@ -324,7 +324,7 @@ class Server
     @pending_responses.delete( socket )
     request = response.request
 
-    log "#{request.http_method.upcase} #{request.resource} #{response.code}", :info, socket
+    log "#{request.http_method.upcase} #{request.resource} #{response.code}", :debug, socket
 
     if request.keep_alive?
       @sockets[:reads] << @sockets[:writes].delete( socket )
