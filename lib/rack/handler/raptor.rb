@@ -59,7 +59,8 @@ class Raptor
         'QUERY_STRING'    => query_string,
         'SERVER_NAME'     => @server.address,
         'SERVER_PORT'     => @server.port.to_s,
-        'HTTP_VERSION'    => http_version
+        'HTTP_VERSION'    => http_version,
+        'REMOTE_ADDR'     => request.client_info.ip_address
     }
 
     request.headers.each do |k, v|

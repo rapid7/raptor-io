@@ -282,6 +282,8 @@ class Server
 
   def handle_read_request( socket )
     request = Request.parse( @pending_requests.delete( socket )[:buffer] )
+    request.client_info = @sockets[:client_info][socket]
+
     @pending_responses[socket][:object] = handle_request( request )
     @sockets[:writes] << @sockets[:reads].delete( socket )
   end
