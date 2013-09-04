@@ -365,6 +365,8 @@ class Client
   #   `true` if the response finished being buffered, `nil` otherwise.
   #
   def read( socket )
+    reset_timeout( socket )
+
     response = @pending_responses[socket]
 
     if response[:has_full_headers]
@@ -434,6 +436,10 @@ class Client
     end
 
     nil
+  end
+
+  def reset_timeout( socket )
+    @pending_responses[socket][:timeout] = @sockets[:lookup_request][socket].timeout
   end
 
   #

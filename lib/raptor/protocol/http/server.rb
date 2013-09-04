@@ -228,6 +228,10 @@ class Server
 
   private
 
+  def reset_timeout( socket )
+    @pending_requests[socket][:timeout] = @timeout
+  end
+
   def stop?
     synchronize { @stop }
   end
@@ -248,6 +252,8 @@ class Server
   end
 
   def read( socket )
+    reset_timeout( socket )
+
     if (headers = @pending_requests[socket][:headers])
       if (content_length = headers['content-length'])
         content_length = content_length.to_i
