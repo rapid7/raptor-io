@@ -54,22 +54,30 @@ describe Rack::Handler::Raptor do
   describe '.run' do
     it 'starts the server' do
       server = nil
-      described_class.run( RackValidatorApp.new, Port: 9292 ) { |s| server = s }
+      t = Thread.new do
+        described_class.run( RackValidatorApp.new, Port: 9292 ) { |s| server = s }
+      end
+      sleep 1
 
       request( server ).body.should == 'Hello Rack!'
 
       described_class.shutdown
+      t.join
     end
   end
 
   describe '.shutdown' do
     it 'stops the server' do
       server = nil
-      described_class.run( RackValidatorApp.new, Port: 9292 ) { |s| server = s }
+      t = Thread.new do
+        described_class.run( RackValidatorApp.new, Port: 9292 ) { |s| server = s }
+      end
+      sleep 1
 
       request( server ).body.should == 'Hello Rack!'
 
       described_class.shutdown
+      t.join
 
       expect { request( server ) }.to raise_error Errno::ECONNREFUSED
     end

@@ -1,3 +1,4 @@
+require_relative '../../../lib/raptor'
 require 'rack'
 require 'stringio'
 require 'rack/content_length'
@@ -5,6 +6,8 @@ require 'rack/content_length'
 module Rack
 module Handler
 class Raptor
+
+  Rack::Handler.register self.to_s.split( ':' ).last.downcase, self
 
   def self.run( app, options = {} )
     return false if @server
@@ -15,7 +18,7 @@ class Raptor
     @app    = app
     @server = ::Raptor::Protocol::HTTP::Server.new( options ) { |req, res| service req, res }
     yield @server if block_given?
-    @server.run_nonblock
+    @server.run
 
     true
   end
@@ -92,7 +95,12 @@ class Raptor
       status, headers, body = @app.call( environment )
 
       response.code = status
-      response.body = body
+
+      if body.is_a? String
+        response.body = body
+      else
+        body.each { |part| (response.body ||= '') << part }
+      end
 
       response.headers.merge! headers
     rescue => e
