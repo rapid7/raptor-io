@@ -115,6 +115,7 @@ class Server
     @timeouts = 0
     @stop     = false
     @running  = false
+    @mutex    = Mutex.new
 
     @handler = handler
   end
@@ -343,7 +344,7 @@ class Server
   end
 
   def synchronize( &block )
-    (@mutex ||= Mutex.new).synchronize( &block )
+    @mutex.synchronize( &block )
   end
 
   def log( message, severity = :info, socket = nil )
