@@ -97,6 +97,7 @@ class Raptor
 
     begin
       status, headers, body = @app.call( environment )
+      body = '' if !body
 
       response.code = status
 
@@ -107,9 +108,14 @@ class Raptor
       end
 
       response.headers.merge! headers
-    rescue => e
+    rescue RuntimeError => e
       response.code = 501
-      response.body = "#{e}\n#{e.backtrace.join( "\n" )}"
+      response.body = "#{e} (#{e.class})"
+
+      environment['rack.errors'].puts "#{e} (#{e.class})"
+      e.backtrace.each do |line|
+        environment['rack.errors'].puts line
+      end
 
       response.headers['content-type'] = 'text/plain'
     end

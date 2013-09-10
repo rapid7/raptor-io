@@ -42,6 +42,12 @@ class RackValidatorApp
   end
 end
 
+class ErrorRackApp
+  def call( environment )
+    raise 'Stuff'
+  end
+end
+
 describe Rack::Handler::Raptor do
 
   def argument_to_url( server_or_url )
@@ -64,6 +70,21 @@ describe Rack::Handler::Raptor do
 
       described_class.shutdown
       t.join
+    end
+
+    context 'when the Rack application raises an exception' do
+      it 'returns the error in the response body' do
+        server = nil
+        t = Thread.new do
+          described_class.run( ErrorRackApp.new, Port: 9292 ) { |s| server = s }
+        end
+        sleep 1
+
+        request( server ).body.should == 'Stuff (RuntimeError)'
+
+        described_class.shutdown
+        t.join
+      end
     end
   end
 
@@ -106,7 +127,7 @@ describe Rack::Handler::Raptor do
         end
       end
     end
-
-
   end
+
+
 end
