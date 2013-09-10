@@ -141,8 +141,8 @@ describe Raptor::Protocol::HTTP::Server do
       it 'passes each request to the given handler' do
         request = nil
 
-        @server = described_class.new do |req, response|
-          request       = req
+        @server = described_class.new do |response|
+          request       = response.request
           response.code = 200
           response.body = 'Success!'
         end

@@ -293,7 +293,7 @@ class Server
     response = Response.new( request: request )
 
     if @handler
-      @handler.call( request, response )
+      @handler.call response
     else
       response.code    = 418
       response.message = "I'm a teapot"

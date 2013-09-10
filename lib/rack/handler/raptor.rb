@@ -16,7 +16,9 @@ class Raptor
     options[:port]   ||= options.delete(:Port) || 8080
 
     @app    = app
-    @server = ::Raptor::Protocol::HTTP::Server.new( options ) { |req, res| service req, res }
+    @server = ::Raptor::Protocol::HTTP::Server.new( options ) do |response|
+      service response
+    end
     yield @server if block_given?
     @server.run
 
@@ -43,7 +45,8 @@ class Raptor
     (ENV['RACK_ENV'] || 'development') == 'development' ? 'localhost' : '0.0.0.0'
   end
 
-  def self.service( request, response )
+  def self.service( response )
+    request      = response.request
     path         = request.effective_url.path
     http_version = "HTTP/#{request.version}"
 

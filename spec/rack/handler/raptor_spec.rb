@@ -29,6 +29,7 @@ class RackValidatorApp
       'QUERY_STRING'      => '',
       'SERVER_PORT'       => '9292',
       'SERVER_PROTOCOL'   => http_version,
+      'REMOTE_ADDR'       => '127.0.0.1',
       'rack.version'      => [ 1, 2 ],
       'rack.multithread'  => true,
       'rack.multiprocess' => false,
