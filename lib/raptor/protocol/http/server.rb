@@ -128,35 +128,11 @@ class Server
     synchronize { @running = true }
 
     while !stop?
-      clock = Time.now
-      sockets = select( [@server] | @sockets[:reads], @sockets[:writes],
-                        open_sockets, @timeout )
-      waiting_time = Time.now - clock
-
-      # Adjust the timeouts for *all* sockets.
-      @pending_requests.each do |_, pending_request|
-        pending_request[:timeout] -= waiting_time
-        pending_request[:timeout]  = 0 if pending_request[:timeout] < 0
-      end
-
-      # One or more sockets timed out, find them and KILL them! Muahahaha!
-      if !sockets
-        @sockets[:reads].each do |socket|
-          # Close the socket if the client has exceeded their allotted time to
-          # make contact.
-          next if waiting_time < @pending_requests[socket][:timeout]
-
-          close socket
-          @timeouts += 1
-
-          log 'Timeout', :debug, socket
-        end
-
-        next
-      end
+      available_sockets = select_sockets
+      next if !available_sockets
 
       # Go through the sockets which are available for reading.
-      sockets[0].each do |socket|
+      available_sockets[:reads].each do |socket|
         # Read and move to the next one if there are no new clients.
         if socket != @server
           read socket
@@ -172,12 +148,12 @@ class Server
       end
 
       # Handle sockets which are ready to be written to.
-      sockets[1].each do |socket|
+      available_sockets[:writes].each do |socket|
         write socket
       end
 
       # Close sockets with errors.
-      sockets[2].each do |socket|
+      available_sockets[:errors].each do |socket|
         log 'Connection error', :error, socket
         close socket
       end
@@ -228,6 +204,41 @@ class Server
   end
 
   private
+
+  def select_sockets
+    clock = Time.now
+    sockets = select( [@server] | @sockets[:reads], @sockets[:writes],
+                      open_sockets, @timeout )
+    waiting_time = Time.now - clock
+
+    # Adjust the timeouts for *all* sockets.
+    @pending_requests.each do |_, pending_request|
+      pending_request[:timeout] -= waiting_time
+      pending_request[:timeout]  = 0 if pending_request[:timeout] < 0
+    end
+
+    # One or more sockets timed out, find them and KILL them! Muahahaha!
+    if !sockets
+      @sockets[:reads].each do |socket|
+        # Close the socket if the client has exceeded their allotted time to
+        # make contact.
+        next if waiting_time < @pending_requests[socket][:timeout]
+
+        close socket
+        @timeouts += 1
+
+        log 'Timeout', :debug, socket
+      end
+
+      return
+    end
+
+    {
+        reads:  sockets[0],
+        writes: sockets[1],
+        errors: sockets[2]
+    }
+  end
 
   def reset_timeout( socket )
     @pending_requests[socket][:timeout] = @timeout
