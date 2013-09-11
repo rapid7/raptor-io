@@ -1,4 +1,4 @@
-require_relative '../../../lib/raptor'
+require 'raptor'
 require 'rack'
 require 'stringio'
 require 'rack/content_length'
