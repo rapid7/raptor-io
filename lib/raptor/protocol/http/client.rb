@@ -372,7 +372,7 @@ class Client
     if response[:has_full_headers]
       headers = response[:parsed_headers]
 
-      if headers['Transfer-Encoding'] == 'chunked'
+      if headers['Transfer-Encoding'].to_s.downcase == 'chunked'
         read_size = socket.gets.to_s[0...-CRLF.size]
         return if read_size.empty?
 
