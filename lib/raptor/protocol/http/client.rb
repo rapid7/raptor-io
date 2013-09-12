@@ -327,7 +327,7 @@ class Client
         handle_error( request, error, socket )
         return
 
-      # Rhe connection has been closed so retry but only if the request is
+      # The connection has been closed so retry but only if the request is
       # idempotent.
       rescue Errno::EPIPE, Errno::ECONNRESET => e
         if request.idempotent? && retry_on_fail
@@ -340,6 +340,7 @@ class Client
           error = Protocol::Error::BrokenPipe.new( e.to_s )
           error.set_backtrace( e.backtrace )
           handle_error( request, error, socket )
+          return
         end
       end
 
