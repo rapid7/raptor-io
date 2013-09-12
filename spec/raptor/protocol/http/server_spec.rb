@@ -33,6 +33,96 @@ describe Raptor::Protocol::HTTP::Server do
     server_or_url.is_a?( String ) ? server_or_url : server_or_url.url
   end
 
+  describe '#run_nonblock' do
+    it 'starts the server but does not block' do
+      @server = described_class.new
+      @server.run_nonblock
+
+      test_server @server
+    end
+  end
+
+  describe '#stop' do
+    it 'stops the server' do
+      @server = described_class.new
+      @server.run_nonblock
+
+      test_server @server
+      @server.stop
+
+      expect { request( @server ) }.to raise_error Errno::ECONNREFUSED
+    end
+  end
+
+  context 'when a request has Transfer-Encoding' do
+    context 'other' do
+      it 'returns a 501 response' do
+        @server = described_class.new
+        @server.run_nonblock
+
+        socket = TCPSocket.new( @server.address, @server.port )
+        [
+            'GET / HTTP/1.1',
+            'Transfer-Encoding: Stuff'
+        ].each do |l|
+          socket.puts l
+        end
+        socket.puts
+
+        [
+            'Data' * 12,
+            'More data' * 20,
+            'Even more data'  * 102
+        ].each do |l|
+          socket << "#{l.size.to_s( 16 )}\r\n#{l}\r\n"
+        end
+        socket << "0\r\n\r\n"
+
+        buff = ''
+        while !(buff =~ Raptor::Protocol::HTTP::HEADER_SEPARATOR_PATTERN)
+          buff << socket.gets
+        end
+        socket.close
+
+        Raptor::Protocol::HTTP::Response.parse( buff ).code.should == 501
+      end
+    end
+
+    describe 'Chunked' do
+      it 'supports it' do
+        @server = described_class.new
+        @server.run_nonblock
+
+        socket = TCPSocket.new( @server.address, @server.port )
+        [
+            'GET / HTTP/1.1',
+            'Transfer-Encoding: Chunked'
+        ].each do |l|
+          socket.puts l
+        end
+        socket.puts
+
+        [
+            'Data' * 12,
+            'More data' * 20,
+            'Even more data'  * 102
+        ].each do |l|
+          socket << "#{l.size.to_s( 16 )}\r\n#{l}\r\n"
+        end
+        socket << "0\r\n\r\n"
+
+        buff = ''
+        while !(buff =~ Raptor::Protocol::HTTP::HEADER_SEPARATOR_PATTERN)
+          buff << socket.gets
+        end
+        socket.close
+
+        Raptor::Protocol::HTTP::Response.parse( buff ).code.should == 418
+      end
+    end
+
+  end
+
   describe '#initialize' do
     describe :address do
       it 'binds to this address' do
@@ -168,15 +258,6 @@ describe Raptor::Protocol::HTTP::Server do
     end
   end
 
-  describe '#run_nonblock' do
-    it 'starts the server but does not block' do
-      @server = described_class.new
-      @server.run_nonblock
-
-      test_server @server
-    end
-  end
-
   describe '#running?' do
     context 'when the server is running' do
       it 'returns true' do
@@ -190,18 +271,6 @@ describe Raptor::Protocol::HTTP::Server do
         @server = described_class.new
         @server.running?.should be_false
       end
-    end
-  end
-
-  describe '#stop' do
-    it 'stops the server' do
-      @server = described_class.new
-      @server.run_nonblock
-
-      test_server @server
-      @server.stop
-
-      expect { request( @server ) }.to raise_error Errno::ECONNREFUSED
     end
   end
 

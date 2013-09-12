@@ -117,6 +117,8 @@ class Server
     @running  = false
     @mutex    = Mutex.new
 
+    @system_responses = {}
+
     @handler = handler
   end
 
@@ -189,7 +191,7 @@ class Server
     return if !@server
 
     synchronize { @stop = true }
-    sleep 0.1 while running?
+    sleep 0.05 while running?
 
     close @server
     @server = nil
@@ -245,6 +247,7 @@ class Server
   end
 
   def stop?
+    sleep 0.005
     synchronize { @stop }
   end
 
@@ -267,6 +270,24 @@ class Server
     reset_timeout( socket )
 
     if (headers = @pending_requests[socket][:headers])
+      if (te = headers['Transfer-Encoding'])
+        if te.downcase == 'chunked'
+          read_size = socket.gets.to_s[0...-CRLF.size]
+          return if read_size.empty?
+
+          if (read_size = read_size.to_i( 16 )) > 0
+            @pending_requests[socket][:buffer] <<
+                socket.gets( read_size + CRLF.size ).to_s[0...read_size]
+            return
+          end
+        else
+          @system_responses[socket] = Response.new(
+              code: 501,
+              body: 'Not implemented'
+          )
+        end
+      end
+
       if (content_length = headers['content-length'])
         content_length = content_length.to_i
         remaining_ct   = content_length - @pending_requests[socket][:body_bytes_read]
@@ -288,6 +309,7 @@ class Server
     @pending_requests[socket][:headers] ||=
         Request.parse( @pending_requests[socket][:buffer] ).headers
     return if @pending_requests[socket][:headers].include?( 'content-length' )
+    return if @pending_requests[socket][:headers].include?( 'transfer-encoding' )
 
     handle_read_request( socket )
   end
@@ -296,7 +318,13 @@ class Server
     request = Request.parse( @pending_requests.delete( socket )[:buffer] )
     request.client_info = @sockets[:client_info][socket]
 
-    @pending_responses[socket][:object] = handle_request( request )
+    if (sysres = @system_responses.delete( socket ))
+      sysres.request = request
+      @pending_responses[socket][:object] = sysres
+    else
+      @pending_responses[socket][:object] = handle_request( request )
+    end
+
     @sockets[:writes] << @sockets[:reads].delete( socket )
   end
 
