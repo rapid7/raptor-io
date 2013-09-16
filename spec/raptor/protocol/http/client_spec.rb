@@ -485,7 +485,10 @@ describe Raptor::Protocol::HTTP::Client do
             client.get( url ){ |r| response = r }
             client.run
 
-            response.error.should be_kind_of Raptor::Protocol::Error::ConnectionRefused
+            [
+                Raptor::Protocol::Error::ConnectionRefused,
+                Raptor::Protocol::Error::HostUnreachable
+            ].should include response.error.class
           end
 
         end
@@ -546,9 +549,17 @@ describe Raptor::Protocol::HTTP::Client do
       context 'in synchronous mode' do
         context 'due to a closed port' do
           it 'raises Raptor::Protocol::Error::ConnectionRefused' do
-            expect {
+            ex = nil
+            begin
               client.get( 'http://localhost:858589', mode: :sync )
-            }.to raise_error Raptor::Protocol::Error::ConnectionRefused
+            rescue => e
+              ex = e
+            end
+
+            [
+                Raptor::Protocol::Error::ConnectionRefused,
+                Raptor::Protocol::Error::HostUnreachable
+            ].should include ex.class
           end
         end
 

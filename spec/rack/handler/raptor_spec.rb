@@ -62,7 +62,7 @@ describe Rack::Handler::Raptor do
     it 'starts the server' do
       server = nil
       t = Thread.new do
-        described_class.run( RackValidatorApp.new, Port: 9292 ) { |s| server = s }
+        described_class.run( RackValidatorApp.new, Host: '0.0.0.0', Port: 9292 ) { |s| server = s }
       end
       sleep 1
 
@@ -76,7 +76,7 @@ describe Rack::Handler::Raptor do
       it 'returns the error in the response body' do
         server = nil
         t = Thread.new do
-          described_class.run( ErrorRackApp.new, Port: 9292 ) { |s| server = s }
+          described_class.run( ErrorRackApp.new, Host: '0.0.0.0', Port: 9292 ) { |s| server = s }
         end
         sleep 1
 
@@ -92,7 +92,7 @@ describe Rack::Handler::Raptor do
     it 'stops the server' do
       server = nil
       t = Thread.new do
-        described_class.run( RackValidatorApp.new, Port: 9292 ) { |s| server = s }
+        described_class.run( RackValidatorApp.new, Host: '0.0.0.0', Port: 9292 ) { |s| server = s }
       end
       sleep 1
 

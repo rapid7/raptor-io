@@ -522,7 +522,8 @@ class Client
 
     address =  begin
       (@address[request.connection_id] ||= Socket.getaddrinfo( host, nil ))
-    rescue Errno::ENOENT => e
+    # OSX raises SocketError.
+    rescue SocketError, Errno::ENOENT => e
       error = Protocol::Error::CouldNotResolve.new( e.to_s )
       error.set_backtrace( e.backtrace )
       handle_error( request, error, nil )
@@ -533,7 +534,8 @@ class Client
 
     begin
       socket.connect_nonblock( Socket.pack_sockaddr_in( port, address[0][3] ) )
-    rescue Errno::EINPROGRESS
+    # OSX raises SocketError.
+    rescue SocketError, Errno::EINPROGRESS
       if select( nil, [socket], nil, @timeout ).nil?
         error = Protocol::Error::HostUnreachable.new
         error.set_backtrace( caller )
