@@ -1,5 +1,5 @@
 require 'thread'
-require 'socket'
+require 'raptor/socket'
 require 'base64'
 require 'cgi'
 require 'uri'

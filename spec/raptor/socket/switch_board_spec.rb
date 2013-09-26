@@ -4,8 +4,7 @@ require 'raptor/socket'
 
 describe Raptor::Socket::SwitchBoard do
   subject(:switch_board) do
-    sb = described_class.new
-    sb
+    described_class.new
   end
 
   it { should be_an Enumerable }

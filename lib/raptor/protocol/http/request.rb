@@ -53,8 +53,8 @@ class Request < Message
   # @private
   attr_accessor :root_redirect_id
 
-  # @return [Addrinfo]  Client address information -- populated by {Server}.
-  attr_accessor :client_info
+  # @return [String]  IP address -- populated by {Server}.
+  attr_accessor :client_address
 
   #
   # @note This class' options are in addition to {Message#initialize}.

@@ -165,6 +165,15 @@ class Raptor::Socket::SwitchBoard
     best_comm(opts[:peer_host]).create_tcp(opts)
   end
 
+  # Create a TCP server socket on the {#best_comm best comm} available
+  # for `:local_host`.
+  #
+  # @param (see Comm#create_tcp_server)
+  # @option opts (see Comm#create_tcp_server)
+  def create_tcp_server(opts)
+    best_comm(opts[:local_host]).create_tcp_server(opts)
+  end
+
   private
 
   def synchronize( &block )

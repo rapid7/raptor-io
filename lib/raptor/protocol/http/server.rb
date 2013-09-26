@@ -40,6 +40,11 @@ class Server
   # @return [Integer]  Amount of timed out connections.
   attr_reader :timeouts
 
+  # @return [SwitchBoard]
+  #   The routing table from which this {Server} will
+  #   {Socket::SwitchBoard#create_tcp_server listen}.
+  attr_reader :switch_board
+
   # @param  [Hash]  options
   # @option options [String] :address ('0.0.0.0')
   #   Address to bind to.
@@ -62,6 +67,11 @@ class Server
   #   Handler to be passed each {Request} and populate an empty {Response}
   #   object.
   def initialize( options = {}, &handler )
+    @switch_board = options.delete(:switch_board)
+    unless @switch_board.is_a?(::Raptor::Socket::SwitchBoard)
+      raise ArgumentError, 'Must provide a :switch_board'
+    end
+
     DEFAULT_OPTIONS.merge( options ).each do |k, v|
       begin
         send( "#{k}=", try_dup( v ) )
@@ -79,8 +89,8 @@ class Server
         # Sockets ready to write to.
         writes:      [],
 
-        # Socket => Addrinfo
-        client_info: {}
+        # IP address.
+        client_address: {}
     }
 
     # In progress/buffered requests.
@@ -141,9 +151,8 @@ class Server
           next
         end
 
-        client, client_addrinfo = @server.accept_nonblock
-
-        @sockets[:client_info][client] = client_addrinfo
+        client = @server.accept_nonblock
+        @sockets[:client_address][client] = Socket.unpack_sockaddr_in( client.getpeername ).last
         @sockets[:reads] << client
 
         log 'Connected', :debug, client
@@ -170,6 +179,9 @@ class Server
       begin
         run
       rescue => e
+        log "#{e.class}: #{e}", :fatal
+        e.backtrace.each { |l| log l, :fatal }
+
         synchronize { @running = true }
         ex = e
       end
@@ -256,10 +268,14 @@ class Server
   end
 
   def listen
-    server = ::Socket.new( ::Socket::Constants::AF_INET, ::Socket::Constants::SOCK_STREAM, 0 )
-    server.setsockopt( ::Socket::Option.bool( :INET, :SOCKET, :REUSEADDR, true ) )
-    server.bind( ::Socket.sockaddr_in( @port, @address ) )
-    server.listen( LISTEN_BACKLOG )
+    server = @switch_board.create_tcp_server(
+        local_host:      @address,
+        local_port:      @port,
+        connect_timeout: @timeout,
+
+        # XXX: Have to handle ssl at some point
+        #ssl:            @ssl
+    )
 
     log "Listening on #{@address}:#{@port}."
 
@@ -316,7 +332,7 @@ class Server
 
   def handle_read_request( socket )
     request = Request.parse( @pending_requests.delete( socket )[:buffer] )
-    request.client_info = @sockets[:client_info][socket]
+    request.client_address = @sockets[:client_address][socket]
 
     if (sysres = @system_responses.delete( socket ))
       sysres.request = request
@@ -378,7 +394,7 @@ class Server
   def close( socket )
     @sockets[:reads].delete( socket )
     @sockets[:writes].delete( socket )
-    @sockets[:client_info].delete( socket )
+    @sockets[:client_address].delete( socket )
     socket.close
   end
 
@@ -389,8 +405,8 @@ class Server
   def log( message, severity = :info, socket = nil )
     return if !@logger
 
-    if socket && @sockets[:client_info].include?( socket )
-      message += " [#{@sockets[:client_info][socket].inspect_sockaddr}]"
+    if socket && @sockets[:client_address].include?( socket )
+      message += " [#{@sockets[:client_address][socket]}]"
     end
 
     @logger.send severity, message

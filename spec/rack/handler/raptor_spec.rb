@@ -58,11 +58,17 @@ describe Rack::Handler::Raptor do
     Net::HTTP.get_response( URI( argument_to_url( server_or_url ) ) )
   end
 
+  def run_server( app, options = {}, &block )
+    options = { switch_board: Raptor::Socket::SwitchBoard.new }.merge( options )
+    described_class.run( app, options, &block )
+  end
+
   describe '.run' do
     it 'starts the server' do
       server = nil
+
       t = Thread.new do
-        described_class.run( RackValidatorApp.new, Host: '0.0.0.0', Port: 9292 ) { |s| server = s }
+        run_server( RackValidatorApp.new, Host: '0.0.0.0', Port: 9292 ) { |s| server = s }
       end
       sleep 1
 
@@ -76,7 +82,7 @@ describe Rack::Handler::Raptor do
       it 'returns the error in the response body' do
         server = nil
         t = Thread.new do
-          described_class.run( ErrorRackApp.new, Host: '0.0.0.0', Port: 9292 ) { |s| server = s }
+          run_server( ErrorRackApp.new, Host: '0.0.0.0', Port: 9292 ) { |s| server = s }
         end
         sleep 1
 
@@ -92,7 +98,7 @@ describe Rack::Handler::Raptor do
     it 'stops the server' do
       server = nil
       t = Thread.new do
-        described_class.run( RackValidatorApp.new, Host: '0.0.0.0', Port: 9292 ) { |s| server = s }
+        run_server( RackValidatorApp.new, Host: '0.0.0.0', Port: 9292 ) { |s| server = s }
       end
       sleep 1
 

@@ -1,5 +1,4 @@
 require 'thread'
-require 'socket'
 require 'base64'
 
 module Raptor
@@ -57,7 +56,7 @@ class Client
   def initialize( options = {} )
     @switch_board = options.delete(:switch_board)
     unless @switch_board.is_a?(::Raptor::Socket::SwitchBoard)
-      raise ArgumentError, "Must provide a :switch_board"
+      raise ArgumentError, 'Must provide a :switch_board'
     end
 
     DEFAULT_OPTIONS.merge( options ).each do |k, v|
