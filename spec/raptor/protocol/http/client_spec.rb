@@ -570,14 +570,14 @@ describe Raptor::Protocol::HTTP::Client do
             response.headers.should == {}
           end
 
-          it 'assigns Raptor::Protocol::Error::CouldNotResolve to #error' do
+          it 'assigns Raptor::Socket::Error::CouldNotResolve to #error' do
             url = 'http://stuffhereblahblahblah'
 
             response = nil
             client.get( url ){ |r| response = r }
             client.run
 
-            response.error.should be_kind_of Raptor::Protocol::Error::CouldNotResolve
+            response.error.should be_kind_of Raptor::Socket::Error::CouldNotResolve
           end
         end
       end
@@ -592,10 +592,10 @@ describe Raptor::Protocol::HTTP::Client do
         end
 
         context 'due to an invalid address' do
-          it 'raises Raptor::Protocol::Error::CouldNotResolve' do
+          it 'raises Raptor::Socket::Error::CouldNotResolve' do
             expect {
               client.get( 'http://stuffhereblahblahblah', mode: :sync )
-            }.to raise_error Raptor::Protocol::Error::CouldNotResolve
+            }.to raise_error Raptor::Socket::Error::CouldNotResolve
           end
         end
       end

@@ -1,4 +1,3 @@
-
 require 'forwardable'
 
 # A basic class for specific transports to inherit from. Analogous to
@@ -12,6 +11,16 @@ class Raptor::Socket
   require 'raptor/socket/tcp_server'
 
   class << self
+
+    def getaddrinfo( *args )
+      begin
+        ::Socket.getaddrinfo( *args )
+      # OSX raises SocketError.
+      rescue ::SocketError, ::Errno::ENOENT => e
+        raise Raptor::Socket::Error::CouldNotResolve.new( e.to_s )
+      end
+    end
+
     # Delegate to Ruby Socket.
     def method_missing(meth, *args, &block)
       if ::Socket.respond_to?(meth)

@@ -529,16 +529,11 @@ class Client
 
     host = request.parsed_url.host
     port = request.parsed_url.port
-    # XXX: Have to handle ssl at some point
-    #ssl  = (request.parsed_url.proto == 'https') ? true : false
 
     addrinfo =  begin
       (@address[request.connection_id] ||= Socket.getaddrinfo( host, nil ))
-    # OSX raises SocketError.
-    rescue Socket::Error, ::Errno::ENOENT => e
-      error = Protocol::Error::CouldNotResolve.new( e.to_s )
-      error.set_backtrace( e.backtrace )
-      handle_error( request, error, nil )
+    rescue Raptor::Socket::Error => e
+      handle_error( request, e, nil )
       return
     end
 
@@ -547,9 +542,11 @@ class Client
         peer_host:       addrinfo[0][3],
         peer_port:       port,
         connect_timeout: @timeout,
-        #ssl:            ssl
+
+        # XXX: Have to handle ssl at some point
+        #ssl:            request.parsed_url.proto == 'https'
       )
-    rescue Raptor::Socket::Error::ConnectionError => e
+    rescue Raptor::Socket::Error => e
       handle_error( request, e )
       return
     end

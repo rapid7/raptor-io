@@ -1,15 +1,22 @@
 
 # Base class for all socket-related errors
 class Raptor::Socket::Error < Raptor::Error
-  # Base class for errors that cause a connection to fail
+
+  # Hostname resolution error.
+  #
+  # @author Tasos "Zapotek" Laskos <tasos.laskos@gmail.com>
+  class CouldNotResolve < Raptor::Socket::Error
+  end
+
+  # Base class for errors that cause a connection to fail.
   class ConnectionError < Raptor::Socket::Error
   end
 
-  # Raised when a socket receives no SYN/ACK before timeout
+  # Raised when a socket receives no SYN/ACK before timeout.
   class ConnectionTimeout < Raptor::Socket::Error::ConnectionError
   end
 
-  # Raised when a socket receives a RST during connect
+  # Raised when a socket receives a RST during connect.
   class ConnectionRefused < Raptor::Socket::Error::ConnectionError
   end
 
