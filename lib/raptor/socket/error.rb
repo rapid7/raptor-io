@@ -25,7 +25,7 @@ end
 
 # Broken-pipe error.
 #
-# Occurs when a connection dies while unexpectedly.
+# Occurs when a connection dies unexpectedly.
 #
 # @author Tasos "Zapotek" Laskos <tasos.laskos@gmail.com>
 class Raptor::Socket::Error::BrokenPipe < Raptor::Socket::Error

@@ -256,9 +256,9 @@ class Server
   end
 
   def listen
-    server = Socket.new( Socket::Constants::AF_INET, Socket::Constants::SOCK_STREAM, 0 )
-    server.setsockopt( Socket::Option.bool( :INET, :SOCKET, :REUSEADDR, true ) )
-    server.bind( Socket.sockaddr_in( @port, @address ) )
+    server = ::Socket.new( ::Socket::Constants::AF_INET, ::Socket::Constants::SOCK_STREAM, 0 )
+    server.setsockopt( ::Socket::Option.bool( :INET, :SOCKET, :REUSEADDR, true ) )
+    server.bind( ::Socket.sockaddr_in( @port, @address ) )
     server.listen( LISTEN_BACKLOG )
 
     log "Listening on #{@address}:#{@port}."

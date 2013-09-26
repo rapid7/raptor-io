@@ -24,10 +24,10 @@ class Client
   # @return [Hash{Symbol=>Hash}]
   #   Request manipulators, and their options, to be run against each
   #   {#queue queued} request.
-  attr_reader :manipulators
+  attr_accessor :manipulators
 
   # @return [Hash]  Persistent storage for the manipulators..
-  attr_reader :datastore
+  attr_accessor :datastore
 
   # @return [SwitchBoard] The routing table from which this {Client}
   #   will {Socket::SwitchBoard#create_tcp make new TCP connections}.
@@ -62,9 +62,9 @@ class Client
 
     DEFAULT_OPTIONS.merge( options ).each do |k, v|
       begin
-        send( "#{k}=", v )
+        send( "#{k}=", try_dup( v ) )
       rescue NoMethodError
-        instance_variable_set( "@#{k}".to_sym, v.dup )
+        instance_variable_set( "@#{k}".to_sym, try_dup( v ) )
       end
     end
 
@@ -296,9 +296,13 @@ class Client
     client = self.class.new(
         switch_board:     @switch_board,
         user_agent:       user_agent,
-        timeout:          timeout,
-        manipulators:     @manipulators
+        timeout:          timeout
     )
+
+    # The normal and sync clients should share these structures, that's why
+    # we're not passing them via the initializer.
+    client.manipulators = @manipulators
+    client.datastore    = @datastore
 
     res = nil
     request.on_complete { |r| res = r }
@@ -346,6 +350,7 @@ class Client
           error = Protocol::Error::BrokenPipe.new( e.to_s )
           error.set_backtrace( e.backtrace )
           handle_error( request, error, socket )
+          return
         end
       end
 
@@ -371,12 +376,14 @@ class Client
   #   `true` if the response finished being buffered, `nil` otherwise.
   #
   def read( socket )
+    reset_timeout( socket )
+
     response = @pending_responses[socket]
 
     if response[:has_full_headers]
       headers = response[:parsed_headers]
 
-      if headers['Transfer-Encoding'] == 'chunked'
+      if headers['Transfer-Encoding'].to_s.downcase == 'chunked'
         read_size = socket.gets.to_s[0...-CRLF.size]
         return if read_size.empty?
 
@@ -440,6 +447,10 @@ class Client
     end
 
     nil
+  end
+
+  def reset_timeout( socket )
+    @pending_responses[socket][:timeout] = @sockets[:lookup_request][socket].timeout
   end
 
   #
@@ -521,9 +532,10 @@ class Client
     # XXX: Have to handle ssl at some point
     #ssl  = (request.parsed_url.proto == 'https') ? true : false
 
-    addrinfo = begin
-      (@address[request.connection_id] ||= ::Socket.getaddrinfo( host, nil ))
-    rescue Errno::ENOENT => e
+    addrinfo =  begin
+      (@address[request.connection_id] ||= Socket.getaddrinfo( host, nil ))
+    # OSX raises SocketError.
+    rescue Socket::Error, ::Errno::ENOENT => e
       error = Protocol::Error::CouldNotResolve.new( e.to_s )
       error.set_backtrace( e.backtrace )
       handle_error( request, error, nil )
@@ -532,10 +544,10 @@ class Client
 
     begin
       socket = @switch_board.create_tcp(
-        peer_host: addrinfo[0][3],
-        peer_port: port,
+        peer_host:       addrinfo[0][3],
+        peer_port:       port,
         connect_timeout: @timeout,
-        #ssl: ssl,
+        #ssl:            ssl
       )
     rescue Raptor::Socket::Error::ConnectionError => e
       handle_error( request, e )
@@ -648,6 +660,10 @@ class Client
 
   def validate_manipulators( manipulators )
     Request::Manipulators.validate_batch_options( manipulators, self )
+  end
+
+  def try_dup( value )
+    value.dup rescue value
   end
 
 end
