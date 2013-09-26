@@ -525,21 +525,15 @@ class Client
   #
   # @param  [Request] request
   def connect( request )
-    @address ||= {}
+    @addresses ||= {}
 
     host = request.parsed_url.host
     port = request.parsed_url.port
-
-    addrinfo =  begin
-      (@address[request.connection_id] ||= Socket.getaddrinfo( host, nil ))
-    rescue Raptor::Socket::Error => e
-      handle_error( request, e, nil )
-      return
-    end
+    cid  = request.connection_id
 
     begin
-      socket = @switch_board.create_tcp(
-        peer_host:       addrinfo[0][3],
+      @switch_board.create_tcp(
+        peer_host:       (@addresses[cid] ||= Socket.getaddrinfo( host, nil ))[0][3],
         peer_port:       port,
         connect_timeout: @timeout,
 
@@ -548,10 +542,8 @@ class Client
       )
     rescue Raptor::Socket::Error => e
       handle_error( request, e )
-      return
+      nil
     end
-
-    socket
   end
 
   def handle_success( socket )
