@@ -52,14 +52,14 @@ class Raptor::Socket::SwitchBoard
       return false unless comm.support_ipv6?
     end
 
-    @mutex.synchronize {
+    synchronize do
       # If the route already exists, return false to the caller.
-      if (route_exists?(subnet, netmask))
+      if route_exists?(subnet, netmask)
         rv = false
       else
         @routes << Route.new(subnet, netmask, comm)
       end
-    }
+    end
 
     rv
   end
@@ -71,17 +71,15 @@ class Raptor::Socket::SwitchBoard
   def best_comm(addr)
     addr = IPAddr.parse(addr)
 
-    addr_nbo = addr.to_i
-
     # Find the most specific route that this address fits in. If none,
     # use the default, i.e., local.
-    best_route = reduce(DEFAULT_ROUTE) { |best, route|
+    best_route = reduce(DEFAULT_ROUTE) do |best, route|
       if route.subnet.include?(addr) && route.netmask >= best.netmask
         route
       else
         best
       end
-    }
+    end
 
     best_route.comm
   end
@@ -100,11 +98,11 @@ class Raptor::Socket::SwitchBoard
   def flush_routes
     # Remove each of the individual routes so the comms don't think they're
     # still routing after a flush.
-    @routes.each { |r|
+    @routes.each do |r|
       if r.comm.respond_to? :routes
         r.comm.routes.delete("#{r.subnet}/#{r.netmask}")
       end
-    }
+    end
 
     # Re-initialize to an empty array
     @routes.clear
@@ -116,11 +114,10 @@ class Raptor::Socket::SwitchBoard
   # @param comm [Comm]
   # @return [void]
   def remove_by_comm(comm)
-    @mutex.synchronize {
-      @routes.delete_if { |route|
-        route.comm == comm
-      }
-    }
+    synchronize do
+      @routes.delete_if { |route| route.comm == comm }
+    end
+
     nil
   end
 
@@ -134,15 +131,15 @@ class Raptor::Socket::SwitchBoard
     rv = false
 
     other = Route.new(subnet, netmask, comm)
-    @mutex.synchronize {
-      @routes.delete_if { |route|
-        if (route == other)
+    synchronize do
+      @routes.delete_if do |route|
+        if route == other
           rv = true
         else
           false
         end
-      }
-    }
+      end
+    end
 
     rv
   end
@@ -152,9 +149,9 @@ class Raptor::Socket::SwitchBoard
   # netmask.
   #
   def route_exists?(subnet, netmask)
-    each { |route|
-      return true if (route.subnet == subnet and route.netmask == netmask)
-    }
+    each do |route|
+      return true if route.subnet == subnet and route.netmask == netmask
+    end
 
     false
   end
@@ -166,6 +163,12 @@ class Raptor::Socket::SwitchBoard
   # @option opts (see Comm#create_tcp)
   def create_tcp(opts)
     best_comm(opts[:peer_host]).create_tcp(opts)
+  end
+
+  private
+
+  def synchronize( &block )
+    @mutex.synchronize( &block )
   end
 
 end

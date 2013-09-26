@@ -10,11 +10,11 @@ class Raptor::Socket::Comm::Local < Raptor::Socket::Comm
   # We attempt to discover this by creating an unbound UDP socket with
   # the AF_INET6 address family
   def support_ipv6?
-    return @support_ipv6 if instance_variable_defined?(:@support_ipv6)
+    return @support_ipv6 unless @support_ipv6.nil?
 
     @support_ipv6 = false
 
-    if (::Socket.const_defined?('AF_INET6'))
+    if ::Socket.const_defined?('AF_INET6')
       begin
         sock = ::Socket.new(::Socket::AF_INET6, ::Socket::SOCK_DGRAM, ::Socket::IPPROTO_UDP)
         sock.close
@@ -23,7 +23,7 @@ class Raptor::Socket::Comm::Local < Raptor::Socket::Comm
       end
     end
 
-    return @support_ipv6
+    @support_ipv6
   end
 
   # Connect to `:peer_host`
