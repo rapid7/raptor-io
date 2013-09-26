@@ -12,10 +12,10 @@ module Protocol::HTTP
 class Response < Message
 
   # @return [Integer] HTTP response status code.
-  attr_reader :code
+  attr_accessor :code
 
   # @return [String] HTTP response status message.
-  attr_reader :message
+  attr_accessor :message
 
   # @return [Request] HTTP {Request} which triggered this {Response}.
   attr_accessor :request
@@ -25,7 +25,7 @@ class Response < Message
   attr_accessor :redirections
 
   # @return [Exception] Exception representing the error that occurred.
-  attr_reader :error
+  attr_accessor :error
 
   #
   # @note This class' options are in addition to {Message#initialize}.
@@ -83,6 +83,8 @@ class Response < Message
   # @return [String]
   #   String representation of the response.
   def to_s
+    headers['Content-Length'] = body.to_s.size
+
     r = "HTTP/#{version} #{code}"
     r <<  " #{message}" if message
     r <<  "\r\n"

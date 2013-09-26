@@ -9,7 +9,7 @@ describe Raptor::Protocol::HTTP::Response do
   let(:response) do
     "HTTP/1.1 404 Not Found\r\n" +
       "Content-Type: text/html;charset=utf-8\r\n" +
-      "Content-Length: 431\r\n\r\n" +
+      "Content-Length: 27\r\n\r\n" +
       "<!DOCTYPE html>\n" +
       "More stuff\n".force_encoding( 'ASCII-8BIT')
   end
@@ -17,7 +17,7 @@ describe Raptor::Protocol::HTTP::Response do
   let(:response_cr) do
     "HTTP/1.1 404 Not Found\n" +
       "Content-Type: text/html;charset=utf-8\n" +
-      "Content-Length: 431\n\n" +
+      "Content-Length: 27\n\n" +
       "<!DOCTYPE html>\n" +
       "More stuff\n".force_encoding( 'ASCII-8BIT')
   end
@@ -187,7 +187,7 @@ describe Raptor::Protocol::HTTP::Response do
       r.body.should == "<!DOCTYPE html>\nMore stuff\n"
       r.headers.should == {
           'Content-Type'   => 'text/html;charset=utf-8',
-          'Content-Length' => '431'
+          'Content-Length' => '27'
       }
       r.to_s.should == response
     end
@@ -200,7 +200,7 @@ describe Raptor::Protocol::HTTP::Response do
       r.body.should == "<!DOCTYPE html>\nMore stuff\n"
       r.headers.should == {
           'Content-Type'   => 'text/html;charset=utf-8',
-          'Content-Length' => '431'
+          'Content-Length' => '27'
       }
       r.to_s.should == response
     end

@@ -38,7 +38,7 @@ describe Raptor::Protocol::HTTP::Headers do
     end
   end
 
-  describe 'set_cookie' do
+  describe '#set_cookie' do
     context 'when there are no set-cookie fields' do
       it 'returns an empty array' do
         described_class.new.cookies.should == []
@@ -55,10 +55,10 @@ describe Raptor::Protocol::HTTP::Headers do
     end
   end
 
-  describe 'cookies' do
-    context 'when there are no cookies' do
+  describe '#parsed_set_cookie' do
+    context 'when there are no Set-cookie fields' do
       it 'returns an empty array' do
-        described_class.new.cookies.should == []
+        described_class.new.parsed_set_cookie.should == []
       end
     end
 
@@ -68,7 +68,7 @@ describe Raptor::Protocol::HTTP::Headers do
               'name=value; Expires=Wed, 09 Jun 2020 10:18:14 GMT',
               'name2=value2; Expires=Wed, 09 Jun 2021 10:18:14 GMT'
           ]
-      ).cookies.should == [
+      ).parsed_set_cookie.should == [
           {
               name:         'name',
               value:        'value',
@@ -96,6 +96,49 @@ describe Raptor::Protocol::HTTP::Headers do
               secure:       nil,
               path:         nil,
               domain:       nil
+          }
+      ]
+    end
+  end
+
+  describe '#cookies' do
+    context 'when there is no Cookie fied' do
+      it 'returns an empty array' do
+        described_class.new.cookies.should == []
+      end
+    end
+
+    it 'returns an array of cookies as hashes' do
+      described_class.new(
+          'Cookie' => 'cname=cvalue; c2name=c2value'
+      ).cookies.should == [
+          {
+              name: 'cname',
+              value: 'cvalue',
+              version: 0,
+              port: nil,
+              discard: nil,
+              comment_url: nil,
+              expires: nil,
+              max_age: nil,
+              comment: nil,
+              secure: nil,
+              path: nil,
+              domain: nil
+          },
+          {
+              name: 'c2name',
+              value: 'c2value',
+              version: 0,
+              port: nil,
+              discard: nil,
+              comment_url: nil,
+              expires: nil,
+              max_age: nil,
+              comment: nil,
+              secure: nil,
+              path: nil,
+              domain: nil
           }
       ]
     end

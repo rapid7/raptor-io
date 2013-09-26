@@ -906,4 +906,60 @@ describe Raptor::Protocol::HTTP::Request do
 
   end
 
+  describe '.parse' do
+    it 'parses a request string into a Request object' do
+      request = <<EOTXT
+GET /stuff?pname=pvalue HTTP/1.1
+Host: localhost:88
+User-Agent: Stuff agent
+Cookie: cname=cvalue; c2name=c2value
+
+body+here
+EOTXT
+
+      request = described_class.parse( request )
+      request.url.should             == '/stuff?pname=pvalue'
+      request.parsed_url.to_s.should == '/stuff?pname=pvalue'
+      request.version.should         == '1.1'
+      request.http_method.should     == :get
+      request.body.should            == "body+here\n"
+      request.headers.should         eq({
+        'Host'       => 'localhost:88',
+        'User-Agent' => 'Stuff agent',
+        'Cookie'     => 'cname=cvalue; c2name=c2value'
+      })
+
+      request.headers.cookies.should == [
+        {
+            name: 'cname',
+            value: 'cvalue',
+            version: 0,
+            port: nil,
+            discard: nil,
+            comment_url: nil,
+            expires: nil,
+            max_age: nil,
+            comment: nil,
+            secure: nil,
+            path: nil,
+            domain: nil
+        },
+        {
+            name: 'c2name',
+            value: 'c2value',
+            version: 0,
+            port: nil,
+            discard: nil,
+            comment_url: nil,
+            expires: nil,
+            max_age: nil,
+            comment: nil,
+            secure: nil,
+            path: nil,
+            domain: nil
+        }
+      ]
+    end
+  end
+
 end

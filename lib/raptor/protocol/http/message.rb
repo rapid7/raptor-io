@@ -15,7 +15,7 @@ class Message
   attr_reader :headers
 
   # @return [String]  {Request}/{Response} body.
-  attr_reader :body
+  attr_accessor :body
 
   #
   # @note All options will be sent through the class setters whenever
