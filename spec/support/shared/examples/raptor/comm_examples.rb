@@ -3,6 +3,8 @@
 shared_examples "a comm" do
   it { should respond_to(:create_tcp) }
   it { should respond_to(:create_tcp_server) }
+  it { should respond_to(:resolve) }
+  it { should respond_to(:reverse_resolve) }
   #pending { should respond_to(:create_udp) }
   #pending { should respond_to(:create_udp_server) }
 

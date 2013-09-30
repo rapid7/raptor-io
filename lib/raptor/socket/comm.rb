@@ -13,6 +13,7 @@ require 'raptor/ruby/ipaddr'
 #
 # Subclasses must implement the following methods:
 #
+#   * `resolve`
 #   * `create_tcp`
 #   * `create_tcp_server`
 #   * `create_udp`
@@ -39,6 +40,24 @@ class Raptor::Socket::Comm
            end
 
     sock
+  end
+
+  # Resolves a hostname to an IP address using this comm.
+  #
+  # @abstract
+  #
+  # @param  [String]  hostname
+  def resolve( hostname )
+    raise NotImplementedError
+  end
+
+  # Resolves an IP address to a hostname using this comm.
+  #
+  # @abstract
+  #
+  # @param  [String]  ip_address
+  def reverse_resolve( ip_address )
+    raise NotImplementedError
   end
 
   # Connect to a host over TCP.

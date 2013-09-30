@@ -19,6 +19,18 @@ describe Raptor::Socket::Comm::Local do
     it_behaves_like "a comm"
   end
 
+  describe '#resolve' do
+    it 'should resolve a hostname to an IP address' do
+      comm_local.resolve( 'localhost' ).should == '127.0.0.1'
+    end
+  end
+
+  describe '#reverse_resolve' do
+    it 'should resolve a hostname to an IP address' do
+      comm_local.reverse_resolve( '127.0.0.1' ).should == 'localhost'
+    end
+  end
+
   describe "#support_ipv6?" do
     # These are ghetto tests. It assumes the implementation for
     # determining support.

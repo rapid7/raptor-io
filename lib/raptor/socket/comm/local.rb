@@ -1,6 +1,7 @@
 # -*- coding: binary -*-
 require 'timeout'
 require 'socket'
+require 'resolv'
 
 # Local communication using Ruby `::Socket`s
 class Raptor::Socket::Comm::Local < Raptor::Socket::Comm
@@ -24,6 +25,20 @@ class Raptor::Socket::Comm::Local < Raptor::Socket::Comm
     end
 
     @support_ipv6
+  end
+
+  # Resolves a hostname to an IP address using this comm.
+  #
+  # @param  [String]  hostname
+  def resolve( hostname )
+    ::Resolv.getaddress hostname
+  end
+
+  # Resolves an IP address to a hostname using this comm.
+  #
+  # @param  [String]  ip_address
+  def reverse_resolve( ip_address )
+    ::Resolv.getname ip_address
   end
 
   # Connect to `:peer_host`
