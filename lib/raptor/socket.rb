@@ -12,6 +12,14 @@ class Raptor::Socket
 
   class << self
 
+    def translate_errors( &block )
+      block.call
+    rescue ::Errno::EPIPE, ::Errno::ECONNRESET => e
+      raise Raptor::Socket::Error::BrokenPipe, e.to_s
+    rescue ::Errno::ECONNREFUSED => e
+      raise Raptor::Socket::Error::ConnectionRefused, e.to_s
+    end
+
     def getaddrinfo( *args )
       begin
         ::Socket.getaddrinfo( *args )
@@ -62,13 +70,9 @@ class Raptor::Socket
   # Delegate to @sock
   def method_missing(meth, *args, &block)
     if @sock.respond_to?(meth)
-      begin
+      self.class.translate_errors do
         # not send() because that sends a packet.  =)
         @sock.__send__(meth, *args, &block)
-      rescue ::Errno::EPIPE, ::Errno::ECONNRESET => e
-        raise Raptor::Socket::Error::BrokenPipe, e.to_s
-      rescue ::Errno::ECONNREFUSED => e
-        raise Raptor::Socket::Error::ConnectionRefused, e.to_s
       end
     else
       super
