@@ -34,6 +34,30 @@ class Raptor::Socket::Tcp < Raptor::Socket
     0
   end
 
+  # Ruby Socket#gets accepts:
+  #
+  # * gets(sep=$/)
+  # * gets(limit=nil)
+  # * gets(sep=$/, limit=nil)
+  #
+  # OpenSSL::SSL::SSLSocket#gets however only supports `gets(sep=$/, limit=nil)`.
+  # This hack allows SSLSocket to behave the same as Ruby Socket.
+  #
+  # @private
+  def gets( *args )
+    self.class.translate_errors do
+      if args.size == 1
+        if (arg = args.first).is_a? String
+          @sock.gets arg
+        else
+          @sock.gets $/, arg
+        end
+      else
+        @sock.gets *args
+      end
+    end
+  end
+
   protected
 
   # Use values from {#config} to create an SSL context.
