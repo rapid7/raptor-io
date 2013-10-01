@@ -28,6 +28,15 @@ class Client
   # @return [Hash]  Persistent storage for the manipulators..
   attr_accessor :datastore
 
+  # @return [Symbol]  SSL version.
+  attr_accessor :ssl_version
+
+  # @return [Constant]  Peer verification mode.
+  attr_accessor :ssl_verify_mode
+
+  # @return [OpenSSL::SSL::SSLContext]  SSL context to use.
+  attr_accessor :ssl_context
+
   # @return [SwitchBoard] The routing table from which this {Client}
   #   will {Socket::SwitchBoard#create_tcp make new TCP connections}.
   attr_reader :switch_board
@@ -36,7 +45,10 @@ class Client
       concurrency:      20,
       user_agent:       "Raptor::HTTP/#{Raptor::VERSION}",
       timeout:          10,
-      manipulators:     {}
+      manipulators:     {},
+      ssl_version:      :TLSv1,
+      ssl_verify_mode:  OpenSSL::SSL::VERIFY_NONE,
+      ssl_context:      nil
   }.freeze
 
   # @param  [Hash]  options Request options.
@@ -48,6 +60,11 @@ class Client
   #   Timeout in seconds.
   # @option options [Hash{Symbol=>Hash}] :manipulators
   #   Request manipulators and their options.
+  # @option options [Symbol]  ssl_version (:TLSv1)
+  # @option options [Constant]  ssl_verify_mode (OpenSSL::SSL::VERIFY_NONE)
+  #   Peer verification mode.
+  # @option options [OpenSSL::SSL::SSLContext]  ssl_context (nil)
+  #   SSL context to use.
   # @option options [Socket::SwitchBoard] :switch_board The switch board
   #   from which we can create new connections.
   #
@@ -387,7 +404,7 @@ class Client
         return if read_size.empty?
 
         if (read_size = read_size.to_i( 16 )) > 0
-          response[:body] << socket.gets( read_size + CRLF.size ).to_s[0...read_size]
+          response[:body] << socket.read( read_size + CRLF.size ).to_s[0...read_size]
           return
         end
       else
@@ -405,7 +422,7 @@ class Client
         closed = false
         if has_body
           begin
-            if (line = socket.gets( *[read_size].compact ))
+            if (line = (read_size ? socket.read( read_size ) : socket.gets))
               response[:body] << line
             else
               raise Raptor::Socket::Error::BrokenPipe
@@ -535,10 +552,12 @@ class Client
         peer_host:       (@addresses[cid] ||= Socket.getaddrinfo( host, nil ))[0][3],
         peer_port:       port,
         connect_timeout: @timeout,
-
-        # XXX: Have to handle ssl at some point
-        #ssl:            request.parsed_url.proto == 'https'
-      )
+        ssl_version:     @ssl_version,
+        ssl_verify_mode: @ssl_verify_mode
+      ).tap do |s|
+        next if request.parsed_url.scheme != 'https'
+        s.ssl_client_connect( ssl_context: @ssl_context )
+      end
     rescue Raptor::Socket::Error => e
       handle_error( request, e )
       nil

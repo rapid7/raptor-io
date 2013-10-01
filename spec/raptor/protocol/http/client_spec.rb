@@ -6,8 +6,11 @@ describe Raptor::Protocol::HTTP::Client do
 
   before :all do
     WebServers.start :client_close_connection
+    WebServers.start :client_https
     WebServers.start :client
-    @url = WebServers.url_for( :client )
+
+    @url       = WebServers.url_for( :client )
+    @https_url = WebServers.url_for( :client_https ).gsub( 'http', 'https' )
   end
 
   before( :each ) do
@@ -20,11 +23,41 @@ describe Raptor::Protocol::HTTP::Client do
   let(:options) { {} }
   subject(:client) do
     described_class.new(
-      { switch_board:switch_board }.merge(options)
+      { switch_board: switch_board }.merge(options)
     )
   end
 
   describe '#initialize' do
+
+    describe :ssl_version do
+      let(:options) do
+        { ssl_version: 'stuff' }
+      end
+
+      it 'sets the SSL version to use' do
+        client.ssl_version.should == 'stuff'
+      end
+    end
+
+    describe :ssl_verify_mode do
+      let(:options) do
+        { ssl_verify_mode: 'stuff' }
+      end
+
+      it 'sets the SSL version to use' do
+        client.ssl_verify_mode.should == 'stuff'
+      end
+    end
+
+    describe :ssl_context do
+      let(:options) do
+        { ssl_context: 'stuff' }
+      end
+
+      it 'sets the SSL version to use' do
+        client.ssl_context.should == 'stuff'
+      end
+    end
 
     describe :manipulators do
       it 'defaults to an empty Hash' do
@@ -211,6 +244,13 @@ describe Raptor::Protocol::HTTP::Client do
   end
 
   describe '#request' do
+    it 'supports SSL' do
+      res = client.get( @https_url, mode: :sync )
+      res.should be_kind_of Raptor::Protocol::HTTP::Response
+      res.code.should == 200
+      res.body.should == 'Stuff...'
+    end
+
     it 'handles responses without body (1xx, 204, 304)' do
       client.get( "#{@url}/204", mode: :sync ).should be_kind_of Raptor::Protocol::HTTP::Response
     end
