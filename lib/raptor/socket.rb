@@ -8,6 +8,7 @@ class Raptor::Socket
   require 'raptor/socket/error'
   require 'raptor/socket/switch_board'
   require 'raptor/socket/tcp'
+  require 'raptor/socket/ssl_tcp'
   require 'raptor/socket/tcp_server'
 
   class << self
@@ -32,13 +33,9 @@ class Raptor::Socket
     # Delegate to Ruby Socket.
     def method_missing(meth, *args, &block)
       if ::Socket.respond_to?(meth)
-        begin
+        translate_errors do
           # not send() because that sends a packet.  =)
           ::Socket.__send__(meth, *args, &block)
-        rescue ::Errno::EPIPE, ::Errno::ECONNRESET => e
-          raise Raptor::Socket::Error::BrokenPipe, e.to_s
-        rescue ::Errno::ECONNREFUSED => e
-          raise Raptor::Socket::Error::ConnectionRefused, e.to_s
         end
       else
         super

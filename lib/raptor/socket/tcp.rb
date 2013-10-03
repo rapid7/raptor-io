@@ -1,77 +1,24 @@
-
 # A TCP client socket
 class Raptor::Socket::TCP < Raptor::Socket
 
   # Number of seconds to wait for a connection to complete
   DEFAULT_CONNECT_TIMEOUT = 5
 
-  def initialize(sock, config={})
+  def initialize( sock, config = {} )
     super
     config[:connect_timeout] ||= DEFAULT_CONNECT_TIMEOUT
   end
 
-  # Turn this socket into an SSL stream
-  #
-  # @param ssl_opts [Hash] Options for
-  # @return 0
-  def ssl_client_connect(ssl_opts={})
-    if ssl_opts[:ssl_context]
-      @ssl_context = ssl_opts[:ssl_context]
-    else
-      ssl_init_context
-    end
-    ssl = OpenSSL::SSL::SSLSocket.new(@sock, @ssl_context)
-
-    Timeout.timeout(config[:connect_timeout]) do
-      ssl.connect
-    end
-
-    # Now that we've set up an encrypted session, we shouldn't ever
-    # really call methods on the underlying socket. Replace it with the
-    # new SSLSocket.
-    @sock = ssl
-
-    0
-  end
-
-  # Ruby Socket#gets accepts:
-  #
-  # * gets(sep=$/)
-  # * gets(limit=nil)
-  # * gets(sep=$/, limit=nil)
-  #
-  # OpenSSL::SSL::SSLSocket#gets however only supports `gets(sep=$/, limit=nil)`.
-  # This hack allows SSLSocket to behave the same as Ruby Socket.
-  #
-  # @private
-  def gets( *args )
-    self.class.translate_errors do
-      if args.size == 1
-        if (arg = args.first).is_a? String
-          @sock.gets arg
-        else
-          @sock.gets $/, arg
-        end
-      else
-        @sock.gets *args
-      end
-    end
-  end
-
-  protected
-
-  # Use values from {#config} to create an SSL context.
-  #
-  # @return [OpenSSL::SSL:SSLContext]
-  def ssl_init_context
-    config[:ssl_version]     ||= :TLSv1
-    config[:ssl_verify_mode] ||= OpenSSL::SSL::VERIFY_PEER
-
-    @ssl_context = OpenSSL::SSL::SSLContext.new(config[:ssl_version])
-    @ssl_context.verify_mode = config[:ssl_verify_mode]
-
-    @ssl_context
+  # @param  [Hash]  ssl_config Options
+  # @option options [Symbol]  version (:TLSv1)
+  # @option options [Constant]  verify_mode (OpenSSL::SSL::VERIFY_NONE)
+  #   Peer verification mode.
+  # @option options [OpenSSL::SSL::SSLContext]  context (nil)
+  #   SSL context to use.
+  def to_ssl!( ssl_config = { } )
+    @sock = Raptor::Socket::SSLTCP.new( @sock, config.merge( ssl_config ) )
+    @sock.connect
+    nil
   end
 
 end
-

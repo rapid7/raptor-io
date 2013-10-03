@@ -1,4 +1,3 @@
-
 # Base class for all socket-related errors
 class Raptor::Socket::Error < Raptor::Error
 
@@ -35,7 +34,12 @@ class Raptor::Socket::Error < Raptor::Error
   # @author Tasos "Zapotek" Laskos <tasos.laskos@gmail.com>
   class BrokenPipe < Raptor::Socket::Error
   end
+
+  # Not connected error.
+  #
+  # Occurs when attempting to transmit data over a not connected transport endpoint.
+  #
+  # @author Tasos "Zapotek" Laskos <tasos.laskos@gmail.com>
+  class NotConnected < Raptor::Socket::Error
+  end
 end
-
-
-
