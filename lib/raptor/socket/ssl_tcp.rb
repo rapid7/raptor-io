@@ -2,7 +2,7 @@
 require 'forwardable'
 
 # An SSL stream over TCP
-class Raptor::Socket::SslTcp < Raptor::Socket::Tcp
+class Raptor::Socket::SSLTCP < Raptor::Socket::TCP
 
   extend Forwardable
   def_delegators :@sock, :close, :closed?, :to_io

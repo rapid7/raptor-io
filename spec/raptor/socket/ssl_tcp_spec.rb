@@ -4,7 +4,7 @@ require 'spec_helper'
 require 'raptor/socket'
 require 'raptor/socket/ssl_tcp'
 
-describe Raptor::Socket::SslTcp do
+describe Raptor::Socket::SSLTCP do
   subject { described_class.new(io, opts) }
   let(:opts) do
     {

@@ -1,6 +1,6 @@
 
 # A TCP client socket
-class Raptor::Socket::Tcp < Raptor::Socket
+class Raptor::Socket::TCP < Raptor::Socket
 
   # Number of seconds to wait for a connection to complete
   DEFAULT_CONNECT_TIMEOUT = 5

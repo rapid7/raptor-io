@@ -3,7 +3,7 @@ require 'spec_helper'
 
 require 'raptor/socket'
 
-describe Raptor::Socket::Tcp do
+describe Raptor::Socket::TCP do
   subject do
     described_class.new(io, opts)
   end

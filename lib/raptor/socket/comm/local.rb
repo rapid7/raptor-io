@@ -44,7 +44,7 @@ class Raptor::Socket::Comm::Local < Raptor::Socket::Comm
   # Connect to `:peer_host`
   #
   # @option (see Comm#create_tcp)
-  # @return [Socket::Tcp]
+  # @return [Socket::TCP]
   # @raise [Raptor::Socket::Error::ConnectTimeout]
   def create_tcp(opts)
     phost = IPAddr.parse(opts[:peer_host])
@@ -72,7 +72,7 @@ class Raptor::Socket::Comm::Local < Raptor::Socket::Comm
       end
     end
 
-    Raptor::Socket::Tcp.new(sock, opts)
+    Raptor::Socket::TCP.new(sock, opts)
   end
 
   # Listen locally on `:local_port`
