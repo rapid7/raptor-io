@@ -1,9 +1,7 @@
-#
-# TCP class with SSL encryption.
+# TCP client with SSL encryption.
 #
 # @author Tasos Laskos <tasos_laskos@rapid7.com>
-#
-class Raptor::Socket::SSLTCP < Raptor::Socket::TCP
+class Raptor::Socket::TCP::SSL < Raptor::Socket::TCP
   extend Forwardable
 
   def_delegators :@sock, :close, :closed?, :to_io

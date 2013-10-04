@@ -1,6 +1,4 @@
-
 require 'spec_helper'
-
 require 'raptor/socket'
 
 describe Raptor::Socket::TCPServer do
@@ -16,6 +14,5 @@ describe Raptor::Socket::TCPServer do
     sio
   }
 
-  it_behaves_like "a server socket"
+  it_behaves_like 'a server socket'
 end
-

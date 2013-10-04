@@ -1,4 +1,4 @@
-# A TCP client socket
+# TCP client socket
 class Raptor::Socket::TCP < Raptor::Socket
 
   # Number of seconds to wait for a connection to complete
@@ -16,7 +16,7 @@ class Raptor::Socket::TCP < Raptor::Socket
   # @option options [OpenSSL::SSL::SSLContext]  context (nil)
   #   SSL context to use.
   def to_ssl!( ssl_config = { } )
-    @sock = Raptor::Socket::SSLTCP.new( @sock, config.merge( ssl_config ) )
+    @sock = Raptor::Socket::TCP::SSL.new( @sock, config.merge( ssl_config ) )
     @sock.connect
     nil
   end

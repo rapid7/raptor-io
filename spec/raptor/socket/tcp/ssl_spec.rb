@@ -1,7 +1,7 @@
 require 'spec_helper'
 require 'raptor/socket'
 
-describe Raptor::Socket::SSLTCP do
+describe Raptor::Socket::TCP::SSL do
   include_context 'with ssl server'
 
   let(:io) { unconnected_client_sock }
