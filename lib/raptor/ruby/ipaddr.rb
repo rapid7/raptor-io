@@ -1,3 +1,4 @@
+require 'ipaddr'
 
 class IPAddr
   def self.parse(parse_me)

@@ -81,7 +81,11 @@ class Raptor::Socket::Comm::Local < Raptor::Socket::Comm
   def create_tcp_server(opts)
     socket = TCPServer.new(opts[:local_host], opts[:local_port])
 
-    Raptor::Socket::TCPServer.new(socket)
+    if (opts[:context] = opts.delete(:ssl_context))
+      Raptor::Socket::TCPServer::SSL.new(socket, opts)
+    else
+      Raptor::Socket::TCPServer.new(socket, opts)
+    end
   end
 
 end

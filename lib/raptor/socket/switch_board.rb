@@ -1,8 +1,6 @@
 # -*- coding: binary -*-
 
 require 'thread'
-require 'ipaddr'
-require 'raptor/ruby/ipaddr'
 
 ###
 #

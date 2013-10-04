@@ -15,12 +15,12 @@ class Raptor::Socket::TCP::SSL < Raptor::Socket::TCP
   def_delegator :@sock, :ssl_verify_mode, :verify_mode
 
   # @!method ssl_version
-  #   @return [Symbol] One of the OpenSSL::SSL::VERIFY_* constants
+  #   @return [Symbol]
   def_delegator :@sock, :ssl_version, :version
 
   # @!method getpeername
   #   @return [String] Sockaddr data.
-  def_delegator :@original_sock, :getpeername, :getpeername
+  def_delegator :@original_socket, :getpeername, :getpeername
 
   DEFAULT_CONFIG = {
     version:     :TLSv1,
@@ -46,6 +46,7 @@ class Raptor::Socket::TCP::SSL < Raptor::Socket::TCP
     @original_socket = sock
     @sock = OpenSSL::SSL::SSLSocket.new( sock, @context )
   end
+
 
   # Ruby Socket#gets accepts:
   #

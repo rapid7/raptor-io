@@ -90,6 +90,7 @@ class Raptor::Socket::Comm
   #
   # @option opts :local_host [String,IPAddr]
   # @option opts :local_port [Fixnum]
+  # @option opts :ssl_context [OpenSSL::SSL::Context]
   def create_tcp_server(opts)
     raise NotImplementedError
   end

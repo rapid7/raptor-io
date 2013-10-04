@@ -1,7 +1,14 @@
 require 'openssl'
 
-class OpenSSL::SSL::SSLServer
+module OpenSSL::SSL
 
+class SSLSocket
+  def empty?
+    @rbuffer.empty?
+  end
+end
+
+class SSLServer
   # Stolen from: OpenSSL::SSL::SSLServer
   def accept_nonblock
     sock = @svr.accept_nonblock
@@ -11,10 +18,11 @@ class OpenSSL::SSL::SSLServer
       ssl.sync_close = true
       ssl.accept if @start_immediately
       ssl
-    rescue SSLError => ex
+    rescue OpenSSL::SSL::SSLError => ex
       sock.close
       raise ex
     end
   end
+end
 
 end
