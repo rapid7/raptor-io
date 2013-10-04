@@ -11,6 +11,7 @@ describe Raptor::Socket::TCP::SSL do
         verify_mode: OpenSSL::SSL::VERIFY_NONE
     }
   end
+  let(:ssl_client) { subject }
 
   subject { described_class.new( io, opts ) }
 

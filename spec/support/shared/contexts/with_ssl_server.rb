@@ -36,15 +36,15 @@ shared_context 'with ssl server' do
     # Allow the server thread a chance to set up if it got scheduled
     # out before doing so.
     Thread.pass
-    subject.connect
+    ssl_client.connect
 
     begin
       ssl_peer = server_thread.value
-      yield subject, ssl_peer
+      yield ssl_client, ssl_peer
     ensure
       server_thread.join
       ssl_server.close
-      subject.close
+      ssl_client.close
       ssl_peer.close
     end
   end

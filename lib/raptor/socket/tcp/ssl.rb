@@ -71,4 +71,9 @@ class Raptor::Socket::TCP::SSL < Raptor::Socket::TCP
     end
   end
 
+  # @private
+  def sock=( sock )
+    @sock = sock
+  end
+
 end

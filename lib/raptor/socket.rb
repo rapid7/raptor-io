@@ -7,6 +7,7 @@ class Raptor::Socket
 
   require 'raptor/socket/error'
   require 'raptor/socket/switch_board'
+  require 'raptor/ruby/openssl'
   require 'raptor/socket/tcp'
   require 'raptor/socket/tcp/ssl'
   require 'raptor/socket/tcp_server'
