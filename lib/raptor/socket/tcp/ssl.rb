@@ -29,10 +29,10 @@ class Raptor::Socket::TCP::SSL < Raptor::Socket::TCP
 
   # @param  [Raptor::Socket]  sock
   # @param  [Hash]  config Options
-  # @option options [Symbol]  version (:TLSv1)
-  # @option options [Constant]  verify_mode (OpenSSL::SSL::VERIFY_NONE)
+  # @option config :version [Symbol] (:TLSv1)
+  # @option config :verify_mode [Constant] (OpenSSL::SSL::VERIFY_NONE)
   #   Peer verification mode.
-  # @option options [OpenSSL::SSL::SSLContext]  context (nil)
+  # @option config :context [OpenSSL::SSL::SSLContext] (nil)
   #   SSL context to use.
   def initialize( sock, config = {} )
     config = DEFAULT_CONFIG.merge( config )
