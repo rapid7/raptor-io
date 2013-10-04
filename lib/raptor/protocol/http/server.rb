@@ -1,3 +1,4 @@
+require 'raptor/socket'
 require 'logger'
 
 module Raptor
@@ -13,13 +14,14 @@ class Server
   LISTEN_BACKLOG = 5
 
   DEFAULT_OPTIONS = {
-      address:      '0.0.0.0',
-      port:         4567,
-      request_mtu:  512,
-      response_mtu: 512,
-      timeout:      10,
-      logger:       ::Logger.new( STDOUT ),
-      logger_level: Logger::INFO
+      address:         '0.0.0.0',
+      port:            4567,
+      ssl_context:     nil,
+      request_mtu:     512,
+      response_mtu:    512,
+      timeout:         10,
+      logger:          ::Logger.new( STDOUT ),
+      logger_level:    Logger::INFO
   }.freeze
 
   # @return [String]  Address of the server.
@@ -27,6 +29,9 @@ class Server
 
   # @return [Integer]  Port number of the server.
   attr_reader :port
+
+  # @return [OpenSSL::SSL::SSLContext]  SSL context to use.
+  attr_accessor :ssl_context
 
   # @return [Integer]  MTU for reading request bodies.
   attr_reader :request_mtu
@@ -50,6 +55,7 @@ class Server
   #   Address to bind to.
   # @option options [Integer] :port (4567)
   #   Port number to listen on.
+  #   SSL context to use.
   # @option options [Integer] :request_mtu (512)
   #   Buffer size for request reading -- only applies to requests with a
   #   Content-Length header.
@@ -132,6 +138,10 @@ class Server
     @handler = handler
   end
 
+  def ssl?
+    !!@ssl_context
+  end
+
   # Starts the server.
   def run
     return if @server
@@ -151,7 +161,14 @@ class Server
           next
         end
 
-        client = @server.accept_nonblock
+        begin
+          client = @server.accept_nonblock
+        rescue => e
+          log "#{e.class}: #{e}", :error
+          e.backtrace.each { |l| log l, :error }
+          next
+        end
+
         @sockets[:client_address][client] = Socket.unpack_sockaddr_in( client.getpeername ).last
         @sockets[:reads] << client
 
@@ -214,7 +231,7 @@ class Server
   end
 
   def url
-    "http://#{address}:#{port}/"
+    "http#{'s' if ssl?}://#{address}:#{port}/"
   end
 
   private
@@ -272,9 +289,7 @@ class Server
         local_host:      @address,
         local_port:      @port,
         connect_timeout: @timeout,
-
-        # XXX: Have to handle ssl at some point
-        #ssl:            @ssl
+        ssl_context:     @ssl_context
     )
 
     log "Listening on #{@address}:#{@port}."
@@ -293,7 +308,7 @@ class Server
 
           if (read_size = read_size.to_i( 16 )) > 0
             @pending_requests[socket][:buffer] <<
-                socket.gets( read_size + CRLF.size ).to_s[0...read_size]
+                socket.read( read_size + CRLF.size ).to_s[0...read_size]
             return
           end
         else

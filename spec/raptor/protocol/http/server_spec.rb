@@ -1,5 +1,6 @@
 #coding: utf-8
 require 'spec_helper'
+require 'net/https'
 
 describe Raptor::Protocol::HTTP::Server do
 
@@ -18,7 +19,13 @@ describe Raptor::Protocol::HTTP::Server do
   end
 
   def request( server_or_url )
-    Net::HTTP.get_response( URI( argument_to_url( server_or_url ) ) )
+    uri = URI( argument_to_url( server_or_url ) )
+
+    https = Net::HTTP.new( uri.host, uri.port )
+    https.use_ssl = (uri.scheme == 'https')
+    https.verify_mode = OpenSSL::SSL::VERIFY_NONE
+
+    https.start { |cx| cx.request( Net::HTTP::Get.new( uri.path ) ) }
   end
 
   def test_request_with_body( server_or_url )
@@ -36,6 +43,26 @@ describe Raptor::Protocol::HTTP::Server do
   end
 
   let(:switch_board) { Raptor::Socket::SwitchBoard.new }
+  let(:ssl_context) do
+    ssl_context             = OpenSSL::SSL::SSLContext.new( :TLSv1 )
+    ssl_context.verify_mode = OpenSSL::SSL::VERIFY_NONE
+
+    ca  = OpenSSL::X509::Name.parse( "/C=US/ST=SomeState/L=SomeCity/O=Organization/OU=Unit/CN=localhost" )
+    key = OpenSSL::PKey::RSA.new( 1024 )
+    crt = OpenSSL::X509::Certificate.new
+
+    crt.version = 2
+    crt.serial  = 1
+    crt.subject = ca
+    crt.issuer  = ca
+    crt.public_key = key.public_key
+    crt.not_before = Time.now
+    crt.not_after  = Time.now + 1 * 365 * 24 * 60 * 60 # 1 year
+
+    ssl_context.cert = crt
+    ssl_context.key  = key
+    ssl_context
+  end
 
   def new_server( options = {}, &block )
     @server = described_class.new(
@@ -144,6 +171,18 @@ describe Raptor::Protocol::HTTP::Server do
         it 'raises ArgumentError' do
           expect { described_class.new }.to raise_error ArgumentError
         end
+      end
+    end
+
+    describe :ssl_context do
+      it 'uses it to establish an SSL stream' do
+        server = new_server( ssl_context: ssl_context )
+        server.url.should == "https://#{server.address}:#{server.port}/"
+        server.ssl?.should be_true
+
+        server.run_nonblock
+
+        test_server server
       end
     end
 
