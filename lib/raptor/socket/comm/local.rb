@@ -81,7 +81,7 @@ class Raptor::Socket::Comm::Local < Raptor::Socket::Comm
   def create_tcp_server(opts)
     socket = TCPServer.new(opts[:local_host], opts[:local_port])
 
-    Raptor::Socket::TcpServer.new(socket)
+    Raptor::Socket::TCPServer.new(socket)
   end
 
 end

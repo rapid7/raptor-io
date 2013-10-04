@@ -3,7 +3,7 @@ require 'spec_helper'
 
 require 'raptor/socket'
 
-describe Raptor::Socket::TcpServer do
+describe Raptor::Socket::TCPServer do
   subject { described_class.new(io) }
   let(:io) {
     sio = StringIO.new
