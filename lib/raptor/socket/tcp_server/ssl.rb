@@ -3,31 +3,31 @@
 # @author Tasos Laskos <tasos_laskos@rapid7.com>
 class Raptor::Socket::TCPServer::SSL < Raptor::Socket::TCPServer
 
-  def initialize( sock, config = {} )
+  def initialize( socket, options = {} )
     super
 
-    if (@context = config[:context]).nil?
-      @context = OpenSSL::SSL::SSLContext.new( config[:version] )
-      @context.verify_mode = config[:verify_mode]
+    if (@context = options[:context]).nil?
+      @context = OpenSSL::SSL::SSLContext.new( options[:version] )
+      @context.verify_mode = options[:verify_mode]
     end
 
-    @original_socket = sock
-    @sock = OpenSSL::SSL::SSLServer.new( sock, @context )
+    @original_socket = socket
+    @socket = OpenSSL::SSL::SSLServer.new( socket, @context )
   end
 
   def accept
-    openssl_to_raptor @sock.accept
+    openssl_to_raptor @socket.accept
   end
 
   def accept_nonblock
-    openssl_to_raptor @sock.accept_nonblock
+    openssl_to_raptor @socket.accept_nonblock
   end
 
   private
 
   def openssl_to_raptor( openssl_socket )
-    s = Raptor::Socket::TCP::SSL.new( openssl_socket.to_io, config )
-    s.sock = openssl_socket
+    s = Raptor::Socket::TCP::SSL.new( openssl_socket.to_io, options )
+    s.socket = openssl_socket
     s
   end
 

@@ -1,4 +1,5 @@
 require 'forwardable'
+require 'raptor/ruby'
 
 # A basic class for specific transports to inherit from. Analogous to
 # stdlib's BasicSocket
@@ -7,7 +8,6 @@ class Raptor::Socket
 
   require 'raptor/socket/error'
   require 'raptor/socket/switch_board'
-  require 'raptor/ruby/openssl'
   require 'raptor/socket/tcp'
   require 'raptor/socket/tcp/ssl'
   require 'raptor/socket/tcp_server'
@@ -49,29 +49,29 @@ class Raptor::Socket
     end
   end
 
-  # Configuration for this socket.
+  # Options for this socket.
   #
   # @return [Hash<Symbol,Object>]
-  attr_accessor :config
-
-  # @param sock [IO] An already-connected socket
-  # @param config [Hash] Configuration options. See {#config}
-  def initialize(sock, config={})
-    @sock = sock
-    @config = config
-  end
+  attr_accessor :options
 
   # @!method to_io
   #   Used by Kernel.select
   #   @return [IO]
-  def_delegator :@sock, :to_io, :to_io
+  def_delegator :@socket, :to_io, :to_io
+
+  # @param socket [IO] An already-connected socket.
+  # @param options [Hash] Options (see {#options}).
+  def initialize( socket, options = {} )
+    @socket  = socket
+    @options = options
+  end
 
   # Delegate to @sock
   def method_missing(meth, *args, &block)
-    if @sock.respond_to?(meth)
+    if @socket.respond_to?(meth)
       self.class.translate_errors do
         # not send() because that sends a packet.  =)
-        @sock.__send__(meth, *args, &block)
+        @socket.__send__(meth, *args, &block)
       end
     else
       super
@@ -79,7 +79,7 @@ class Raptor::Socket
   end
 
   def respond_to_missing?(meth, include_private=false)
-    @sock.respond_to?(meth, include_private)
+    @socket.respond_to?(meth, include_private)
   end
 
 end

@@ -1,7 +1,6 @@
 # -*- coding: binary -*-
 require 'raptor/socket'
 require 'ipaddr'
-require 'raptor/ruby/ipaddr'
 
 ###
 #
@@ -27,19 +26,24 @@ class Raptor::Socket::Comm
   # Creates a socket on this Comm based on the supplied uniform
   # parameters.
   #
-  # @option opts :switch_board [SwitchBoard]
-  # @option opts :port [Fixnum] Optional based on proto
+  # @option options :switch_board [SwitchBoard]
+  # @option options :port [Fixnum] Optional based on proto
+  # @option options :protocol [Symbol]
+  #   * `:tcp`
+  #   * `:udp`
+  #
   # @return [Raptor::Socket]
-  def create(opts)
-    opts = opts.dup
-    opts[:peer_host] = IPAddr.parse(opts[:peer_host])
+  def create( options )
+    options = options.dup
+    options[:peer_host] = IPAddr.parse(options[:peer_host])
 
-    sock = case opts.delete(:proto)
-           when :tcp then opts[:server] ? create_tcp_server(opts) : create_tcp(opts)
-           when :udp then opts[:server] ? create_udp_server(opts) : create_udp(opts)
-           end
+    case options.delete(:protocol)
+      when :tcp
+        options[:server] ? create_tcp_server(options) : create_tcp(options)
 
-    sock
+      when :udp
+        options[:server] ? create_udp_server(options) : create_udp(options)
+    end
   end
 
   # Resolves a hostname to an IP address using this comm.
@@ -64,11 +68,11 @@ class Raptor::Socket::Comm
   #
   # @abstract
   #
-  # @option opts :peer_host [String,IPAddr]
-  # @option opts :peer_port [Fixnum]
-  # @option opts :local_host [String,IPAddr]
-  # @option opts :local_port [Fixnum]
-  def create_tcp(opts)
+  # @option options :peer_host [String,IPAddr]
+  # @option options :peer_port [Fixnum]
+  # @option options :local_host [String,IPAddr]
+  # @option options :local_port [Fixnum]
+  def create_tcp(options)
     raise NotImplementedError
   end
 
@@ -76,11 +80,11 @@ class Raptor::Socket::Comm
   #
   # @abstract
   #
-  # @option opts :peer_host [String,IPAddr]
-  # @option opts :peer_port [Fixnum]
-  # @option opts :local_host [String,IPAddr]
-  # @option opts :local_port [Fixnum]
-  def create_udp(opts)
+  # @option options :peer_host [String,IPAddr]
+  # @option options :peer_port [Fixnum]
+  # @option options :local_host [String,IPAddr]
+  # @option options :local_port [Fixnum]
+  def create_udp(options)
     raise NotImplementedError
   end
 
@@ -88,10 +92,10 @@ class Raptor::Socket::Comm
   #
   # @abstract
   #
-  # @option opts :local_host [String,IPAddr]
-  # @option opts :local_port [Fixnum]
-  # @option opts :ssl_context [OpenSSL::SSL::Context]
-  def create_tcp_server(opts)
+  # @option options :local_host [String,IPAddr]
+  # @option options :local_port [Fixnum]
+  # @option options :ssl_context [OpenSSL::SSL::Context]
+  def create_tcp_server(options)
     raise NotImplementedError
   end
 
@@ -99,9 +103,9 @@ class Raptor::Socket::Comm
   #
   # @abstract
   #
-  # @option opts :local_host [String,IPAddr]
-  # @option opts :local_port [Fixnum]
-  def create_udp_server(opts)
+  # @option options :local_host [String,IPAddr]
+  # @option options :local_port [Fixnum]
+  def create_udp_server(options)
     raise NotImplementedError
   end
 

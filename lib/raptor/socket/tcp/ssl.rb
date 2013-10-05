@@ -6,15 +6,15 @@ class Raptor::Socket::TCP::SSL < Raptor::Socket::TCP
 
   # @!method context
   #   @return [OpenSSL::SSL::Context]
-  def_delegator :@sock, :ssl_context, :context
+  def_delegator :@socket, :ssl_context, :context
 
   # @!method verify_mode
   #   @return [Fixnum] One of the `OpenSSL::SSL::VERIFY_*` constants
-  def_delegator :@sock, :ssl_verify_mode, :verify_mode
+  def_delegator :@socket, :ssl_verify_mode, :verify_mode
 
   # @!method version
   #   @return [Symbol]  SSL version.
-  def_delegator :@sock, :ssl_version, :version
+  def_delegator :@socket, :ssl_version, :version
 
   # @!method getpeername
   #   @return [String] Sockaddr data.
@@ -26,8 +26,8 @@ class Raptor::Socket::TCP::SSL < Raptor::Socket::TCP
     connect_timeout: 5
   }
 
-  # @param  [Raptor::Socket]  sock
-  # @param  [Hash]  config Options
+  # @param  [Raptor::Socket]  socket
+  # @param  [Hash]  options Options
   # @option config :connect_timeout [Integer] (5)
   #   {#connect Connection} timeout in seconds.
   # @option config :version [Symbol] (:TLSv1)
@@ -35,17 +35,17 @@ class Raptor::Socket::TCP::SSL < Raptor::Socket::TCP
   #   Peer verification mode.
   # @option config :context [OpenSSL::SSL::SSLContext] (nil)
   #   SSL context to use.
-  def initialize( sock, config = {} )
-    config = DEFAULT_CONFIG.merge( config )
+  def initialize( socket, options = {} )
+    options = DEFAULT_CONFIG.merge( options )
     super
 
-    if (@context = config[:context]).nil?
-      @context = OpenSSL::SSL::SSLContext.new( config[:version] )
-      @context.verify_mode = config[:verify_mode]
+    if (@context = options[:context]).nil?
+      @context = OpenSSL::SSL::SSLContext.new( options[:version] )
+      @context.verify_mode = options[:verify_mode]
     end
 
-    @original_socket = sock
-    @sock = OpenSSL::SSL::SSLSocket.new( sock, @context )
+    @original_socket = socket
+    @socket = OpenSSL::SSL::SSLSocket.new( socket, @context )
   end
 
   # Starts the SSL/TLS handshake.
@@ -54,8 +54,8 @@ class Raptor::Socket::TCP::SSL < Raptor::Socket::TCP
   #   On connection timeout (based on the `:connect_timeout` option).
   def connect
     begin
-      Timeout.timeout( config[:connect_timeout] ) do
-        @sock.connect
+      Timeout.timeout( options[:connect_timeout] ) do
+        @socket.connect
       end
     rescue Timeout::Error => e
       raise Raptor::Socket::Error::ConnectionTimeout, e.to_s
@@ -76,19 +76,19 @@ class Raptor::Socket::TCP::SSL < Raptor::Socket::TCP
     self.class.translate_errors do
       if args.size == 1
         if (arg = args.first).is_a? String
-          @sock.gets arg
+          @socket.gets arg
         else
-          @sock.gets $/, arg
+          @socket.gets $/, arg
         end
       else
-        @sock.gets *args
+        @socket.gets *args
       end
     end
   end
 
   # @private
-  def sock=( sock )
-    @sock = sock
+  def socket=( socket )
+    @socket = socket
   end
 
 end

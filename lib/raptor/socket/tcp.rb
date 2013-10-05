@@ -7,7 +7,7 @@ class Raptor::Socket::TCP < Raptor::Socket
   #
   # Starts an SSL/TLS stream over this established connection.
   #
-  # @param  [Hash]  ssl_config Options
+  # @param  [Hash]  ssl_options Options
   # @option ssl_config :version [Symbol] (:TLSv1)
   # @option ssl_config :verify_mode [Constant] (OpenSSL::SSL::VERIFY_NONE)
   #   Peer verification mode.
@@ -15,8 +15,8 @@ class Raptor::Socket::TCP < Raptor::Socket
   #   SSL context to use.
   #
   # @return Raptor::Socket::TCP::SSL
-  def to_ssl( ssl_config = { } )
-    s = Raptor::Socket::TCP::SSL.new( @sock, config.merge( ssl_config ) )
+  def to_ssl( ssl_options = { } )
+    s = Raptor::Socket::TCP::SSL.new( @socket, options.merge( ssl_options ) )
     s.connect
     s
   end
