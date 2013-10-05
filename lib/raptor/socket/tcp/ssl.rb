@@ -4,18 +4,16 @@
 class Raptor::Socket::TCP::SSL < Raptor::Socket::TCP
   extend Forwardable
 
-  def_delegators :@sock, :close, :closed?, :to_io
-
-  # @!method ssl_context
+  # @!method context
   #   @return [OpenSSL::SSL::Context]
   def_delegator :@sock, :ssl_context, :context
 
-  # @!method ssl_verify_mode
+  # @!method verify_mode
   #   @return [Fixnum] One of the `OpenSSL::SSL::VERIFY_*` constants
   def_delegator :@sock, :ssl_verify_mode, :verify_mode
 
-  # @!method ssl_version
-  #   @return [Symbol]
+  # @!method version
+  #   @return [Symbol]  SSL version.
   def_delegator :@sock, :ssl_version, :version
 
   # @!method getpeername
