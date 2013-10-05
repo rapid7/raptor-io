@@ -11,7 +11,7 @@ class Raptor::Socket::TCP::SSL < Raptor::Socket::TCP
   def_delegator :@sock, :ssl_context, :context
 
   # @!method ssl_verify_mode
-  #   @return [Fixnum] One of the OpenSSL::SSL::VERIFY_* constants
+  #   @return [Fixnum] One of the `OpenSSL::SSL::VERIFY_*` constants
   def_delegator :@sock, :ssl_verify_mode, :verify_mode
 
   # @!method ssl_version
@@ -23,14 +23,17 @@ class Raptor::Socket::TCP::SSL < Raptor::Socket::TCP
   def_delegator :@original_socket, :getpeername, :getpeername
 
   DEFAULT_CONFIG = {
-    version:     :TLSv1,
-    verify_mode: OpenSSL::SSL::VERIFY_PEER
+    version:         :TLSv1,
+    verify_mode:     OpenSSL::SSL::VERIFY_PEER,
+    connect_timeout: 5
   }
 
   # @param  [Raptor::Socket]  sock
   # @param  [Hash]  config Options
+  # @option config :connect_timeout [Integer] (5)
+  #   {#connect Connection} timeout in seconds.
   # @option config :version [Symbol] (:TLSv1)
-  # @option config :verify_mode [Constant] (OpenSSL::SSL::VERIFY_NONE)
+  # @option config :verify_mode [Integer] (OpenSSL::SSL::VERIFY_NONE)
   #   Peer verification mode.
   # @option config :context [OpenSSL::SSL::SSLContext] (nil)
   #   SSL context to use.
@@ -47,14 +50,27 @@ class Raptor::Socket::TCP::SSL < Raptor::Socket::TCP
     @sock = OpenSSL::SSL::SSLSocket.new( sock, @context )
   end
 
+  # Starts the SSL/TLS handshake.
+  #
+  # @raise [Raptor::Socket::Error::ConnectionTimeout]
+  #   On connection timeout (based on the `:connect_timeout` option).
+  def connect
+    begin
+      Timeout.timeout( config[:connect_timeout] ) do
+        @sock.connect
+      end
+    rescue Timeout::Error => e
+      raise Raptor::Socket::Error::ConnectionTimeout, e.to_s
+    end
+  end
 
-  # Ruby Socket#gets accepts:
+  # Ruby `Socket#gets` accepts:
   #
-  # * gets(sep=$/)
-  # * gets(limit=nil)
-  # * gets(sep=$/, limit=nil)
+  # * `gets( sep = $/ )`
+  # * `gets( limit = nil )`
+  # * `gets( sep = $/, limit = nil )`
   #
-  # OpenSSL::SSL::SSLSocket#gets however only supports `gets(sep=$/, limit=nil)`.
+  # `OpenSSL::SSL::SSLSocket#gets` however only supports `gets(sep=$/, limit=nil)`.
   # This hack allows SSLSocket to behave the same as Ruby Socket.
   #
   # @private

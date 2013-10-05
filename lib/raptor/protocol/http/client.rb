@@ -548,18 +548,21 @@ class Client
     cid  = request.connection_id
 
     begin
-      @switch_board.create_tcp(
+      socket = @switch_board.create_tcp(
         peer_host:       (@addresses[cid] ||= Socket.getaddrinfo( host, nil ))[0][3],
         peer_port:       port,
         connect_timeout: @timeout
-      ).tap do |s|
-        next if request.parsed_url.scheme != 'https'
-        s.to_ssl!(
+      )
+
+      if request.parsed_url.scheme.to_s == 'https'
+        socket = socket.to_ssl(
             context:     @ssl_context,
             version:     @ssl_version,
             verify_mode: @ssl_verify_mode
         )
       end
+
+      socket
     rescue Raptor::Socket::Error => e
       handle_error( request, e )
       nil

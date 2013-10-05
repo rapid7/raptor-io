@@ -9,5 +9,5 @@ describe Raptor::Socket::TCP do
 
   it_behaves_like 'a client socket'
 
-  it { should respond_to(:to_ssl!) }
+  it { should respond_to(:to_ssl) }
 end
