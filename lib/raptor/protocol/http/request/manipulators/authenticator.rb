@@ -47,10 +47,19 @@ class Authenticator < Manipulator
     client.run
   end
 
+  private
+
+  # @note Set by one of the authenticators, not `self`.
+  # @return [Bool]  `true` if authentication failed, `false` otherwise.
   def failed?
     !!datastore[:failed]
   end
 
+  # Retries the request with authentication.
+  #
+  # @param  [Symbol]  type  Authenticator to use.
+  # @param  [Raptor::Protocol::HTTP::Response]  response
+  #   Response signaling the need to authenticate.
   def retry_with_auth( type, response )
     datastore[:tries] += 1
 
@@ -61,10 +70,14 @@ class Authenticator < Manipulator
     requeue
   end
 
+  # Requeues the request after the proper authenticator has been enabled.
   def requeue
     client.queue( request, shortname => { skip: true } )
   end
 
+  # @param  [Raptor::Protocol::HTTP::Response]  response
+  #   Response signaling the need to authenticate.
+  # @return [Symbol]  Authentication type.
   def type( response )
     response.headers['www-authenticate'].to_s.split( ' ' ).first.to_s.downcase.to_s.to_sym
   end
@@ -73,10 +86,14 @@ class Authenticator < Manipulator
     failed? || !!options[:skip]
   end
 
+  # @param  [Symbol]  type  Authentication type to check.
+  # @return [Bool]
+  #   `true` if the authentication `type` is supported, `false` otherwise.
   def supported?( type )
     Request::Manipulators.exist? "authenticators/#{type}"
   end
 
+  # Removes all enabled authenticators.
   def remove_client_authenticators
     client.manipulators.reject!{ |k, _| k.start_with? 'authenticator' }
   end
