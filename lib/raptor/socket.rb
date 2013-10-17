@@ -15,6 +15,9 @@ class Raptor::Socket
 
   class << self
 
+    # Captures Ruby exceptions and converts them to Raptor Errors.
+    #
+    # @param  [Block] block Block to run.
     def translate_errors( &block )
       block.call
     rescue ::Errno::EPIPE, ::Errno::ECONNRESET => e
@@ -23,6 +26,7 @@ class Raptor::Socket
       raise Raptor::Socket::Error::ConnectionRefused, e.to_s
     end
 
+    # Delegates to `::Socket.getaddrinfo`.
     def getaddrinfo( *args )
       begin
         ::Socket.getaddrinfo( *args )
