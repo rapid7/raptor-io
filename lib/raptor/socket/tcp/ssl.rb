@@ -20,7 +20,8 @@ class Raptor::Socket::TCP::SSL < Raptor::Socket::TCP
   #   @return [String] Sockaddr data.
   def_delegator :@original_socket, :getpeername, :getpeername
 
-  DEFAULT_CONFIG = {
+  # Default configuration options.
+  DEFAULT_OPTIONS = {
     version:         :TLSv1,
     verify_mode:     OpenSSL::SSL::VERIFY_PEER,
     connect_timeout: 5
@@ -36,7 +37,7 @@ class Raptor::Socket::TCP::SSL < Raptor::Socket::TCP
   # @option config :context [OpenSSL::SSL::SSLContext] (nil)
   #   SSL context to use.
   def initialize( socket, options = {} )
-    options = DEFAULT_CONFIG.merge( options )
+    options = DEFAULT_OPTIONS.merge( options )
     super
 
     if (@context = options[:context]).nil?
