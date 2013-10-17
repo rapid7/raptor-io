@@ -44,7 +44,11 @@ class RedirectFollower < Manipulator
       request.handle_response response
     end
   end
-  
+
+  private
+
+  # @return [Hash<Integer, Array<Raptor::Protocol::HTTP::Response>]
+  #   Keeps track of stacked redirections based on the ID of their root request.
   def redirections
     datastore[:redirections] ||= Hash.new { |h, k| h[k] = [] }
   end
