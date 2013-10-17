@@ -14,10 +14,6 @@ module Authenticators
 #
 class Negotiate < Manipulator
 
-  def provider
-    'Negotiate'
-  end
-
   def run
     return if skip?
     client.manipulators.delete shortname
@@ -27,6 +23,12 @@ class Negotiate < Manipulator
     if authorize( type3( t2 ) ).code == 401 && client.manipulators['authenticator']
       client.datastore['authenticator'][:failed] = true
     end
+  end
+
+  private
+
+  def provider
+    'Negotiate'
   end
 
   def authorize( message )

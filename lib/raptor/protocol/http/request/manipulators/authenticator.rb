@@ -4,6 +4,10 @@ class Request
 
 module Manipulators
 
+# Namespace for all authenticator manipulators.
+module Authenticators
+end
+
 #
 # Implements automatic HTTP authentication.
 #

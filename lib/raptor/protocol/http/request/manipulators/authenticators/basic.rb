@@ -17,6 +17,8 @@ class Basic < Manipulator
         "Basic #{Base64.encode64("#{username}:#{password}").chomp}"
   end
 
+  private
+
   def username
     options[:username]
   end

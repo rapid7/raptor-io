@@ -32,6 +32,8 @@ class Digest < Manipulator
     }.map { |k, v| "#{k}=\"#{v}\"" }.join( ', ' )
   end
 
+  private
+
   def algorithm_klass
     if challenge[:algorithm].to_s =~ /(.+)(-sess)?$/
       case $1
