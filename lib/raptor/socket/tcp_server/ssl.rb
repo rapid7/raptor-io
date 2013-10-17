@@ -15,10 +15,16 @@ class Raptor::Socket::TCPServer::SSL < Raptor::Socket::TCPServer
     @socket = OpenSSL::SSL::SSLServer.new( socket, @context )
   end
 
+  # Accepts a client connection.
+  #
+  # @return [Raptor::Socket::TCP::SSL]
   def accept
     openssl_to_raptor @socket.accept
   end
 
+  # Accepts a client connection without blocking.
+  #
+  # @return [Raptor::Socket::TCP::SSL]
   def accept_nonblock
     openssl_to_raptor @socket.accept_nonblock
   end
