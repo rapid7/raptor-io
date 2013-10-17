@@ -176,31 +176,39 @@ module Manipulators
       @manipulators = {}
     end
 
-    # @param  [Symbol]  name  Manipulator name.
+    # @param  [String]  name  Manipulator name.
     # @return [Bool]  `true` if the given manipulator exists, `false` otherwise.
     def exist?( name )
       File.exist? name_to_path( name )
     end
 
-    private
-
+    # @param  [String]  path  FS path to a manipulator.
+    # @return [String]  Manipulator shortname.
     def path_to_name( path )
       normalize_name path.gsub( library, '' ).gsub( /(.+)\.rb$/, '\1' )
     end
 
+    # @param  [Class]  klass  Manipulator class.
+    # @return [String, nil]
+    #   Manipulator shortname, `nil` if the manipulator isn't loaded.
     def class_to_name( klass )
       @manipulators.select { |name, k| return name if k == klass }
       nil
     end
 
+    # @param  [String]  name  Manipulator shortname.
+    # @return [String]  Manipulator FS path.
     def name_to_path( name )
       File.expand_path "#{library}/#{name}.rb"
     end
 
+    # @param  [String, Symbol]  name  Manipulator name.
+    # @return [String]  Manipulator name.
     def normalize_name( name )
       name.to_s
     end
   end
+
   reset
 
 end
