@@ -41,6 +41,7 @@ class Client
   #   will {Socket::SwitchBoard#create_tcp make new TCP connections}.
   attr_reader :switch_board
 
+  # Default client options.
   DEFAULT_OPTIONS = {
       concurrency:      20,
       user_agent:       "Raptor::HTTP/#{Raptor::VERSION}",

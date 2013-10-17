@@ -48,6 +48,7 @@ module Manipulators
       errors.reject { |_, errs| errs.empty? }
     end
 
+    # Same as {.validate_batch_options} but raises exception on errors.
     def validate_batch_options!( manipulators, client )
       errors = validate_batch_options( manipulators, client )
       if errors.any?
@@ -175,9 +176,13 @@ module Manipulators
       @manipulators = {}
     end
 
+    # @param  [Symbol]  name  Manipulator name.
+    # @return [Bool]  `true` if the given manipulator exists, `false` otherwise.
     def exist?( name )
       File.exist? name_to_path( name )
     end
+
+    private
 
     def path_to_name( path )
       normalize_name path.gsub( library, '' ).gsub( /(.+)\.rb$/, '\1' )

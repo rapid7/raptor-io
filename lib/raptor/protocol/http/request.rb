@@ -109,6 +109,8 @@ class Request < Message
     !!@continue
   end
 
+  # @param  [String]  uri Request URL.
+  # @return  [String]  `uri`
   def url=( uri )
     @url = uri
     @parsed_url= URI(@url)
@@ -201,6 +203,7 @@ class Request < Message
     http_method != :post
   end
 
+  # @return [String]  Server-side resource to request.
   def resource
     req_resource  = "#{effective_url.path}"
     req_resource << "?#{effective_url.query}" if effective_url.query
@@ -265,14 +268,7 @@ class Request < Message
     true
   end
 
-  def encode_if_not_raw( str )
-    raw? ? str : CGI.escape( str )
-  end
-
-  def decode_if_not_raw( str )
-    raw? ? str : CGI.unescape( str )
-  end
-
+  # @return [Request] Duplicate of `self`.
   def dup
     r = self.class.new( url: url )
     instance_variables.each do |iv|
@@ -281,6 +277,8 @@ class Request < Message
     r
   end
 
+  # @param  [String]  request HTTP request message to parse.
+  # @return [Request]
   def self.parse( request )
     data = {}
     first_line, headers_and_body = request.split( CRLF_PATTERN, 2 )
@@ -291,6 +289,16 @@ class Request < Message
     data[:headers] = Headers.parse( headers.to_s )
 
     new data
+  end
+
+  private
+
+  def encode_if_not_raw( str )
+    raw? ? str : CGI.escape( str )
+  end
+
+  def decode_if_not_raw( str )
+    raw? ? str : CGI.unescape( str )
   end
 
 end

@@ -75,6 +75,7 @@ class Headers < Hash
     }.flatten.compact
   end
 
+  # @return [Array<Hash>] Request cookies.
   def cookies
     return [] if !self['cookie']
 

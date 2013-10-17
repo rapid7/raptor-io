@@ -3,12 +3,15 @@ require 'rack'
 require 'stringio'
 require 'rack/content_length'
 
-module Rack
-module Handler
-class Raptor
+# Rack handler for {Raptor::Protocol::HTTP::Server}.
+class Rack::Handler::Raptor
 
   Rack::Handler.register self.to_s.split( ':' ).last.downcase, self
 
+  # Starts the server and runs the `app`.
+  #
+  # @param  [#call] app   Rack Application to run.
+  # @param  [Hash]  options Rack options.
   def self.run( app, options = {} )
     return false if @server
 
@@ -25,6 +28,7 @@ class Raptor
     true
   end
 
+  # Shuts down the server.
   def self.shutdown
     return false if !@server
 
@@ -33,6 +37,8 @@ class Raptor
 
     true
   end
+
+  private
 
   def self.valid_options
     {
@@ -122,7 +128,4 @@ class Raptor
   ensure
     body.close if body.respond_to? :close
   end
-end
-
-end
 end

@@ -10,10 +10,19 @@ require 'uri'
 # @author Tasos Laskos <tasos_laskos@rapid7.com>
 #
 module Raptor::Protocol::HTTP
+
+  # Matches line separator characters for HTTP messages.
   CRLF_PATTERN             = /\r?\n/
+
+  # CRLF character sequence.
   CRLF                     = "\r\n"
+
+  # Matches sequence used to separate headers from the body.
   HEADER_SEPARATOR_PATTERN = /\r?\n\r?\n/
+
+  # Header separator character sequence.
   HEADER_SEPARATOR         = "\r\n\r\n"
+
 end
 
 require 'raptor/protocol/http/error'

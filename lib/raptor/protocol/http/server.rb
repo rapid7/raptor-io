@@ -13,6 +13,7 @@ class Server
   # implementations.
   LISTEN_BACKLOG = 5
 
+  # Default server options.
   DEFAULT_OPTIONS = {
       address:         '0.0.0.0',
       port:            4567,
@@ -190,6 +191,7 @@ class Server
     synchronize { @running = false }
   end
 
+  # {#run Runs} the server in a Thread and returns once it's ready.
   def run_nonblock
     ex = nil
     Thread.new {
@@ -211,6 +213,7 @@ class Server
     end
   end
 
+  # @return [Bool]  `true` if the server is running, `false` otherwise.
   def running?
     synchronize { @running }
   end
@@ -230,6 +233,7 @@ class Server
     true
   end
 
+  # @return [String]  URL of the server.
   def url
     "http#{'s' if ssl?}://#{address}:#{port}/"
   end

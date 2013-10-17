@@ -50,6 +50,10 @@ class Manipulator
   def run
   end
 
+  # Delegates the work to another manipulator.
+  #
+  # @param  [Symbol]  manipulator Manipulator to run.
+  # @param  [Hash]  opts  Manipulator options.
   def delegate( manipulator, opts = options )
     Request::Manipulators.process( manipulator, client, request, opts )
   end
@@ -59,6 +63,7 @@ class Manipulator
     client.datastore[shortname]
   end
 
+  # @return [String]  Shortname of `self`.
   def shortname
     self.class.shortname
   end
@@ -71,6 +76,8 @@ class Manipulator
 
   class <<self
 
+    # @return [Hash{Symbol=>Array<String>}]
+    #   Option names keys for and error messages for values.
     def validate_options( &block )
       fail ArgumentError, 'Missing block.' if !block_given?
       @validator = block
@@ -88,12 +95,12 @@ class Manipulator
       @validator ? @validator.call( options, client ) : {}
     end
 
+    # @return [String]  Shortname of `self`.
     def shortname
       @shortname ||= Request::Manipulators.class_to_name( self )
     end
 
-    # Registers {Request::Manipulators::Base manipulators} which inherit from
-    # this base class.
+    # Registers manipulators which inherit from this class.
     #
     # @see Request::Manipulators#register
     def inherited( manipulator_klass )
