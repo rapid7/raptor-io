@@ -35,7 +35,7 @@ describe Raptor::Socket::TCPServer::SSL do
   end
 
   describe '#accept_nonblock' do
-    it 'returns a client connection as a Raptor::Socket::TCP::SSL socket without blocking' do
+    pending 'returns a client connection as a Raptor::Socket::TCP::SSL socket without blocking' do
       ssl_server
 
       Thread.new do
