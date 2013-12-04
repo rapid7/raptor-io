@@ -51,11 +51,12 @@ class Server
   #   {Socket::SwitchBoard#create_tcp_server listen}.
   attr_reader :switch_board
 
-  # @param  [Hash]  options
+  # @param [Hash{Symbol => String,nil}] options Request options.
   # @option options [String] :address ('0.0.0.0')
   #   Address to bind to.
   # @option options [Integer] :port (4567)
   #   Port number to listen on.
+  # @option options [OpenSSL::SSL::SSLContext]  :ssl_context (nil)
   #   SSL context to use.
   # @option options [Integer] :request_mtu (512)
   #   Buffer size for request reading -- only applies to requests with a

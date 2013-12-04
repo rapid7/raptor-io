@@ -61,10 +61,10 @@ class Client
   #   Timeout in seconds.
   # @option options [Hash{Symbol=>Hash}] :manipulators
   #   Request manipulators and their options.
-  # @option options [Symbol]  ssl_version (:TLSv1)
-  # @option options [Constant]  ssl_verify_mode (OpenSSL::SSL::VERIFY_NONE)
+  # @option options [Symbol]  :ssl_version (:TLSv1)
+  # @option options [Constant]  :ssl_verify_mode (OpenSSL::SSL::VERIFY_NONE)
   #   Peer verification mode.
-  # @option options [OpenSSL::SSL::SSLContext]  ssl_context (nil)
+  # @option options [OpenSSL::SSL::SSLContext]  :ssl_context (nil)
   #   SSL context to use.
   # @option options [Socket::SwitchBoard] :switch_board The switch board
   #   from which we can create new connections.
