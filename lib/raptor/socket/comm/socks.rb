@@ -91,8 +91,15 @@ class Raptor::Socket::Comm::SOCKS < Raptor::Socket::Comm
   end
 
 
-private
+  private
 
+  # Attempt to create a connection to `peer_host`:`peer_port` via the
+  # SOCKS server at {#socks_host}:{#socks_port}.
+  #
+  # @param peer_host [String] An address or hostname
+  # @param peer_port [Fixnum] TCP port to connect to
+  #
+  # @raise [Error::ConnectionError] When the connection fails
   def negotiate_connection(peer_host, peer_port)
     # From RFC1928:
     # ```
@@ -123,6 +130,7 @@ private
 
     @socks_socket.write(request)
 
+    # [ version ][ reply code ][ reserved ][ atyp ]
     reply_pkt = @socks_socket.read(4)
     _, reply, _, type = reply_pkt.unpack("C4")
 
@@ -153,7 +161,7 @@ private
         @socks_socket.read(len)
       end
       # bind port
-      @socks_socket.read(2).unpack("n")
+      @socks_socket.read(2)
 
     when ReplyCodes::NETUNREACH, ReplyCodes::HOSTUNREACH
       @socks_socket.close
@@ -182,16 +190,15 @@ private
     begin
       ip = IPAddr.parse(peer_host)
       if ip.ipv4?
-        type = 1
+        type = AddressTypes::ATYP_IPv4
       elsif ip.ipv6?
-        type = 4
+        type = AddressTypes::ATYP_IPv6
       end
       packed_addr = ip.hton
     rescue ArgumentError
-      # Domain name
-      type = 3
+      type = AddressTypes::ATYP_DOMAINNAME
       # Packed as a Pascal string
-      packed_addr = [peer_host.length].pack("C") + peer_host
+      packed_addr = [peer_host.length, peer_host].pack("Ca*")
     end
     connect_packet = [
       5, # Version
