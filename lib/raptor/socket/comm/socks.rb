@@ -146,10 +146,12 @@ class Raptor::Socket::Comm::SOCKS < Raptor::Socket::Comm
     #  X'09' to X'FF' unassigned
     case reply
     when ReplyCodes::SUCCEEDED
-      # Read in the bind addr
-      # XXX This should maybe be available with a getpeername or
-      # somesuch. Unfortunately, it looks like ssh(1) always populates
-      # these with zeros, so they're pretty much useless
+      # Read in the bind addr. The protocol spec says this is supposed
+      # to be the getsockname(2) address of the sockfd on the server,
+      # which isn't all that useful to begin with. SSH(1) always
+      # populates it with NULL bytes, making it completely pointless.
+      # Read it off the socket and ignore it so it doesn't get in the
+      # way of the proxied traffic.
       case type
       when AddressTypes::ATYP_IPv4
         @socks_socket.read(4)
