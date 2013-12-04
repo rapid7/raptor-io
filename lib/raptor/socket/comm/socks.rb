@@ -155,10 +155,7 @@ private
       # bind port
       @socks_socket.read(2).unpack("n")
 
-    when ReplyCodes::NETUNREACH
-      @socks_socket.close
-      raise Raptor::Socket::Error::HostUnreachable
-    when ReplyCodes::HOSTUNREACH
+    when ReplyCodes::NETUNREACH, ReplyCodes::HOSTUNREACH
       @socks_socket.close
       raise Raptor::Socket::Error::HostUnreachable
     when ReplyCodes::CONNREFUSED

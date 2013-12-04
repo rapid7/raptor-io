@@ -17,7 +17,7 @@ def usage(msg)
   $stderr.puts "The SOCKS address type has additional options."
   $stderr.puts
   $stderr.puts "Examples:"
-  $stderr.puts "    SOCKS:127.0.0.1:www.google.com:80,socksport=1234,socksuser=bob"
+  $stderr.puts "    SOCKS:127.0.0.1:www.google.com:80,socksport=1234"
   $stderr.puts
   exit 1
 end
@@ -52,8 +52,6 @@ ARGV.each do |address|
       socks_comm: Raptor::Socket::Comm::Local.new,
       socks_host: server_host,
       socks_port: (opts_hash["socksport"] || 1080).to_i,
-      username: opts_hash["username"],
-      password: opts_hash["password"],
     }
     comm = Raptor::Socket::Comm::SOCKS.new(socks_opts)
     create_opts = {
