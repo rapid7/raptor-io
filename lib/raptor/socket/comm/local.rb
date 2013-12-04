@@ -28,7 +28,7 @@ class Raptor::Socket::Comm::Local < Raptor::Socket::Comm
 
   # Resolves a hostname to an IP address using this comm.
   #
-  # @param  [String]  hostname
+  # @param hostname [String]
   def resolve( hostname )
     ::Resolv.getaddress hostname
   end

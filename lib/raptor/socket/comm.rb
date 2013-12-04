@@ -22,6 +22,7 @@ require 'ipaddr'
 ###
 class Raptor::Socket::Comm
   require 'raptor/socket/comm/local'
+  require 'raptor/socket/comm/socks'
 
   # Creates a socket on this Comm based on the supplied uniform
   # parameters.
@@ -59,7 +60,7 @@ class Raptor::Socket::Comm
   #
   # @abstract
   #
-  # @param  [String]  ip_address
+  # @param ip_address [String]
   def reverse_resolve( ip_address )
     raise NotImplementedError
   end

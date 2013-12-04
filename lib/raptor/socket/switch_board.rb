@@ -8,8 +8,8 @@ require 'thread'
 # classes are used to instantiate objects that are tied to remote
 # network entities.  For example, {Comm::Local} is used to build network
 # connections directly from the local machine whereas, for instance, a
-# Meterpreter Comm would build a local socket pair that is associated
-# with a connection established by a remote entity.  This can be seen as
+# SOCKS Comm would build a local socket pair that is associated with a
+# connection established by a remote SOCKS server.  This can be seen as
 # a uniform way of communicating with hosts through arbitrary channels.
 #
 ###

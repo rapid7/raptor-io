@@ -82,7 +82,7 @@ class Raptor::Socket::TCP::SSL < Raptor::Socket::TCP
           @socket.gets $/, arg
         end
       else
-        @socket.gets *args
+        @socket.gets(*args)
       end
     end
   end
