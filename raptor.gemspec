@@ -32,12 +32,18 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'simplecov', '0.5.4'
 
   # Test web-servers
-  spec.add_development_dependency 'thin'
+  if RUBY_PLATFORM !~ /java/
+    spec.add_development_dependency 'thin'
+  end
   spec.add_development_dependency 'sinatra'
   spec.add_development_dependency 'sinatra-contrib'
 
   # Markdown dependency for YARD.
-  spec.add_development_dependency 'redcarpet'
+  if RUBY_PLATFORM =~ /java/
+    spec.add_development_dependency 'kramdown'
+  else
+    spec.add_development_dependency 'redcarpet'
+  end
 
   # Pretty-dumps objects to the screen.
   spec.add_development_dependency 'awesome_print'
