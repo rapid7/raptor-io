@@ -163,15 +163,17 @@ class Server
           next
         end
 
-        begin
-          client = @server.accept_nonblock
+        client = begin
+          @server.accept_nonblock
         rescue => e
           log "#{e.class}: #{e}", :error
           e.backtrace.each { |l| log l, :error }
           next
         end
+        $stderr.puts("http server accepted #{client.inspect}")
 
-        @sockets[:client_address][client] = Socket.unpack_sockaddr_in( client.getpeername ).last
+        @sockets[:client_address][client] =
+          Socket.unpack_sockaddr_in( client.getpeername ).last
         @sockets[:reads] << client
 
         log 'Connected', :debug, client

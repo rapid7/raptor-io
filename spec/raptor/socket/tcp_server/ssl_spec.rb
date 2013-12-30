@@ -6,18 +6,19 @@ describe Raptor::Socket::TCPServer::SSL do
 
   let(:io) { server }
   let(:ssl_server) { described_class.new(io, context: server_context ) }
-  let(:ssl_client) { Raptor::Socket::TCP::SSL.new( client_sock, verify_mode: OpenSSL::SSL::VERIFY_NONE ) }
+  let(:ssl_client) { Raptor::Socket::TCP::SSL.new( client_sock, ssl_verify_mode: OpenSSL::SSL::VERIFY_NONE ) }
   let(:data) { 'test'.force_encoding( 'binary' ) }
 
   subject { ssl_server }
 
   describe '#accept' do
-    it 'returns a client connection as a Raptor::Socket::TCP::SSL socket' do
+    pending 'returns a client connection as a Raptor::Socket::TCP::SSL socket' do
+
       server_thread
 
       Thread.pass
 
-      ssl_client.connect
+      ssl_client
 
       ssl_peer = nil
       begin
@@ -39,7 +40,7 @@ describe Raptor::Socket::TCPServer::SSL do
       ssl_server
 
       Thread.new do
-        ssl_client.connect
+        ssl_client
       end
       Thread.pass
 

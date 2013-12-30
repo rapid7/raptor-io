@@ -71,7 +71,11 @@ class Raptor::Socket::Comm::Local < Raptor::Socket::Comm
       end
     end
 
-    Raptor::Socket::TCP.new( socket, options )
+    if options[:ssl_context]
+      Raptor::Socket::TCP::SSL.new(socket, options)
+    else
+      Raptor::Socket::TCP.new(socket, options)
+    end
   end
 
   # Listen locally on `:local_port`

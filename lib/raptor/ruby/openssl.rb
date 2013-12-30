@@ -16,24 +16,31 @@ class SSLSocket
   # {SSLSocket}s which still have data to read.
   #
   # @private
+  #
+  # See http://bugs.ruby-lang.org/issues/8875
+  # See http://jira.codehaus.org/browse/JRUBY-6874
   def empty?
     @rbuffer.empty?
   end
 end
 
 class SSLServer
-  # Stolen from: OpenSSL::SSL::SSLServer
-  def accept_nonblock
-    sock = @svr.accept_nonblock
+  # Guard this in case stdlib ever implements it
+  unless method_defined?(:accept_nonblock)
+    # Non-blocking version of accept, stolen directly from the blocking
+    # version, OpenSSL::SSL::SSLServer#accept.
+    def accept_nonblock
+      sock = @svr.accept_nonblock
 
-    begin
-      ssl = OpenSSL::SSL::SSLSocket.new(sock, @ctx)
-      ssl.sync_close = true
-      ssl.accept if @start_immediately
-      ssl
-    rescue OpenSSL::SSL::SSLError => ex
-      sock.close
-      raise ex
+      begin
+        ssl = OpenSSL::SSL::SSLSocket.new(sock, @ctx)
+        ssl.sync_close = true
+        ssl.accept if @start_immediately
+        ssl
+      rescue OpenSSL::SSL::SSLError => ex
+        sock.close
+        raise ex
+      end
     end
   end
 end
