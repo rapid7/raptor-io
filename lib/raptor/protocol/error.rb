@@ -1,5 +1,3 @@
-module Raptor
-
 #
 # {Protocol} error namespace.
 #
@@ -7,7 +5,6 @@ module Raptor
 #
 # @author Tasos "Zapotek" Laskos <tasos.laskos@gmail.com>
 #
-class Protocol::Error < Error
+class Raptor::Protocol::Error < Raptor::Error
 
-end
 end

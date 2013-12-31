@@ -4,37 +4,49 @@
 class Raptor::Socket::TCPServer::SSL < Raptor::Socket::TCPServer
 
   def initialize( socket, options = {} )
+    #p options[:context].frozen?
     super
+    #p options[:context].frozen?
 
-    if (@context = options[:context]).nil?
-      @context = OpenSSL::SSL::SSLContext.new( options[:version] )
+    @context = options[:context]
+    if @context.nil?
+      @context = OpenSSL::SSL::SSLContext.new( options[:ssl_version] )
       @context.verify_mode = options[:verify_mode]
     end
 
-    @original_socket = socket
+    @plaintext_socket = socket
     @socket = OpenSSL::SSL::SSLServer.new( socket, @context )
   end
 
   # Accepts a client connection.
   #
+  # @see Socket::TCP::SSL.from_openssl
   # @return [Raptor::Socket::TCP::SSL]
   def accept
-    openssl_to_raptor @socket.accept
+    Raptor::Socket::TCP::SSL.from_openssl(@socket.accept)
   end
 
   # Accepts a client connection without blocking.
   #
+  # @see Socket::TCP::SSL.from_openssl
   # @return [Raptor::Socket::TCP::SSL]
+  # @raise [IO::WaitWritable]
   def accept_nonblock
-    openssl_to_raptor @socket.accept_nonblock
+    Raptor::Socket::TCP::SSL.from_openssl(@socket.accept_nonblock)
   end
 
-  private
-
-  def openssl_to_raptor( openssl_socket )
-    s = Raptor::Socket::TCP::SSL.new( openssl_socket.to_io, options )
-    s.socket = openssl_socket
-    s
+  # Close this SSL stream and the underlying socket
+  #
+  # @return [void]
+  def close
+    begin
+      @socket.close
+    ensure
+      if (!@plaintext_socket.closed?)
+        @plaintext_socket.close
+      end
+    end
   end
+
 
 end

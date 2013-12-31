@@ -1,8 +1,24 @@
+
 # TCP client with SSL encryption.
 #
 # @author Tasos Laskos <tasos_laskos@rapid7.com>
 class Raptor::Socket::TCP::SSL < Raptor::Socket::TCP
-  extend Forwardable
+
+  # Create a new {SSL} from an already-connected
+  # `OpenSSL::SSL::SSLSocket`.
+  #
+  # @see TCPServer::SSL
+  # @param openssl_socket [OpenSSL::SSL::SSLSocket]
+  # @return [SSL]
+  def self.from_openssl(openssl_socket)
+    raptor = self.allocate
+    raptor.__send__(:socket=, openssl_socket)
+    raptor.__send__(:plaintext_socket=, openssl_socket.to_io)
+    raptor.options = {}
+    raptor.options[:ssl_context] = openssl_socket.context
+
+    raptor
+  end
 
   # @!method context
   #   @return [OpenSSL::SSL::Context]
@@ -16,80 +32,39 @@ class Raptor::Socket::TCP::SSL < Raptor::Socket::TCP
   #   @return [Symbol]  SSL version.
   def_delegator :@socket, :ssl_version, :version
 
-  # @!method getpeername
-  #   @return [String] Sockaddr data.
-  def_delegator :@original_socket, :getpeername, :getpeername
-
-  # Default configuration options.
-  DEFAULT_OPTIONS = {
-    version:         :TLSv1,
-    verify_mode:     OpenSSL::SSL::VERIFY_PEER,
-    connect_timeout: 5
-  }
-
-  # @param  [Raptor::Socket]  socket
-  # @param  [Hash]  options Options
-  # @option config :connect_timeout [Integer] (5)
-  #   {#connect Connection} timeout in seconds.
-  # @option config :version [Symbol] (:TLSv1)
-  # @option config :verify_mode [Integer] (OpenSSL::SSL::VERIFY_NONE)
-  #   Peer verification mode.
-  # @option config :context [OpenSSL::SSL::SSLContext] (nil)
-  #   SSL context to use.
+  # @param  socket  [Raptor::Socket]
+  # @param  options [Hash]  Options
+  # @option (see TCP#to_ssl)
   def initialize( socket, options = {} )
-    options = DEFAULT_OPTIONS.merge( options )
+    options = DEFAULT_SSL_OPTIONS.merge( options )
     super
 
-    if (@context = options[:context]).nil?
-      @context = OpenSSL::SSL::SSLContext.new( options[:version] )
-      @context.verify_mode = options[:verify_mode]
+    @context = options[:context] || options[:ssl_context]
+
+    if @context.nil?
+      @context = OpenSSL::SSL::SSLContext.new( options[:ssl_version] )
+      @context.verify_mode = options[:ssl_verify_mode]
     end
 
-    @original_socket = socket
-    @socket = OpenSSL::SSL::SSLSocket.new( socket, @context )
-  end
-
-  # Starts the SSL/TLS handshake.
-  #
-  # @raise [Raptor::Socket::Error::ConnectionTimeout]
-  #   On connection timeout (based on the `:connect_timeout` option).
-  def connect
+    @socket = OpenSSL::SSL::SSLSocket.new(socket.to_io, @context)
     begin
-      Timeout.timeout( options[:connect_timeout] ) do
-        @socket.connect
-      end
-    rescue Timeout::Error => e
-      raise Raptor::Socket::Error::ConnectionTimeout, e.to_s
-    end
-  end
-
-  # Ruby `Socket#gets` accepts:
-  #
-  # * `gets( sep = $/ )`
-  # * `gets( limit = nil )`
-  # * `gets( sep = $/, limit = nil )`
-  #
-  # `OpenSSL::SSL::SSLSocket#gets` however only supports `gets(sep=$/, limit=nil)`.
-  # This hack allows SSLSocket to behave the same as Ruby Socket.
-  #
-  # @private
-  def gets( *args )
-    self.class.translate_errors do
-      if args.size == 1
-        if (arg = args.first).is_a? String
-          @socket.gets arg
-        else
-          @socket.gets $/, arg
-        end
+      #$stderr.puts("#{self.class}#initialize connecting")
+      @socket.connect_nonblock
+    rescue IO::WaitReadable, IO::WaitWritable => e
+      #$stderr.puts("Wait*able #{e}, #{options[:connect_timeout].inspect}")
+      if e.kind_of? IO::WaitReadable
+        r,w,_ = IO.select([@socket], nil, nil, options[:connect_timeout])
       else
-        @socket.gets(*args)
+        r,w,_ = IO.select(nil, [@socket], nil, options[:connect_timeout])
       end
-    end
-  end
 
-  # @private
-  def socket=( socket )
-    @socket = socket
+      if r.nil? && w.nil?
+        #$stderr.puts("timeout")
+        raise Raptor::Socket::Error::ConnectionTimeout.new(e.to_s)
+      end
+
+      retry
+    end
   end
 
 end

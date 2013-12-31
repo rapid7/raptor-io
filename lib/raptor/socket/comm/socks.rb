@@ -52,6 +52,10 @@ class Raptor::Socket::Comm::SOCKS < Raptor::Socket::Comm
     ATYP_NOT_SUPPORTED = 8
   end
 
+  # @param options [Hash]
+  # @option options :socks_host [String,IPAddr]
+  # @option options :socks_port [Fixnum]
+  # @option options :socks_comm [Socket::Comm]
   def initialize(options = {})
     @socks_host = options[:socks_host]
     @socks_port = options[:socks_port].to_i
@@ -60,14 +64,13 @@ class Raptor::Socket::Comm::SOCKS < Raptor::Socket::Comm
 
   # (see Comm#support_ipv6?)
   def support_ipv6?
-  end
-
-  # (see Comm#resolve)
-  def resolve(hostname)
-  end
-
-  # (see Comm#reverse_resolve)
-  def reverse_resolve(ip_address)
+    begin
+      tcp = create_tcp("::1", {})
+      tcp.close
+      true
+    rescue Raptor::Error
+      nil
+    end
   end
 
   # Connect to `:peer_host`
@@ -87,7 +90,11 @@ class Raptor::Socket::Comm::SOCKS < Raptor::Socket::Comm
 
     negotiate_connection(options[:peer_host], options[:peer_port])
 
-    Raptor::Socket::TCP.new(@socks_socket, options)
+    if options[:ssl_context]
+      Raptor::Socket::TCP::SSL.new(@socks_socket, options)
+    else
+      Raptor::Socket::TCP.new(@socks_socket, options)
+    end
   end
 
 
@@ -130,8 +137,48 @@ class Raptor::Socket::Comm::SOCKS < Raptor::Socket::Comm
 
     @socks_socket.write(request)
 
-    # [ version ][ reply code ][ reserved ][ atyp ]
     reply_pkt = @socks_socket.read(4)
+    if reply_pkt.nil?
+      # ssh(1) likes to just sever the connection if it can't connect
+      raise Raptor::Socket::Error::ConnectionError
+    end
+
+    handle_reply(reply_pkt)
+  end
+
+  def pack_v5_connect_packet(peer_host, peer_port)
+    begin
+      ip = IPAddr.parse(peer_host)
+    rescue ArgumentError
+      type = AddressTypes::ATYP_DOMAINNAME
+      # Packed as a Pascal string
+      packed_addr = [peer_host.length, peer_host].pack("Ca*")
+    else
+      if ip.to_range.count != 1
+        raise ArgumentError, "Invalid host"
+      end
+      type = if ip.ipv4?
+               AddressTypes::ATYP_IPv4
+             elsif ip.ipv6?
+               AddressTypes::ATYP_IPv6
+             end
+      packed_addr = ip.hton
+    end
+    connect_packet = [
+      5, # Version
+      1, # CMD, CONNECT X'01'
+      0, # reserved
+      type,
+      packed_addr,
+      peer_port
+    ].pack("CCCCa*n")
+
+    connect_packet
+  end
+
+  def handle_reply(reply_pkt)
+
+    # [ version ][ reply code ][ reserved ][ atyp ]
     _, reply, _, type = reply_pkt.unpack("C4")
 
     #  X'00' succeeded
@@ -186,32 +233,6 @@ class Raptor::Socket::Comm::SOCKS < Raptor::Socket::Comm
       @socks_socket.close
       raise Raptor::Socket::Error::ConnectionError
     end
-  end
-
-  def pack_v5_connect_packet(peer_host, peer_port)
-    begin
-      ip = IPAddr.parse(peer_host)
-      if ip.ipv4?
-        type = AddressTypes::ATYP_IPv4
-      elsif ip.ipv6?
-        type = AddressTypes::ATYP_IPv6
-      end
-      packed_addr = ip.hton
-    rescue ArgumentError
-      type = AddressTypes::ATYP_DOMAINNAME
-      # Packed as a Pascal string
-      packed_addr = [peer_host.length, peer_host].pack("Ca*")
-    end
-    connect_packet = [
-      5, # Version
-      1, # CMD, CONNECT X'01'
-      0, # reserved
-      type,
-      packed_addr,
-      peer_port
-    ].pack("CCCCa*n")
-
-    connect_packet
   end
 
 end

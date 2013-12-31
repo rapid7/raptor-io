@@ -423,7 +423,8 @@ class Client
         closed = false
         if has_body
           begin
-            if (line = (read_size ? socket.read( read_size ) : socket.gets))
+            line = (read_size ? socket.read(read_size) : socket.gets)
+            if line
               response[:body] << line
             else
               raise Raptor::Socket::Error::BrokenPipe
@@ -557,9 +558,9 @@ class Client
 
       if request.parsed_url.scheme.to_s == 'https'
         socket = socket.to_ssl(
-            context:     @ssl_context,
-            version:     @ssl_version,
-            verify_mode: @ssl_verify_mode
+            ssl_context:     @ssl_context,
+            ssl_version:     @ssl_version,
+            ssl_verify_mode: @ssl_verify_mode
         )
       end
 
