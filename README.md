@@ -1,6 +1,6 @@
 # Raptor
 
-Lighter, faster, smarter than REX. Raptor is the next evolutionary step in Metasploit's basic network IO functionality.
+Lighter, faster and smarter than REX,  Raptor is the next evolutionary step in Metasploit's basic network IO functionality.
 
 
 
@@ -23,6 +23,12 @@ Lighter, faster, smarter than REX. Raptor is the next evolutionary step in Metas
     
 ### From RubyGems
 *submission to RubyGems anticipated mid-January 2014*    
+
+## Usage
+
+* [HTTP client and server operations](https://github.com/rapid7/raptor/wiki/HTTP-examples) with asychronous, synchronous, and manually queued interactions
+* [Arbitrary network connections](https://github.com/rapid7/raptor/wiki/Raptor-Socket-Requirements) using the Comm(connection establishment) and Switchboard(routing) abstractions.
+
 
 ## Immediate Goals
 * ~~Implement improved Switchboard (in-memory router)~~
