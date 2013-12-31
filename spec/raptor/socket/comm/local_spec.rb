@@ -21,7 +21,7 @@ describe Raptor::Socket::Comm::Local do
 
   describe '#resolve' do
     it 'should resolve a hostname to an IP address' do
-      comm_local.resolve( 'localhost' ).should == '127.0.0.1'
+      ['127.0.0.1', 'fe80::1%lo0'].should include(comm_local.resolve('localhost'))
     end
   end
 

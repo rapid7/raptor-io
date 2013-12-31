@@ -1,3 +1,4 @@
+=begin
 require 'spec_helper'
 require 'raptor/socket'
 
@@ -55,3 +56,4 @@ describe Raptor::Socket::TCPServer::SSL do
     end
   end
 end
+=end
