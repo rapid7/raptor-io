@@ -167,7 +167,7 @@ class Request < Message
   # @return [String]  Response body to use.
   def effective_body
     return '' if headers['Expect'] == '100-continue'
-    return encode_if_not_raw(body.to_s) if http_method != :post
+    return encode_if_not_raw(body.to_s)
 
     body_params = if !body.to_s.empty?
                     body.split('&').inject({}) do |h, pair|
