@@ -29,7 +29,7 @@ if !((ARGV & ["-h", "--help"]).empty?)
   usage
 end
 
-comms = [ Raptor::Socket::Comm::Local.new ]
+comms = [ RaptorIO::Socket::Comm::Local.new ]
 connect_opts = nil
 host = nil
 port = nil
@@ -47,14 +47,14 @@ ARGV.each do |arg|
   case arg_uri.scheme.downcase
   when "sapni"
     port ||= 3299
-    comms << Raptor::Socket::Comm::SAPNI.new(
+    comms << RaptorIO::Socket::Comm::SAPNI.new(
       sap_host: host,
       sap_port: port,
       sap_comm: comms.last,
     )
   when "socks"
     port ||= 1080
-    comms << Raptor::Socket::Comm::SOCKS.new(
+    comms << RaptorIO::Socket::Comm::SOCKS.new(
       socks_host: host,
       socks_port: port,
       socks_comm: comms.last,
@@ -89,7 +89,7 @@ writers = [ $stdout, sock ]
 connections = readers.zip(writers)
 
 until connections.empty?
-  r,_,_ = Raptor::Socket.select(connections.map(&:first))
+  r,_,_ = RaptorIO::Socket.select(connections.map(&:first))
   r.each do |read_io|
     begin
       data = read_io.readpartial(1024)
