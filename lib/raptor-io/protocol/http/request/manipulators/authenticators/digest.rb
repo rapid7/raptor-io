@@ -1,6 +1,6 @@
 require 'digest'
 
-module Raptor
+module RaptorIO
 module Protocol::HTTP
 class Request
 
