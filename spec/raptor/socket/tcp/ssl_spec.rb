@@ -1,6 +1,6 @@
 require 'spec_helper'
 require 'raptor/socket'
-=begin
+
 describe Raptor::Socket::TCP::SSL do
   let(:opts) do
     {
@@ -9,10 +9,10 @@ describe Raptor::Socket::TCP::SSL do
     }
   end
 
-  include_context 'with ssl server'
+  #include_context 'with ssl server'
 
-  it_behaves_like "a client socket"
+  #it_behaves_like "a client socket"
 
 end
-=end
+
 

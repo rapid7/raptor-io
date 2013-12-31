@@ -163,17 +163,17 @@ class Server
           next
         end
 
-        client = begin
-          @server.accept_nonblock
+        begin
+          client = @server.accept_nonblock
         rescue => e
-          log "#{e.class}: #{e}", :error
+          log "#{e.class}: #{e}, #{client.inspect}", :error
           e.backtrace.each { |l| log l, :error }
           next
         end
-        $stderr.puts("http server accepted #{client.inspect}")
+        #$stderr.puts("http server accepted #{client.inspect}")
 
         @sockets[:client_address][client] =
-          Socket.unpack_sockaddr_in( client.getpeername ).last
+          ::Socket.unpack_sockaddr_in( client.getpeername ).last
         @sockets[:reads] << client
 
         log 'Connected', :debug, client
@@ -245,8 +245,10 @@ class Server
 
   def select_sockets
     clock = Time.now
-    sockets = select( [@server] | @sockets[:reads], @sockets[:writes],
-                      open_sockets, @timeout )
+    sockets = Socket.select( [@server] | @sockets[:reads],
+                                    @sockets[:writes],
+                                    open_sockets,
+                                    @timeout )
     waiting_time = Time.now - clock
 
     # Adjust the timeouts for *all* sockets.

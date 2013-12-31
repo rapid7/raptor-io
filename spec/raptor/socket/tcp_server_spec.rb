@@ -2,7 +2,8 @@ require 'spec_helper'
 require 'raptor/socket'
 
 describe Raptor::Socket::TCPServer do
-  subject { described_class.new(io) }
+  subject { described_class.new(io, opts) }
+  let(:opts) { {} }
   let(:io) {
     sio = StringIO.new
     # Bind, listen, and connect all return 0 unless an exception is

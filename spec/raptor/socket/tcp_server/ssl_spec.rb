@@ -2,68 +2,56 @@ require 'spec_helper'
 require 'raptor/socket'
 
 describe Raptor::Socket::TCPServer::SSL do
-  include_context 'with ssl server'
+  include_context 'with tcp server'
 
-  let(:io) { server }
-  let(:ssl_server) { described_class.new(io, context: server_context ) }
-  let(:ssl_client) { Raptor::Socket::TCP::SSL.new( client_sock, ssl_verify_mode: OpenSSL::SSL::VERIFY_NONE ) }
-  let(:data) { 'test'.force_encoding( 'binary' ) }
-
-  subject { ssl_server }
-
-  describe '#accept' do
-    pending 'returns a client connection as a Raptor::Socket::TCP::SSL socket' do
-
-      server_thread
-
-      Thread.pass
-
-      ssl_client
-
-      ssl_peer = nil
-      begin
-        ssl_peer = server_thread.value
-        ssl_peer.should be_kind_of Raptor::Socket::TCP::SSL
-
-        ssl_peer.write data
-        ssl_client.read(data.size).should == data
-      ensure
-        server_thread.join
-        ssl_server.close
-        ssl_peer.close if ssl_peer
-      end
+  let(:server_cert) { File.read(File.join(fixtures_path, 'raptor', 'socket', 'ssl_server.crt')) }
+  let(:server_key)  { File.read(File.join(fixtures_path, 'raptor', 'socket', 'ssl_server.key')) }
+  let(:server_context) do
+    OpenSSL::SSL::SSLContext.new.tap do |context|
+      context.cert = OpenSSL::X509::Certificate.new(server_cert)
+      context.key  = OpenSSL::PKey::RSA.new(server_key)
     end
   end
 
+  subject(:ssl_server) do
+    described_class.new(server_sock, context: server_context )
+  end
+
+  let(:data) { 'test'.force_encoding( 'binary' ) }
+
   describe '#accept_nonblock' do
-    pending 'returns a client connection as a Raptor::Socket::TCP::SSL socket without blocking' do
+    it 'returns a connected peer as a Raptor::Socket::TCP::SSL socket' do
       ssl_server
+      ssl_client = OpenSSL::SSL::SSLSocket.new(client_sock)
 
       Thread.new do
-        ssl_client
+        Thread.pass
+        #$stderr.puts "ssl_client connecting"
+        ssl_client.connect
+        #$stderr.puts "ssl_client CONNECTED"
       end
-      Thread.pass
 
       ssl_peer = nil
+
       begin
-        begin
-          ssl_peer = ssl_server.accept_nonblock
-        rescue IO::WaitReadable
-          IO.select([ssl_server])
-          retry
-        end
-
-        ssl_peer.should be_kind_of Raptor::Socket::TCP::SSL
-
-        select( [], [ssl_peer] )
-        ssl_peer.write data
-
-        select( [ssl_client] )
-        ssl_client.read(data.size).should == data
-      ensure
-        ssl_server.close
-        ssl_peer.close if ssl_peer
+        #$stderr.puts "ssl_server accepting"
+        ssl_peer = ssl_server.accept_nonblock
+        #$stderr.puts "ssl_server ACCEPTED"
+      rescue IO::WaitReadable
+        #$stderr.puts "ssl_server waiting for a client"
+        Raptor::Socket.select([ssl_server])
+        retry
       end
+
+      #$stderr.puts("ssl_server accepted peer #{ssl_peer}")
+      ssl_peer.should be_kind_of Raptor::Socket::TCP::SSL
+
+      select( [], [ssl_peer] )
+      ssl_peer.write data
+
+      select( [ssl_client] )
+      ssl_client.read(data.size).should == data
+
     end
   end
 end

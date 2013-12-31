@@ -1,4 +1,4 @@
-shared_examples_for "a socket" do
+shared_examples_for "a client socket" do
   let(:data) { "0\n1\n2\n3\n4\n".force_encoding( 'binary' ) }
 
   context do
@@ -128,12 +128,7 @@ shared_examples_for "a socket" do
 
 end
 
-shared_examples "a client socket" do
-  it_behaves_like "a socket"
-end
-
 shared_examples "a server socket" do
-  it_behaves_like "a socket"
   it { should respond_to(:bind) }
   it { should respond_to(:listen) }
   it { should respond_to(:accept) }

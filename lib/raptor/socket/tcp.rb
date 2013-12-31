@@ -3,10 +3,11 @@ class Raptor::Socket::TCP < Raptor::Socket
 
   # Default configuration options.
   DEFAULT_OPTIONS = {
-    connect_timeout: 5
+    connect_timeout: 5,
   }
 
   # Default options for SSL streams connected through this socket.
+  #
   # @see #to_ssl
   # @see TCP::SSL
   DEFAULT_SSL_OPTIONS = {
@@ -21,56 +22,86 @@ class Raptor::Socket::TCP < Raptor::Socket
   attr_accessor :socket
 
   # @param (see Socket#initialize)
-  # @param (see #to_ssl)
   def initialize(socket, options = {})
+    options = DEFAULT_OPTIONS.merge(options)
     super
     @plaintext_socket = @socket = socket
-
-    if options.keys.include?(:ssl_context)
-      to_ssl(options)
-    end
   end
 
-  # @!method getpeername
+  # @!method getpeername(string)
   #   Return a Sockaddr struct for the *socket*. Note that this is the
   #   @return [String] Sockaddr data.
   def_delegator :@plaintext_socket, :getpeername, :getpeername
+
+  # @!method ungetc
+  #   Pushes back one character onto the {#socket}'s read buffer. Note
+  #   that some streams will *lose data* if this is called with a
+  #   `string` larger than one byte or called more than once between
+  #   calls to {#read}!
+  #
+  #   @param string [String] A single-byte string
+  #   @return [nil]
+  def_delegator :@socket, :ungetc, :ungetc
 
   def remote_address
     ::Addrinfo.new([ "AF_INET", options[:peer_port], options[:peer_host], options[:peer_host] ])
   end
 
+  # Write `data` to the {#socket}.
+  #
+  # @param data [String,#to_s]
+  # @return [Fixnum]
   def write(data)
     translate_errors do
       begin
         @socket.write_nonblock(data)
-      rescue Errno::EAGAIN
+      rescue IO::WaitWritable
         IO.select(nil, [@socket])
         retry
       end
     end
   end
 
-  def read(maxlength = nil)
+  # Read exactly `maxlen` bytes from the {#socket}. If fewer than
+  # `maxlen` bytes are available for reading, wait until enough data
+  # is sent.
+  #
+  # @note May block
+  #
+  # @param (see #read_nonblock)
+  # @return (see #read_nonblock)
+  def read(maxlen)
+    buf = ""
+    until 0 == maxlen
+      prev_length = buf.length
+      buf << readpartial(maxlen)
+      maxlen -= buf.length - prev_length
+    end
+    buf
+  end
+
+  # Read at most `maxlen` bytes from the {#socket}.
+  #
+  # @note May block
+  #
+  # @param (see #read_nonblock)
+  # @return (see #read_nonblock)
+  def readpartial(maxlen = nil)
     begin
-      read_nonblock(maxlength)
-    rescue Errno::EAGAIN
+      read_nonblock(maxlen)
+    rescue IO::WaitReadable
       IO.select([@socket])
       retry
     end
   end
 
-  def read_nonblock(maxlength = nil)
+  # Read at most `maxlen` bytes from the {#socket}.
+  #
+  # @param maxlen [Fixnum]
+  # @return [String]
+  def read_nonblock(maxlen = nil)
     translate_errors do
-      begin
-        @socket.read_nonblock(maxlength)
-      rescue OpenSSL::SSL::SSLError => e
-        if e.to_s =~ /would block/
-          raise Errno::EAGAIN, e.to_s
-        else
-          raise e
-        end
-      end
+      @socket.read_nonblock(maxlen)
     end
   end
 
@@ -83,7 +114,7 @@ class Raptor::Socket::TCP < Raptor::Socket
   # `OpenSSL::SSL::SSLSocket#gets` however only supports `gets(sep=$/, limit=nil)`.
   # This hack allows SSLSocket to behave the same as Ruby Socket.
   #
-  # @private
+  # @note May block
   def gets(*args)
     translate_errors do
       if args.size == 1
@@ -105,7 +136,7 @@ class Raptor::Socket::TCP < Raptor::Socket
   # @return [void]
   def close
     begin
-      @socket.close
+      super
     ensure
       if (!@plaintext_socket.closed?)
         @plaintext_socket.close
@@ -113,6 +144,9 @@ class Raptor::Socket::TCP < Raptor::Socket
     end
   end
 
+  # Attempt to turn this into something usable by `IO.select`.
+  #
+  # @return [IO]
   def to_io
     IO.try_convert(@socket) || @socket
   end
@@ -148,6 +182,8 @@ class Raptor::Socket::TCP < Raptor::Socket
   # you to start a TLS connection after data has already been exchanged
   # to enable things like `STARTTLS`.
   #
+  # @note May block
+  #
   # @param ssl_options [Hash]  Options
   # @option ssl_options :ssl_version [Symbol] (:TLSv1)
   # @option ssl_options :ssl_verify_mode [Constant] (OpenSSL::SSL::VERIFY_PEER)
@@ -158,11 +194,10 @@ class Raptor::Socket::TCP < Raptor::Socket
   # @return [Raptor::Socket::TCP::SSL] A new Socket with an established
   #   SSL connection
   def to_ssl(ssl_options = {})
-    $stderr.puts("#{self.class}#to_ss")
     if ssl_options[:ssl_context]
       options[:ssl_context] = ssl_options[:ssl_context]
     else
-      ssl_options = ssl_options.merge(DEFAULT_SSL_OPTIONS)
+      ssl_options = DEFAULT_SSL_OPTIONS.merge(ssl_options)
       options[:ssl_context] = OpenSSL::SSL::SSLContext.new.tap do |ctx|
         ctx.ssl_version = ssl_options[:ssl_version]
         ctx.verify_mode = ssl_options[:ssl_verify_mode]
@@ -179,7 +214,7 @@ class Raptor::Socket::TCP < Raptor::Socket
 
   def translate_errors(&block)
     yield
-  rescue Errno::ECONNRESET,  Errno::EPIPE
+  rescue Errno::ECONNRESET, Errno::EPIPE
     raise Raptor::Socket::Error::BrokenPipe
   rescue Errno::ECONNREFUSED
     raise Raptor::Socket::Error::ConnectionRefused

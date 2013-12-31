@@ -5,7 +5,7 @@
 class Raptor::Socket::TCP::SSL < Raptor::Socket::TCP
 
   # Create a new {SSL} from an already-connected
-  # {OpenSSL::SSL::SSLSocket}.
+  # `OpenSSL::SSL::SSLSocket`.
   #
   # @see TCPServer::SSL
   # @param openssl_socket [OpenSSL::SSL::SSLSocket]
@@ -32,9 +32,9 @@ class Raptor::Socket::TCP::SSL < Raptor::Socket::TCP
   #   @return [Symbol]  SSL version.
   def_delegator :@socket, :ssl_version, :version
 
-  # @param  [Raptor::Socket]  socket
-  # @param  [Hash]  options Options
-  # @option (see TCP#to_ss)
+  # @param  socket  [Raptor::Socket]
+  # @param  options [Hash]  Options
+  # @option (see TCP#to_ssl)
   def initialize( socket, options = {} )
     options = DEFAULT_SSL_OPTIONS.merge( options )
     super
@@ -48,19 +48,23 @@ class Raptor::Socket::TCP::SSL < Raptor::Socket::TCP
 
     @socket = OpenSSL::SSL::SSLSocket.new(socket.to_io, @context)
     begin
+      #$stderr.puts("#{self.class}#initialize connecting")
       @socket.connect_nonblock
-    rescue IO::WaitReadable => e
-      r,w,_ = IO.select([@socket],[@socket],nil,options[:connect_timeout])
+    rescue IO::WaitReadable, IO::WaitWritable => e
+      #$stderr.puts("Wait*able #{e}, #{options[:connect_timeout].inspect}")
+      if e.kind_of? IO::WaitReadable
+        r,w,_ = IO.select([@socket], nil, nil, options[:connect_timeout])
+      else
+        r,w,_ = IO.select(nil, [@socket], nil, options[:connect_timeout])
+      end
+
       if r.nil? && w.nil?
+        #$stderr.puts("timeout")
         raise Raptor::Socket::Error::ConnectionTimeout.new(e.to_s)
       end
+
       retry
     end
-  end
-
-  # @return [self]
-  def to_ssl(*args)
-    self
   end
 
 end

@@ -12,26 +12,52 @@ shared_context 'with ssl server' do
   end
 
   let(:ssl_server_sock) do
-    @ssl_server_sock = OpenSSL::SSL::SSLServer.new(server_sock, server_context)
+    @ssl_server_sock = OpenSSL::SSL::SSLSocket.new(server_sock, server_context)
   end
 
   let(:io) do
-    $stderr.puts("with_ssl_server :io")
+    #$stderr.puts("with_ssl_server :io, starting tcp server thread")
     server_thread
-    $stderr.puts("io connecting")
+
+    #$stderr.puts(":io client_sock connecting")
     client_sock
-    $stderr.puts("ssl thread")
+
+    #$stderr.puts("starting ssl accept thread")
     @ssl_server_thread = Thread.new { ssl_server_sock.accept }
+    #$stderr.puts(" ssl accept thread, #{@ssl_server_thread.inspect}")
+
+    # pass to make sure the server thread gets a slice before we return
     Thread.pass
+
+    # this should now be a connected ::TCPSocket
     client_sock
   end
 
+  let(:server_thread) do
+    @server_thread = Thread.new do
+      begin
+        #$stderr.puts("ssl_server_sock.accept_nonblock")
+        peer = ssl_server_sock.accept_nonblock
+      rescue IO::WaitReadable, IO::WaitWritable
+        #$stderr.puts(":server_sock waiting for a client")
+        select([server_sock], [server_sock])
+        #$stderr.puts(":server_sock retrying")
+        retry
+      end
+      #$stderr.puts(":server_sock accepted peer #{peer.inspect}")
+      peer
+    end
+    @server_thread
+
+  end
+
   subject do
-    $stderr.puts("with_ssl_server subject")
+    #$stderr.puts("with_ssl_server subject (#{described_class})")
     s = described_class.new(io, opts)
-    $stderr.puts("Subject:  #{s.inspect}")
+
+    #$stderr.puts("Subject:  #{s.inspect}")
     peer = @ssl_server_thread.value
-    $stderr.puts("ssl_server_thread.value #{peer}")
+    #$stderr.puts("ssl_server_thread.value #{peer}")
     s
   end
 
