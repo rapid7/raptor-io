@@ -1,8 +1,8 @@
 =begin
 require 'spec_helper'
-require 'raptor/socket'
+require 'raptor-io/socket'
 
-describe Raptor::Socket::TCPServer::SSL do
+describe RaptorIO::Socket::TCPServer::SSL do
   include_context 'with tcp server'
 
   let(:server_cert) { File.read(File.join(fixtures_path, 'raptor', 'socket', 'ssl_server.crt')) }
@@ -21,7 +21,7 @@ describe Raptor::Socket::TCPServer::SSL do
   let(:data) { 'test'.force_encoding( 'binary' ) }
 
   describe '#accept_nonblock' do
-    it 'returns a connected peer as a Raptor::Socket::TCP::SSL socket' do
+    it 'returns a connected peer as a RaptorIO::Socket::TCP::SSL socket' do
       ssl_server
       ssl_client = OpenSSL::SSL::SSLSocket.new(client_sock)
 
@@ -40,12 +40,12 @@ describe Raptor::Socket::TCPServer::SSL do
         #$stderr.puts "ssl_server ACCEPTED"
       rescue IO::WaitReadable
         #$stderr.puts "ssl_server waiting for a client"
-        Raptor::Socket.select([ssl_server])
+        RaptorIO::Socket.select([ssl_server])
         retry
       end
 
       #$stderr.puts("ssl_server accepted peer #{ssl_peer}")
-      ssl_peer.should be_kind_of Raptor::Socket::TCP::SSL
+      ssl_peer.should be_kind_of RaptorIO::Socket::TCP::SSL
 
       select( [], [ssl_peer] )
       ssl_peer.write data

@@ -1,19 +1,19 @@
 require 'spec_helper'
 
-describe 'Raptor::Protocol::HTTP::Request::Manipulators::RedirectFollower' do
+describe 'RaptorIO::Protocol::HTTP::Request::Manipulators::RedirectFollower' do
   before :all do
     WebServers.start :redirect_follower
     @url = WebServers.url_for( :redirect_follower )
   end
 
   before( :each ) do
-    Raptor::Protocol::HTTP::Request::Manipulators.reset
+    RaptorIO::Protocol::HTTP::Request::Manipulators.reset
   end
 
   subject(:client) do
-    Raptor::Protocol::HTTP::Client.new(
+    RaptorIO::Protocol::HTTP::Client.new(
       {
-        switch_board: Raptor::Socket::SwitchBoard.new
+        switch_board: RaptorIO::Socket::SwitchBoard.new
       }.merge(options)
     )
   end

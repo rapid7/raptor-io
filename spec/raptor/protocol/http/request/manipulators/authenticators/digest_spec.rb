@@ -1,24 +1,24 @@
 require 'spec_helper'
-require 'raptor/socket'
+require 'raptor-io/socket'
 
-describe 'Raptor::Protocol::HTTP::Request::Manipulators::Authenticators::Digest' do
+describe 'RaptorIO::Protocol::HTTP::Request::Manipulators::Authenticators::Digest' do
   before :all do
     WebServers.start :digest
     @url = WebServers.url_for( :digest )
   end
 
-  let( :manipulators ) { Raptor::Protocol::HTTP::Request::Manipulators }
+  let( :manipulators ) { RaptorIO::Protocol::HTTP::Request::Manipulators }
   before( :each ) do
-    Raptor::Protocol::HTTP::Request::Manipulators.reset
+    RaptorIO::Protocol::HTTP::Request::Manipulators.reset
   end
 
   let(:client) do
-    sb = Raptor::Socket::SwitchBoard.new
-    Raptor::Protocol::HTTP::Client.new(switch_board: sb)
+    sb = RaptorIO::Socket::SwitchBoard.new
+    RaptorIO::Protocol::HTTP::Client.new(switch_board: sb)
   end
 
   def response( algo )
-    Raptor::Protocol::HTTP::Response.parse "HTTP/1.1 401 Unauthorized
+    RaptorIO::Protocol::HTTP::Response.parse "HTTP/1.1 401 Unauthorized
 Content-Type: text/plain
 Content-Length: 0
 Www-Authenticate: Digest realm=\"Protected Area\", algorithm=\"#{algo}\", nonce=\"MTM3MzI5OTYxNiAxYzk2ZDM4OWY1MTY2ZGM3ODllNGQ2N2RjZDIyYzk1ZA==\", opaque=\"610a2ee688cda9e724885e23cd2cfdee\", qop=\"auth\"
@@ -48,7 +48,7 @@ Server: thin 1.5.1 codename Straight Razor\r\n\r\n"
       manipulators.process(
           'authenticators/digest',
           client,
-          Raptor::Protocol::HTTP::Request.new( url: @url ),
+          RaptorIO::Protocol::HTTP::Request.new( url: @url ),
           {
               response: response( algo ),
               username: 'admin',
@@ -63,14 +63,14 @@ Server: thin 1.5.1 codename Straight Razor\r\n\r\n"
       manipulators.process(
           'authenticators/digest',
           client,
-          Raptor::Protocol::HTTP::Request.new( url: @url ),
+          RaptorIO::Protocol::HTTP::Request.new( url: @url ),
           {
               response: response( 'stuff' ),
               username: 'admin',
               password: 'secret'
           }
       )
-    end.to raise_error Raptor::Protocol::HTTP::Error
+    end.to raise_error RaptorIO::Protocol::HTTP::Error
   end
 end
 

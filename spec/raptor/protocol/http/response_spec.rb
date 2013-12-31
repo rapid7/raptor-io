@@ -1,8 +1,8 @@
 #coding: utf-8
 require 'spec_helper'
 
-describe Raptor::Protocol::HTTP::Response do
-  it_should_behave_like 'Raptor::Protocol::HTTP::Message'
+describe RaptorIO::Protocol::HTTP::Response do
+  it_should_behave_like 'RaptorIO::Protocol::HTTP::Message'
 
   let(:url) { 'http://test.com' }
 
@@ -173,7 +173,7 @@ describe Raptor::Protocol::HTTP::Response do
 
   describe '#request' do
     it 'returns the assigned request' do
-      r = Raptor::Protocol::HTTP::Request.new( url: url )
+      r = RaptorIO::Protocol::HTTP::Request.new( url: url )
       described_class.new( url: url, request: r ).request.should == r
     end
   end

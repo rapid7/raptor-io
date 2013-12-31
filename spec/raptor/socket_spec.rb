@@ -1,8 +1,8 @@
 require 'spec_helper'
 
-require 'raptor/socket'
+require 'raptor-io/socket'
 
-describe Raptor::Socket do
+describe RaptorIO::Socket do
   subject { described_class.new(io) }
   let(:io) { StringIO.new }
 

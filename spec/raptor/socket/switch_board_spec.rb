@@ -1,8 +1,8 @@
 require 'spec_helper'
 
-require 'raptor/socket'
+require 'raptor-io/socket'
 
-describe Raptor::Socket::SwitchBoard do
+describe RaptorIO::Socket::SwitchBoard do
   subject(:switch_board) do
     described_class.new
   end

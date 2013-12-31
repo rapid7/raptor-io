@@ -1,7 +1,7 @@
 require 'spec_helper'
-require 'raptor/socket'
+require 'raptor-io/socket'
 
-describe Raptor::Socket::TCP do
+describe RaptorIO::Socket::TCP do
 
   subject { described_class.new(io, opts) }
 

@@ -20,14 +20,14 @@ shared_examples_for "a client socket" do
       io.stub(:gets).and_raise(Errno::ECONNRESET)
       expect {
         subject.gets
-      }.to raise_error(Raptor::Socket::Error::BrokenPipe)
+      }.to raise_error(RaptorIO::Socket::Error::BrokenPipe)
     end
 
     it "converts Errno::EPIPE to BrokenPipe" do
       io.stub(:gets).and_raise(Errno::EPIPE)
       expect {
         subject.gets
-      }.to raise_error(Raptor::Socket::Error::BrokenPipe)
+      }.to raise_error(RaptorIO::Socket::Error::BrokenPipe)
     end
 
     context "with a TCPSocket for IO" do
@@ -89,14 +89,14 @@ shared_examples_for "a client socket" do
       io.stub(:read).and_raise(Errno::ECONNRESET)
       expect {
         subject.read(1)
-      }.to raise_error(Raptor::Socket::Error::BrokenPipe)
+      }.to raise_error(RaptorIO::Socket::Error::BrokenPipe)
     end
 
     it "converts Errno::EPIPE to BrokenPipe" do
       io.stub(:read).and_raise(Errno::EPIPE)
       expect {
         subject.read(1)
-      }.to raise_error(Raptor::Socket::Error::BrokenPipe)
+      }.to raise_error(RaptorIO::Socket::Error::BrokenPipe)
     end
 
     context 'with server' do
@@ -115,14 +115,14 @@ shared_examples_for "a client socket" do
       io.stub(:write).and_raise(Errno::ECONNRESET)
       expect {
         subject.write("asdf")
-      }.to raise_error(Raptor::Socket::Error::BrokenPipe)
+      }.to raise_error(RaptorIO::Socket::Error::BrokenPipe)
     end
 
     it "converts Errno::EPIPE to BrokenPipe" do
       io.stub(:write).and_raise(Errno::EPIPE)
       expect {
         subject.write("asdf")
-      }.to raise_error(Raptor::Socket::Error::BrokenPipe)
+      }.to raise_error(RaptorIO::Socket::Error::BrokenPipe)
     end
   end
 

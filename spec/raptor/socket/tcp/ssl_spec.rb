@@ -1,7 +1,7 @@
 require 'spec_helper'
-require 'raptor/socket'
+require 'raptor-io/socket'
 
-describe Raptor::Socket::TCP::SSL do
+describe RaptorIO::Socket::TCP::SSL do
   let(:opts) do
     {
         ssl_version:     :TLSv1,

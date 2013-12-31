@@ -1,16 +1,16 @@
 require 'spec_helper'
 
-describe 'Raptor::Protocol::HTTP::Request::Manipulators::Authenticators::NTLM' do
+describe 'RaptorIO::Protocol::HTTP::Request::Manipulators::Authenticators::NTLM' do
   before :all do
     WebServers.start :basic
     @url = "http://#{ENV['IIS']}/ntlm/"
   end
 
   before( :each ) do
-    Raptor::Protocol::HTTP::Request::Manipulators.reset
+    RaptorIO::Protocol::HTTP::Request::Manipulators.reset
   end
 
-  let(:client) { Raptor::Protocol::HTTP::Client.new }
+  let(:client) { RaptorIO::Protocol::HTTP::Client.new }
 
   it 'provides NTLM authentication' do
     pending if !ENV['IIS']

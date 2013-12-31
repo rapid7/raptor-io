@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe 'Raptor::Protocol::HTTP::Request::Manipulators::Authenticator' do
+describe 'RaptorIO::Protocol::HTTP::Request::Manipulators::Authenticator' do
   before :all do
     WebServers.start :basic
     @basic_url = WebServers.url_for( :basic )
@@ -14,14 +14,14 @@ describe 'Raptor::Protocol::HTTP::Request::Manipulators::Authenticator' do
   end
 
   before( :each ) do
-    Raptor::Protocol::HTTP::Request::Manipulators.reset
-    Raptor::Protocol::HTTP::Client.reset
+    RaptorIO::Protocol::HTTP::Request::Manipulators.reset
+    RaptorIO::Protocol::HTTP::Client.reset
   end
 
 
   let(:client) do
-    Raptor::Protocol::HTTP::Client.new(
-        switch_board: Raptor::Socket::SwitchBoard.new,
+    RaptorIO::Protocol::HTTP::Client.new(
+        switch_board: RaptorIO::Socket::SwitchBoard.new,
         manipulators: {
             'authenticator' =>
                 {
@@ -69,7 +69,7 @@ describe 'Raptor::Protocol::HTTP::Request::Manipulators::Authenticator' do
 
     context 'Negotiate' do
       let(:client) do
-        Raptor::Protocol::HTTP::Client.new(
+        RaptorIO::Protocol::HTTP::Client.new(
             manipulators: {
                 'authenticator' =>
                     {
@@ -129,7 +129,7 @@ describe 'Raptor::Protocol::HTTP::Request::Manipulators::Authenticator' do
 
     context 'NTLM' do
       let(:client) do
-        Raptor::Protocol::HTTP::Client.new(
+        RaptorIO::Protocol::HTTP::Client.new(
             manipulators: {
                 'authenticator' =>
                     {

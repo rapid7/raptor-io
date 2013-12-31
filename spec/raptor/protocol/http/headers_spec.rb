@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe Raptor::Protocol::HTTP::Headers do
+describe RaptorIO::Protocol::HTTP::Headers do
 
   describe '#to_s' do
     it 'supports multiple headers' do

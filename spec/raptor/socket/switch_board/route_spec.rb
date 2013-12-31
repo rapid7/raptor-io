@@ -1,8 +1,8 @@
 require 'spec_helper'
 
-require 'raptor/socket'
+require 'raptor-io/socket'
 
-describe Raptor::Socket::SwitchBoard::Route do
+describe RaptorIO::Socket::SwitchBoard::Route do
 
   context "class methods" do
     describe ".new" do
@@ -21,26 +21,26 @@ describe Raptor::Socket::SwitchBoard::Route do
 
   context "instance methods" do
     subject(:route) do
-      Raptor::Socket::SwitchBoard::Route.new("1.2.3.4", "255.255.255.0", nil)
+      RaptorIO::Socket::SwitchBoard::Route.new("1.2.3.4", "255.255.255.0", nil)
     end
 
     describe "#==" do
       it "should be equal if attributes are the same" do
-        Raptor::Socket::SwitchBoard::Route.new("1.2.3.4", "255.255.255.0", nil).should == route
+        RaptorIO::Socket::SwitchBoard::Route.new("1.2.3.4", "255.255.255.0", nil).should == route
       end
       it "should NOT be equal if any attributes are different" do
-        Raptor::Socket::SwitchBoard::Route.new("1.2.3.4", "255.0.0.0", nil).should_not == route
-        Raptor::Socket::SwitchBoard::Route.new("2.2.3.4", "255.255.255.0", nil).should_not == route
+        RaptorIO::Socket::SwitchBoard::Route.new("1.2.3.4", "255.0.0.0", nil).should_not == route
+        RaptorIO::Socket::SwitchBoard::Route.new("2.2.3.4", "255.255.255.0", nil).should_not == route
       end
     end
 
     describe "#<=>" do
       it "should compare the subnet" do
-        other = Raptor::Socket::SwitchBoard::Route.new("0.0.0.0", "255.255.0.0", nil)
+        other = RaptorIO::Socket::SwitchBoard::Route.new("0.0.0.0", "255.255.0.0", nil)
         (route.<=> other).should == 1
-        other = Raptor::Socket::SwitchBoard::Route.new("0.0.0.0", "255.255.255.0", nil)
+        other = RaptorIO::Socket::SwitchBoard::Route.new("0.0.0.0", "255.255.255.0", nil)
         (route.<=> other).should == 0
-        other = Raptor::Socket::SwitchBoard::Route.new("0.0.0.0", "255.255.255.255", nil)
+        other = RaptorIO::Socket::SwitchBoard::Route.new("0.0.0.0", "255.255.255.255", nil)
         (route.<=> other).should == -1
       end
     end

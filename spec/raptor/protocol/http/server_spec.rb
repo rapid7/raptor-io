@@ -2,7 +2,7 @@
 require 'spec_helper'
 require 'net/https'
 
-describe Raptor::Protocol::HTTP::Server do
+describe RaptorIO::Protocol::HTTP::Server do
 
   after :each do
     next if !@server
@@ -42,7 +42,7 @@ describe Raptor::Protocol::HTTP::Server do
     server_or_url.is_a?( String ) ? server_or_url : server_or_url.url
   end
 
-  let(:switch_board) { Raptor::Socket::SwitchBoard.new }
+  let(:switch_board) { RaptorIO::Socket::SwitchBoard.new }
   let(:ssl_context) do
     ssl_context             = OpenSSL::SSL::SSLContext.new( :TLSv1 )
     ssl_context.verify_mode = OpenSSL::SSL::VERIFY_NONE
@@ -117,12 +117,12 @@ describe Raptor::Protocol::HTTP::Server do
         socket << "0\r\n\r\n"
 
         buff = ''
-        while !(buff =~ Raptor::Protocol::HTTP::HEADER_SEPARATOR_PATTERN)
+        while !(buff =~ RaptorIO::Protocol::HTTP::HEADER_SEPARATOR_PATTERN)
           buff << socket.gets
         end
         socket.close
 
-        Raptor::Protocol::HTTP::Response.parse( buff ).code.should == 501
+        RaptorIO::Protocol::HTTP::Response.parse( buff ).code.should == 501
       end
     end
 
@@ -150,12 +150,12 @@ describe Raptor::Protocol::HTTP::Server do
         socket << "0\r\n\r\n"
 
         buff = ''
-        while !(buff =~ Raptor::Protocol::HTTP::HEADER_SEPARATOR_PATTERN)
+        while !(buff =~ RaptorIO::Protocol::HTTP::HEADER_SEPARATOR_PATTERN)
           buff << socket.gets
         end
         socket.close
 
-        Raptor::Protocol::HTTP::Response.parse( buff ).code.should == 418
+        RaptorIO::Protocol::HTTP::Response.parse( buff ).code.should == 418
       end
     end
   end
@@ -301,7 +301,7 @@ describe Raptor::Protocol::HTTP::Server do
         response.code.should == '200'
         response.body.should == 'Success!'
 
-        request.should be_kind_of Raptor::Protocol::HTTP::Request
+        request.should be_kind_of RaptorIO::Protocol::HTTP::Request
       end
     end
   end

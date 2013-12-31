@@ -1,8 +1,8 @@
 require 'spec_helper'
 
-require 'raptor/socket'
+require 'raptor-io/socket'
 
-describe Raptor::Socket::Comm::Local do
+describe RaptorIO::Socket::Comm::Local do
   subject(:comm_local) { described_class.new }
 
   context "with a server to connect to" do

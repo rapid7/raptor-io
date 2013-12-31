@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe Raptor::Protocol::HTTP::Request::Manipulators do
+describe RaptorIO::Protocol::HTTP::Request::Manipulators do
   before( :each ) do
     described_class.reset
     described_class.library = manipulator_fixtures_path
@@ -13,17 +13,17 @@ describe Raptor::Protocol::HTTP::Request::Manipulators do
   describe '.class_to_name' do
     it 'returns the name of a loaded manipulator based on its class' do
       described_class.load_all
-      described_class.class_to_name( Raptor::Protocol::HTTP::Request::Manipulators::NiccoloMachiavelli ).should ==
+      described_class.class_to_name( RaptorIO::Protocol::HTTP::Request::Manipulators::NiccoloMachiavelli ).should ==
           'niccolo_machiavelli'
     end
   end
 
   describe '.process' do
     let(:client) do
-      Raptor::Protocol::HTTP::Client.new(switch_board:Raptor::Socket::SwitchBoard.new)
+      RaptorIO::Protocol::HTTP::Client.new(switch_board:RaptorIO::Socket::SwitchBoard.new)
     end
     it 'processes the given request and client with the given manipulator' do
-      request = Raptor::Protocol::HTTP::Request.new( url: 'http://test/' )
+      request = RaptorIO::Protocol::HTTP::Request.new( url: 'http://test/' )
       options = { stuff: 1 }
 
       datastore = client.datastore['niccolo_machiavelli']
@@ -35,7 +35,7 @@ describe Raptor::Protocol::HTTP::Request::Manipulators do
 
     context 'when given a non-existent manipulator' do
       it 'raises LoadError' do
-        request = Raptor::Protocol::HTTP::Request.new( url: 'http://test/' )
+        request = RaptorIO::Protocol::HTTP::Request.new( url: 'http://test/' )
 
         expect do
           described_class.process( :huaa!, client, request )
@@ -136,11 +136,11 @@ describe Raptor::Protocol::HTTP::Request::Manipulators do
     it 'loads a manipulator by filename' do
       described_class.load( :niccolo_machiavelli )
       described_class.loaded['niccolo_machiavelli'].should ==
-          Raptor::Protocol::HTTP::Request::Manipulators::NiccoloMachiavelli
+          RaptorIO::Protocol::HTTP::Request::Manipulators::NiccoloMachiavelli
     end
     it 'returns the loaded manipulator' do
       described_class.load( :niccolo_machiavelli ).should ==
-          Raptor::Protocol::HTTP::Request::Manipulators::NiccoloMachiavelli
+          RaptorIO::Protocol::HTTP::Request::Manipulators::NiccoloMachiavelli
     end
 
     context 'when given a non-existent manipulator' do
@@ -154,13 +154,13 @@ describe Raptor::Protocol::HTTP::Request::Manipulators do
     it 'loads all manipulators' do
       described_class.load_all
       described_class.loaded['niccolo_machiavelli'].should ==
-          Raptor::Protocol::HTTP::Request::Manipulators::NiccoloMachiavelli
+          RaptorIO::Protocol::HTTP::Request::Manipulators::NiccoloMachiavelli
     end
     it 'returns the loaded manipulators' do
       described_class.load_all.should eq ({
-        'manifoolators/fooer' => Raptor::Protocol::HTTP::Request::Manipulators::Manifoolators::Fooer,
-        'niccolo_machiavelli' => Raptor::Protocol::HTTP::Request::Manipulators::NiccoloMachiavelli,
-        'options_validator' => Raptor::Protocol::HTTP::Request::Manipulators::OptionsValidator
+        'manifoolators/fooer' => RaptorIO::Protocol::HTTP::Request::Manipulators::Manifoolators::Fooer,
+        'niccolo_machiavelli' => RaptorIO::Protocol::HTTP::Request::Manipulators::NiccoloMachiavelli,
+        'options_validator' => RaptorIO::Protocol::HTTP::Request::Manipulators::OptionsValidator
       })
     end
   end
@@ -172,7 +172,7 @@ describe Raptor::Protocol::HTTP::Request::Manipulators do
       described_class.loaded.should_not include :niccolo_machiavelli
 
       expect do
-        Raptor::Protocol::HTTP::Request::Manipulators::NiccoloMachiavelli
+        RaptorIO::Protocol::HTTP::Request::Manipulators::NiccoloMachiavelli
       end.to raise_error NameError
     end
   end

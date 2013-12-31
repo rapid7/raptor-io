@@ -2,8 +2,8 @@
 require 'spec_helper'
 require 'ostruct'
 
-describe Raptor::Protocol::HTTP::Request do
-  it_should_behave_like 'Raptor::Protocol::HTTP::Message'
+describe RaptorIO::Protocol::HTTP::Request do
+  it_should_behave_like 'RaptorIO::Protocol::HTTP::Message'
 
   let(:url) { 'http://test.com' }
   let(:parsed_url) { URI(url) }
@@ -532,7 +532,7 @@ describe Raptor::Protocol::HTTP::Request do
         passed_response = nil
         request.on_complete { |res| passed_response = res }
 
-        response = Raptor::Protocol::HTTP::Response.new( url: url )
+        response = RaptorIO::Protocol::HTTP::Response.new( url: url )
         request.handle_response( response )
 
         passed_response.should == response
@@ -547,7 +547,7 @@ describe Raptor::Protocol::HTTP::Request do
           request.on_complete { |res| passed_responses << res }
         end
 
-        response = Raptor::Protocol::HTTP::Response.new( url: url )
+        response = RaptorIO::Protocol::HTTP::Response.new( url: url )
         request.handle_response( response )
 
         passed_responses.size.should == 2
@@ -573,7 +573,7 @@ describe Raptor::Protocol::HTTP::Request do
         passed_response = nil
         request.on_success { |res| passed_response = res }
 
-        response = Raptor::Protocol::HTTP::Response.new( url: url, code: 200 )
+        response = RaptorIO::Protocol::HTTP::Response.new( url: url, code: 200 )
         request.handle_response( response )
 
         passed_response.should == response
@@ -588,7 +588,7 @@ describe Raptor::Protocol::HTTP::Request do
           request.on_success { |res| passed_responses << res }
         end
 
-        response = Raptor::Protocol::HTTP::Response.new( url: url, code: 200 )
+        response = RaptorIO::Protocol::HTTP::Response.new( url: url, code: 200 )
         request.handle_response( response )
 
         passed_responses.size.should == 2
@@ -614,7 +614,7 @@ describe Raptor::Protocol::HTTP::Request do
         passed_response = nil
         request.on_failure { |res| passed_response = res }
 
-        response = Raptor::Protocol::HTTP::Response.new( url: url, code: 0 )
+        response = RaptorIO::Protocol::HTTP::Response.new( url: url, code: 0 )
         request.handle_response( response )
 
         passed_response.should == response
@@ -629,7 +629,7 @@ describe Raptor::Protocol::HTTP::Request do
           request.on_failure { |res| passed_responses << res }
         end
 
-        response = Raptor::Protocol::HTTP::Response.new( url: url, code: 0 )
+        response = RaptorIO::Protocol::HTTP::Response.new( url: url, code: 0 )
         request.handle_response( response )
 
         passed_responses.size.should == 2
@@ -654,14 +654,14 @@ describe Raptor::Protocol::HTTP::Request do
       passed_response = nil
       request.on_complete { |res| passed_response = res }
 
-      response = Raptor::Protocol::HTTP::Response.new( url: url )
+      response = RaptorIO::Protocol::HTTP::Response.new( url: url )
       request.handle_response( response )
 
       passed_response.request.should == request
     end
 
     context 'when a response is successful' do
-      let(:response) { Raptor::Protocol::HTTP::Response.new( url: url, code: 200 ) }
+      let(:response) { RaptorIO::Protocol::HTTP::Response.new( url: url, code: 200 ) }
 
       it 'calls #on_complete callbacks' do
         request = described_class.new( url: url )
@@ -692,7 +692,7 @@ describe Raptor::Protocol::HTTP::Request do
       end
     end
     context 'when a request fails' do
-      let(:response) { Raptor::Protocol::HTTP::Response.new( url: url, code: 0 ) }
+      let(:response) { RaptorIO::Protocol::HTTP::Response.new( url: url, code: 0 ) }
 
       it 'calls #on_complete callbacks' do
         request = described_class.new( url: url )

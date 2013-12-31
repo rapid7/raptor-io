@@ -50,11 +50,11 @@ ARGV.each do |address|
 
     server_host, host, port = address
     socks_opts = {
-      socks_comm: Raptor::Socket::Comm::Local.new,
+      socks_comm: RaptorIO::Socket::Comm::Local.new,
       socks_host: server_host,
       socks_port: (opts_hash["socksport"] || 1080).to_i,
     }
-    comm = Raptor::Socket::Comm::SOCKS.new(socks_opts)
+    comm = RaptorIO::Socket::Comm::SOCKS.new(socks_opts)
     create_opts = {
       peer_host: host,
       peer_port: port,
@@ -82,7 +82,7 @@ ARGV.each do |address|
                                OpenSSL::SSL::VERIFY_NONE :
                                OpenSSL::SSL::VERIFY_PEER)
 
-    comm = Raptor::Socket::Comm::Local.new
+    comm = RaptorIO::Socket::Comm::Local.new
     create_opts = {
       peer_host: address.first,
       peer_port: address.last,
@@ -95,7 +95,7 @@ ARGV.each do |address|
       usage("Invalid #{type} address")
     end
 
-    comm = Raptor::Socket::Comm::Local.new
+    comm = RaptorIO::Socket::Comm::Local.new
     create_opts = {
       peer_host: address.first,
       peer_port: address.last,
@@ -119,7 +119,7 @@ end
 connections = readers.zip(writers)
 
 until connections.empty?
-  r,_,_ = Raptor::Socket.select(connections.map(&:first))
+  r,_,_ = RaptorIO::Socket.select(connections.map(&:first))
   r.each do |read_io|
     begin
       data = read_io.readpartial(1024)
