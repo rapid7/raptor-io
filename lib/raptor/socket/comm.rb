@@ -23,6 +23,7 @@ require 'ipaddr'
 class Raptor::Socket::Comm
   require 'raptor/socket/comm/local'
   require 'raptor/socket/comm/socks'
+  require 'raptor/socket/comm/sapni'
 
   # Creates a socket on this Comm based on the supplied uniform
   # parameters.

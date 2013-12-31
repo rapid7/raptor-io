@@ -45,6 +45,13 @@ ARGV.each do |arg|
   port = arg_uri.port
 
   case arg_uri.scheme.downcase
+  when "sapni"
+    port ||= 3299
+    comms << Raptor::Socket::Comm::SAPNI.new(
+      sap_host: host,
+      sap_port: port,
+      sap_comm: comms.last,
+    )
   when "socks"
     port ||= 1080
     comms << Raptor::Socket::Comm::SOCKS.new(
@@ -82,14 +89,14 @@ writers = [ $stdout, sock ]
 connections = readers.zip(writers)
 
 until connections.empty?
-  r,_,_ = select(connections.map(&:first))
+  r,_,_ = Raptor::Socket.select(connections.map(&:first))
   r.each do |read_io|
-    if read_io.eof?
+    begin
+      data = read_io.readpartial(1024)
+    rescue EOFError
       connections.delete_if { |c| (c.first == read_io) }
       next
     end
-
-    data = read_io.readpartial(1024)
     tuple = connections.find { |c| c.first == read_io }
     tuple.last.write(data)
   end

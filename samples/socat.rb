@@ -119,14 +119,14 @@ end
 connections = readers.zip(writers)
 
 until connections.empty?
-  r,_,_ = select(connections.map(&:first))
+  r,_,_ = Raptor::Socket.select(connections.map(&:first))
   r.each do |read_io|
-    if read_io.eof?
+    begin
+      data = read_io.readpartial(1024)
+    rescue EOFError
       connections.delete_if { |c| (c.first == read_io) }
       next
     end
-
-    data = read_io.readpartial(1024)
     tuple = connections.find { |c| c.first == read_io }
     tuple.last.write(data)
   end

@@ -52,13 +52,21 @@ class Raptor::Socket::TCP < Raptor::Socket
   # @param data [String,#to_s]
   # @return [Fixnum]
   def write(data)
+    begin
+      write_nonblock(data)
+    rescue IO::WaitWritable
+      IO.select(nil, [@socket])
+      retry
+    end
+  end
+
+  # Try to write `data` to the {#socket}.
+  #
+  # @param maxlen [Fixnum]
+  # @return [String]
+  def write_nonblock(data)
     translate_errors do
-      begin
-        @socket.write_nonblock(data)
-      rescue IO::WaitWritable
-        IO.select(nil, [@socket])
-        retry
-      end
+      @socket.write_nonblock(data)
     end
   end
 

@@ -7,6 +7,11 @@ class Raptor::Socket::TCP::SSL < Raptor::Socket::TCP
   # Create a new {SSL} from an already-connected
   # `OpenSSL::SSL::SSLSocket`.
   #
+  # @example
+  #   tcp_server = ::TCPServer.new()
+  #   ssl_server = OpenSSL::SSL::SSLServer.new(tcp_server)
+  #   Raptor::Socket::TCP::SSL.from_openssl(ssl_server.accept)
+  #
   # @see TCPServer::SSL
   # @param openssl_socket [OpenSSL::SSL::SSLSocket]
   # @return [SSL]
@@ -20,7 +25,9 @@ class Raptor::Socket::TCP::SSL < Raptor::Socket::TCP
     raptor
   end
 
-  # @!method context
+  # @!method ssl_context
+  #   The SSL context for this encrypted stream.
+  #
   #   @return [OpenSSL::SSL::Context]
   def_delegator :@socket, :ssl_context, :context
 

@@ -55,7 +55,7 @@ class Raptor::Socket::Comm::SOCKS < Raptor::Socket::Comm
   # @param options [Hash]
   # @option options :socks_host [String,IPAddr]
   # @option options :socks_port [Fixnum]
-  # @option options :socks_comm [Socket::Comm]
+  # @option options :socks_comm [Comm]
   def initialize(options = {})
     @socks_host = options[:socks_host]
     @socks_port = options[:socks_port].to_i
@@ -76,8 +76,6 @@ class Raptor::Socket::Comm::SOCKS < Raptor::Socket::Comm
   # Connect to `:peer_host`
   #
   # @option (see Comm#create_tcp)
-  # @option options :socks_host [String,IPAddr]
-  # @option options :socks_port [Fixnum]
   #
   # @return [Socket::TCP]
   #
