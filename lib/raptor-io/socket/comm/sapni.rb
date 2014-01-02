@@ -29,6 +29,9 @@ class RaptorIO::Socket::Comm::SAPNI < RaptorIO::Socket::Comm
     @sap_comm = options[:sap_comm]
   end
 
+  # Connect to a SAPRouter and use its routing capabilities to create a
+  # TCP connection to `:peer_host`.
+  #
   # @param (see Comm#create_tcp)
   def create_tcp(options)
     @sap_socket = @sap_comm.create_tcp(

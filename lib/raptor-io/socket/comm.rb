@@ -74,6 +74,7 @@ class RaptorIO::Socket::Comm
   # @option options :peer_port [Fixnum]
   # @option options :local_host [String,IPAddr]
   # @option options :local_port [Fixnum]
+  # @return [RaptorIO::Socket::TCP]
   def create_tcp(options)
     raise NotImplementedError
   end
