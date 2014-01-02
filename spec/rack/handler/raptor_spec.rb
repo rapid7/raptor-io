@@ -114,6 +114,7 @@ describe Rack::Handler::RaptorIO do
   describe '.default_host' do
     context 'by default' do
       it 'returns localhost' do
+        ENV['RACK_ENV'] = nil
         described_class.default_host.should == 'localhost'
       end
     end

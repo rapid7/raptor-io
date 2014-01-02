@@ -63,7 +63,6 @@ class Rack::Handler::RaptorIO
         'REQUEST_METHOD'  => request.http_method.to_s.upcase,
         'SCRIPT_NAME'     => '',
         'PATH_INFO'       => path,
-        'PATH_INFO'       => path,
         'REQUEST_PATH'    => path,
         'QUERY_STRING'    => query_string,
         'SERVER_NAME'     => @server.address,
