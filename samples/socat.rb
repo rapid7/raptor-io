@@ -26,7 +26,8 @@ if ARGV.length != 2
   usage("Wrong number of addresses (#{ARGV.length} for 2)")
 end
 
-connections = []
+readers = []
+writers = []
 
 ARGV.each do |address|
   address, options = address.split(",", 2)
@@ -49,60 +50,85 @@ ARGV.each do |address|
 
     server_host, host, port = address
     socks_opts = {
-      socks_comm: Raptor::Socket::Comm::Local.new,
+      socks_comm: RaptorIO::Socket::Comm::Local.new,
       socks_host: server_host,
       socks_port: (opts_hash["socksport"] || 1080).to_i,
     }
-    comm = Raptor::Socket::Comm::SOCKS.new(socks_opts)
+    comm = RaptorIO::Socket::Comm::SOCKS.new(socks_opts)
     create_opts = {
       peer_host: host,
       peer_port: port,
     }
+
+  when "openssl","ssl"
+    if address.length != 2 || address.include?(nil) || address.include?("")
+      usage("Invalid #{type} address")
+    end
+
+    if opts_hash["method"]
+      ssl_version = case opts_hash["method"].downcase
+                    when "sslv2"  then :SSLv2
+                    when "sslv3"  then :SSLv3
+                    when "sslv23" then :SSLv23
+                    when "tlsv1"  then :TLSv1
+                    else usage("Invalid ssl version (possible values: sslv2,sslv3,sslv23,tlsv1)")
+                    end
+    else
+      ssl_version = :TLSv1
+    end
+
+    ssl_context = OpenSSL::SSL::SSLContext.new(ssl_version)
+    ssl_context.verify_mode = (opts_hash["verify"] == "0" ?
+                               OpenSSL::SSL::VERIFY_NONE :
+                               OpenSSL::SSL::VERIFY_PEER)
+
+    comm = RaptorIO::Socket::Comm::Local.new
+    create_opts = {
+      peer_host: address.first,
+      peer_port: address.last,
+      ssl_context: ssl_context,
+    }
+    $stderr.puts ssl_context.inspect
 
   when "tcp"
     if address.length != 2 || address.include?(nil) || address.include?("")
       usage("Invalid #{type} address")
     end
 
-    comm = Raptor::Socket::Comm::Local.new
+    comm = RaptorIO::Socket::Comm::Local.new
     create_opts = {
       peer_host: address.first,
       peer_port: address.last,
     }
 
   when "stdio"
-    connections << [ $stdin, $stdout ]
+    readers.push($stdin)
+    writers.unshift($stdout)
   else
     usage("Unknown address type: #{type}")
   end
 
   if comm
     tcp = comm.create_tcp(create_opts)
-    connections << [ tcp, tcp ]
+    readers.push(tcp)
+    writers.unshift(tcp)
   end
 
 end
 
-readers = connections.map{|c| c[0]}
-writers = connections.map{|c| c[1]}
-until readers.empty?
-  r,_,_ = select(connections.map{|c| c[0]})
-  r.each do |rio|
-    if rio.eof?
-      readers.delete(rio)
+connections = readers.zip(writers)
+
+until connections.empty?
+  r,_,_ = RaptorIO::Socket.select(connections.map(&:first))
+  r.each do |read_io|
+    begin
+      data = read_io.readpartial(1024)
+    rescue EOFError
+      connections.delete_if { |c| (c.first == read_io) }
       next
     end
-
-    data = rio.readpartial(1024)
-    #puts rio.inspect + "\n" + data
-    puts "Read #{data.length} bytes from #{rio.inspect}"
-
-    case rio
-    when readers[0]
-      writers[1].write(data)
-    when readers[1]
-      writers[0].write(data)
-    end
+    tuple = connections.find { |c| c.first == read_io }
+    tuple.last.write(data)
   end
 end
 

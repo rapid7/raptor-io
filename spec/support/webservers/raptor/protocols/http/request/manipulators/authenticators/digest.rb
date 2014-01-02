@@ -19,4 +19,4 @@ class Protected < Sinatra::Base
 end
 
 options = WebServerOptionParser.parse
-Rack::Handler::Thin.run( Protected.new, Port: options[:port], Address: options[:address] )
+Rack::Handler.default.run( Protected.new, Port: options[:port], Address: options[:address] )

@@ -1,5 +1,7 @@
-# largely stolen from celluloid-io
+
 shared_context 'with ssl server' do
+  include_context 'with tcp server'
+
   let(:server_cert) { File.read(File.join(fixtures_path, 'raptor', 'socket', 'ssl_server.crt')) }
   let(:server_key)  { File.read(File.join(fixtures_path, 'raptor', 'socket', 'ssl_server.key')) }
   let(:server_context) do
@@ -8,45 +10,61 @@ shared_context 'with ssl server' do
       context.key  = OpenSSL::PKey::RSA.new(server_key)
     end
   end
-  let(:server)     { TCPServer.new(example_addr, example_ssl_port) }
-  let(:ssl_server) { OpenSSL::SSL::SSLServer.new(server, server_context) }
+
+  let(:ssl_server_sock) do
+    @ssl_server_sock = OpenSSL::SSL::SSLSocket.new(server_sock, server_context)
+  end
+
+  let(:io) do
+    #$stderr.puts("with_ssl_server :io, starting tcp server thread")
+    server_thread
+
+    #$stderr.puts(":io client_sock connecting")
+    client_sock
+
+    #$stderr.puts("starting ssl accept thread")
+    @ssl_server_thread = Thread.new { ssl_server_sock.accept }
+    #$stderr.puts(" ssl accept thread, #{@ssl_server_thread.inspect}")
+
+    # pass to make sure the server thread gets a slice before we return
+    Thread.pass
+
+    # this should now be a connected ::TCPSocket
+    client_sock
+  end
+
   let(:server_thread) do
-    Thread.new { ssl_server.accept }.tap do |thread|
-      Thread.pass while thread.status && thread.status != 'sleep'
-      thread.join unless thread.status
+    @server_thread = Thread.new do
+      begin
+        #$stderr.puts("ssl_server_sock.accept_nonblock")
+        peer = ssl_server_sock.accept_nonblock
+      rescue IO::WaitReadable, IO::WaitWritable
+        #$stderr.puts(":server_sock waiting for a client")
+        select([server_sock], [server_sock])
+        #$stderr.puts(":server_sock retrying")
+        retry
+      end
+      #$stderr.puts(":server_sock accepted peer #{peer.inspect}")
+      peer
     end
+    @server_thread
+
   end
 
-  let(:unconnected_client_sock) do
-    s = ::Socket.new(::Socket::AF_INET, ::Socket::SOCK_STREAM, 0)
-  end
+  subject do
+    #$stderr.puts("with_ssl_server subject (#{described_class})")
+    s = described_class.new(io, opts)
 
-  let(:client_sock) do
-    retries = 3
-    begin
-       s = TCPSocket.new(example_addr, example_ssl_port)
-    rescue Errno::ECONNREFUSED
-      retry if (retries -= 1) > 0
-    end
+    #$stderr.puts("Subject:  #{s.inspect}")
+    peer = @ssl_server_thread.value
+    #$stderr.puts("ssl_server_thread.value #{peer}")
     s
   end
 
-  def with_ssl_sockets
-    server_thread
-    # Allow the server thread a chance to set up if it got scheduled
-    # out before doing so.
-    Thread.pass
-    ssl_client.connect
-
-    begin
-      ssl_peer = server_thread.value
-      yield ssl_client, ssl_peer
-    ensure
-      server_thread.join
-      ssl_server.close
-      ssl_client.close
-      ssl_peer.close
-    end
+  after(:each) do
+    @ssl_server_sock.close if @ssl_server_sock
+    @ssl_server_thread.kill if @ssl_server_thread
   end
 
 end
+

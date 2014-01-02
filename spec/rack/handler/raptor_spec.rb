@@ -1,5 +1,5 @@
 require 'spec_helper'
-require 'rack/handler/raptor'
+require 'rack/handler/raptor-io'
 
 class RackValidatorApp
   def call( environment )
@@ -48,7 +48,7 @@ class ErrorRackApp
   end
 end
 
-describe Rack::Handler::Raptor do
+describe Rack::Handler::RaptorIO do
 
   def argument_to_url( server_or_url )
     server_or_url.is_a?( String ) ? server_or_url : server_or_url.url
@@ -59,7 +59,7 @@ describe Rack::Handler::Raptor do
   end
 
   def run_server( app, options = {}, &block )
-    options = { switch_board: Raptor::Socket::SwitchBoard.new }.merge( options )
+    options = { switch_board: RaptorIO::Socket::SwitchBoard.new }.merge( options )
     described_class.run( app, options, &block )
   end
 
