@@ -21,13 +21,9 @@ describe RaptorIO::Socket::Comm::Local do
 
   describe '#resolve' do
     it 'should resolve a hostname to an IP address' do
-      ['127.0.0.1', 'fe80::1%lo0'].should include(comm_local.resolve('localhost'))
-    end
-  end
-
-  describe '#reverse_resolve' do
-    it 'should resolve a hostname to an IP address' do
-      comm_local.reverse_resolve( '127.0.0.1' ).should == 'localhost'
+      # OSX uses a link-local address on the loopback interface
+      # (fe80::1%lo0) to be 'localhost'
+      ['127.0.0.1', '::1', 'fe80::1%lo0'].should include(comm_local.resolve('localhost'))
     end
   end
 

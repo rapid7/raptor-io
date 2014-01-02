@@ -5,6 +5,9 @@ rvm:
   - '2.0.0'
   - 'jruby'
 
+allow_failures:
+  - 'jruby'
+
 notifications:
   irc: "irc.freenode.org#msfnotify"
 
