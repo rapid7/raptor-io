@@ -97,6 +97,11 @@ class Response < Message
   def self.parse( response )
     options ||= {}
 
+    # FIXME: The existence of this extra newline at the beginning of a
+    # response suggests a bug somewhere else in the response parsing
+    # code.
+    response = response.gsub(/\A\r\n/, '')
+
     headers_string, options[:body] = response.split( HEADER_SEPARATOR_PATTERN, 2 )
     request_line   = headers_string.to_s.lines.first.to_s.chomp
 

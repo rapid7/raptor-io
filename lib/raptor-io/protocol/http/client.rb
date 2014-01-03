@@ -574,7 +574,6 @@ class Client
   def handle_success( socket )
     response_data = @pending_responses.delete( socket )
     @sockets[:done] << @sockets[:reads].delete( socket )
-
     response_text = "#{response_data[:headers]}#{HEADER_SEPARATOR}#{response_data[:body]}"
     response = Response.parse( response_text )
     request  = @sockets[:lookup_request][socket]
