@@ -97,6 +97,8 @@ class Response < Message
   def self.parse( response )
     options ||= {}
 
+    response = response.gsub(/\A\r\n/, '')
+
     headers_string, options[:body] = response.split( HEADER_SEPARATOR_PATTERN, 2 )
     request_line   = headers_string.to_s.lines.first.to_s.chomp
 
