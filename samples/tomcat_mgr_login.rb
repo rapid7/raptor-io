@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 $:.push File.join(File.dirname(__FILE__), "..", "lib")
 
-require 'raptor'
+require 'raptor-io'
 require 'optparse'
 
 options = {}

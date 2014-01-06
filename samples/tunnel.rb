@@ -2,7 +2,7 @@
 
 $:.push File.join(File.dirname(__FILE__), "..", "lib")
 
-require 'raptor'
+require 'raptor-io'
 require 'uri'
 
 def usage(msg = nil)
@@ -37,7 +37,7 @@ port = nil
 ARGV.each do |arg|
   begin
     arg_uri = URI.parse(arg)
-  rescue URI::InvalidURIError => e
+  rescue URI::InvalidURIError
     usage("Invalid URI (#{arg.inspect})")
   end
 
