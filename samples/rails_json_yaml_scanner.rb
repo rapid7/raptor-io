@@ -1,17 +1,17 @@
 #!/usr/bin/env ruby
 $:.push File.join(File.dirname(__FILE__), "..", "lib")
 
-require 'raptor'
+require 'raptor-io'
 require 'securerandom'
 
 target_uri =  ARGV[0]
 
-http_client =  Raptor::Protocol::HTTP::Client.new(switch_board: Raptor::Socket::SwitchBoard.new)
+http_client =  RaptorIO::Protocol::HTTP::Client.new(switch_board: RaptorIO::Socket::SwitchBoard.new)
 
 # Set the Content-Type to JSON
 ctype_headers = { 'Content-Type' => 'application/json' }
 
-# Benign bogus request to set a baseline for the behaviour
+# Benign bogus request to set a baseline for the behavior
 baseline_data = "{ \"#{SecureRandom.hex(rand(8)+1)}\" : \"#{SecureRandom.hex(rand(8)+1)}\" }"
 first_response = http_client.post target_uri, body: baseline_data, headers: ctype_headers, raw: true, mode: :sync
 
