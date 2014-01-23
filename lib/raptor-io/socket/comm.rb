@@ -25,6 +25,32 @@ class RaptorIO::Socket::Comm
   require 'raptor-io/socket/comm/socks'
   require 'raptor-io/socket/comm/sapni'
 
+  # @param uri [URI]
+  def self.from_uri(uri, opts = {})
+    raise ArgumentError unless uri.kind_of? URI
+
+    prev_comm = opts[:prev_comm] || RaptorIO::Socket::Comm::Local.new
+
+    comm = case uri.scheme.downcase
+           when "sapni"
+             uri.port ||= 3299
+             RaptorIO::Socket::Comm::SAPNI.new(
+               sap_host: uri.host,
+               sap_port: uri.port,
+               sap_comm: prev_comm,
+             )
+           when "socks"
+             uri.port ||= 1080
+             RaptorIO::Socket::Comm::SOCKS.new(
+               socks_host: uri.host,
+               socks_port: uri.port,
+               socks_comm: prev_comm,
+             )
+           end
+
+    comm
+  end
+
   # Creates a socket on this Comm based on the supplied uniform
   # parameters.
   #

@@ -2,18 +2,31 @@
 $:.push File.join(File.dirname(__FILE__), "..", "lib")
 
 require 'raptor-io'
+require 'raptor-io/socket/comm_chain'
 require 'securerandom'
 
-target_uri =  ARGV[0]
+target_uri = URI.parse(ARGV.pop)
 
-http_client =  RaptorIO::Protocol::HTTP::Client.new(switch_board: RaptorIO::Socket::SwitchBoard.new)
+unless ['http', 'https'].include?(target_uri.scheme)
+  puts "Unrecognized URI scheme (not 'http' or 'https')"
+  exit
+end
+
+comm_chain = RaptorIO::Socket::CommChain.new(*ARGV)
+http_client =  RaptorIO::Protocol::HTTP::Client.new(switch_board: comm_chain)
 
 # Set the Content-Type to JSON
 ctype_headers = { 'Content-Type' => 'application/json' }
 
 # Benign bogus request to set a baseline for the behavior
 baseline_data = "{ \"#{SecureRandom.hex(rand(8)+1)}\" : \"#{SecureRandom.hex(rand(8)+1)}\" }"
-first_response = http_client.post target_uri, body: baseline_data, headers: ctype_headers, raw: true, mode: :sync
+first_response = http_client.post(
+  target_uri,
+  body: baseline_data,
+  headers: ctype_headers,
+  raw: true,
+  mode: :sync
+)
 
 if first_response.nil?
   puts "Got no response from #{target_uri} to the initial JSON request"
@@ -26,7 +39,13 @@ end
 
 # Deserialize a hash, this should work if YAML deserializes.
 second_data = "--- {}\n".gsub(':', '\u003a')
-second_response = http_client.post target_uri, body: second_data, headers: ctype_headers, raw: true, mode: :sync
+second_response = http_client.post(
+  target_uri,
+  body: second_data,
+  headers: ctype_headers,
+  raw: true,
+  mode: :sync
+)
 
 if second_response.nil?
   puts "No response to the initial YAML probe"
@@ -35,7 +54,13 @@ end
 
 # Deserialize a malformed object, inducing an error.
 third_data = "--- !ruby/object:\x00".gsub(':', '\u003a')
-third_response = http_client.post target_uri, body: third_data, headers: ctype_headers, raw: true, mode: :sync
+third_response = http_client.post(
+  target_uri,
+  body: third_data,
+  headers: ctype_headers,
+  raw: true,
+  mode: :sync
+)
 
 if third_response.nil?
   puts "No response to the second YAML probe"

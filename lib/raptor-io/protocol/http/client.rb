@@ -73,7 +73,7 @@ class Client
   #   On invalid manipulator options.
   def initialize( options = {} )
     @switch_board = options.delete(:switch_board)
-    unless @switch_board.is_a?(::RaptorIO::Socket::SwitchBoard)
+    unless @switch_board.respond_to?(:create_tcp)
       raise ArgumentError, 'Must provide a :switch_board'
     end
 
