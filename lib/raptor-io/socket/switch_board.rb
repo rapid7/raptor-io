@@ -16,6 +16,7 @@ require 'thread'
 class RaptorIO::Socket::SwitchBoard
 
   require 'raptor-io/socket/comm'
+  require 'raptor-io/socket/comm_chain'
   require 'raptor-io/socket/switch_board/route'
 
   include Enumerable

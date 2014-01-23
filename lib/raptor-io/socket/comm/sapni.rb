@@ -60,12 +60,13 @@ class RaptorIO::Socket::Comm::SAPNI < RaptorIO::Socket::Comm
     ni_packet = NI_ROUTE_HEADER.dup + route_data
     ni_packet = [ni_packet.length].pack('N') + ni_packet
 
-    p ni_packet
-
     @sap_socket.write(ni_packet)
     res_length = @sap_socket.read(4)
     res = @sap_socket.read(res_length.unpack("N").first)
-    p res
+
+    unless res == "NI_PONG\x00"
+      raise RaptorIO::Socket::Error::ConnectionError
+    end
 
     RaptorIO::Socket::TCP.new(@sap_socket, options)
   end

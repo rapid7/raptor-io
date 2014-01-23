@@ -25,61 +25,31 @@ def usage(msg = nil)
   exit 1
 end
 
-if !((ARGV & ["-h", "--help"]).empty?)
+if ARGV.length == 0 || !((ARGV & ["-h", "--help"]).empty?)
   usage
 end
 
 comms = [ RaptorIO::Socket::Comm::Local.new ]
-connect_opts = nil
-host = nil
-port = nil
 
-ARGV.each do |arg|
-  begin
-    arg_uri = URI.parse(arg)
-  rescue URI::InvalidURIError
-    usage("Invalid URI (#{arg.inspect})")
-  end
+last_uri = URI.parse(ARGV.pop)
 
-  host = arg_uri.host
-  port = arg_uri.port
+connect_opts = case last_uri.scheme.downcase
+               when "tcp"
+                 {
+                   peer_host: last_uri.host,
+                   peer_port: last_uri.port,
+                 }
+               when "ssl"
+                 {
+                   peer_host: last_uri.host,
+                   peer_port: last_uri.port,
+                   ssl_context: OpenSSL::SSL::SSLContext.new(:TLSv1),
+                 }
+               else
+                 usage("Last uri must be for a tcp:// or ssl:// connection")
+               end
 
-  case arg_uri.scheme.downcase
-  when "sapni"
-    port ||= 3299
-    comms << RaptorIO::Socket::Comm::SAPNI.new(
-      sap_host: host,
-      sap_port: port,
-      sap_comm: comms.last,
-    )
-  when "socks"
-    port ||= 1080
-    comms << RaptorIO::Socket::Comm::SOCKS.new(
-      socks_host: host,
-      socks_port: port,
-      socks_comm: comms.last,
-    )
-  when "tcp"
-    connect_opts = {
-      peer_host: host,
-      peer_port: port,
-    }
-  when "ssl"
-    connect_opts = {
-      peer_host: host,
-      peer_port: port,
-      ssl_context: OpenSSL::SSL::SSLContext.new(:TLSv1),
-    }
-  else
-    usage("Invalid commandline argument: unknown scheme (#{arg_uri.scheme.inspect})")
-  end
-
-end
-
-if connect_opts.nil?
-  usage("Last uri must be for a tcp:// or ssl:// connection")
-end
-
+comm_chain = RaptorIO::Socket::CommChain.new(*ARGV)
 sock = comms.last.create_tcp(connect_opts)
 
 readers = [ sock, $stdin ]
