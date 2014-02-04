@@ -23,7 +23,7 @@ Lighter, faster and smarter than REX,  RaptorIO is the next evolutionary step in
     bundle install
     
 ### From RubyGems
-*submission to RubyGems anticipated mid-January 2014*    
+*submission to RubyGems anticipated mid-February 2014*    
 
 ## Usage
 
