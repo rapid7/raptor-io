@@ -5,12 +5,12 @@ require 'raptor-io/socket'
 describe RaptorIO::Protocol::HTTP::Client do
 
   before :all do
-    WebServers.start :client_close_connection
-    WebServers.start :client_https
-    WebServers.start :client
+    # WebServers.start :client_close_connection
+    # WebServers.start :client_https
+    # WebServers.start :client
 
-    @url       = WebServers.url_for( :client )
-    @https_url = WebServers.url_for( :client_https ).gsub( 'http', 'https' )
+    @url       = "http://127.0.0.1:9292"
+    @https_url = "https://127.0.0.1:9293"
   end
 
   before( :each ) do
@@ -572,11 +572,11 @@ describe RaptorIO::Protocol::HTTP::Client do
         context 'due to an invalid IP address' do
           it 'passes the callback an empty response', speed: 'slow' do
             url = 'http://10.11.12.13'
-
+          
             response = nil
             client.get( url ){ |r| response = r }
             client.run
-
+          
             response.version.should == '1.1'
             response.code.should == 0
             response.message.should be_nil
@@ -586,11 +586,11 @@ describe RaptorIO::Protocol::HTTP::Client do
 
           it 'assigns RaptorIO::Socket::Error::ConnectionError to #error', speed: 'slow' do
             url = 'http://10.11.12.13'
-
+          
             response = nil
             client.get( url ){ |r| response = r }
             client.run
-
+          
             response.error.should be_kind_of RaptorIO::Socket::Error::ConnectionError
           end
         end

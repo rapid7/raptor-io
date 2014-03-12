@@ -1,3 +1,5 @@
+require 'service_manager'
+ServiceManager.start
 
 require 'simplecov'
 SimpleCov.start

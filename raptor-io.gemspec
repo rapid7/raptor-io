@@ -30,6 +30,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'rspec'
   spec.add_development_dependency 'yard'
   spec.add_development_dependency 'simplecov', '0.5.4'
+  spec.add_development_dependency 'service_manager'
 
   # Test web-servers
   if RUBY_PLATFORM !~ /java/

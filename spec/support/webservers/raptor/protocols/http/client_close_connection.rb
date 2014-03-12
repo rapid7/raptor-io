@@ -15,6 +15,7 @@ server = TCPServer.new( options[:address], options[:port] )
 @requests = Hash.new { |h, k| h[k] = '' }
 
 Thread.abort_on_exception = true
+puts "Listening for connections"
 loop do
   Thread.start( server.accept ) do |client|
     # Wait for the request to arrive.
