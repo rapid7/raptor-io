@@ -11,6 +11,7 @@ describe RaptorIO::Protocol::HTTP::Client do
 
     @url       = "http://127.0.0.1:9292"
     @https_url = "https://127.0.0.1:9293"
+    @close_url = "http://127.0.0.1:9294"
   end
 
   before( :each ) do
@@ -453,10 +454,9 @@ describe RaptorIO::Protocol::HTTP::Client do
     end
 
     it 'treats a closed connection as a signal for end of a response' do
-      url = WebServers.url_for( :client_close_connection )
-      client.get( url, mode: :sync ).body.should == "Success\n.\n"
-      client.get( url, mode: :sync ).body.should == "Success\n.\n"
-      client.get( url, mode: :sync ).body.should == "Success\n.\n"
+      client.get( @close_url, mode: :sync ).body.should == "Success\n.\n"
+      client.get( @close_url, mode: :sync ).body.should == "Success\n.\n"
+      client.get( @close_url, mode: :sync ).body.should == "Success\n.\n"
     end
 
     describe 'Content-Encoding' do
@@ -583,7 +583,7 @@ describe RaptorIO::Protocol::HTTP::Client do
             response.body.should be_nil
             response.headers.should == {}
           end
-
+          
           it 'assigns RaptorIO::Socket::Error::ConnectionError to #error', speed: 'slow' do
             url = 'http://10.11.12.13'
           
