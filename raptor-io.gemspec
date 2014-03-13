@@ -35,6 +35,7 @@ Gem::Specification.new do |spec|
   # Test web-servers
   if RUBY_PLATFORM !~ /java/
     spec.add_development_dependency 'thin'
+    spec.add_development_dependency 'unicorn'
   end
   spec.add_development_dependency 'sinatra'
   spec.add_development_dependency 'sinatra-contrib'
