@@ -27,7 +27,7 @@ end
 
 myopts.parse!
 
-http_client =  Raptor::Protocol::HTTP::Client.new(switch_board: Raptor::Socket::SwitchBoard.new)
+http_client =  RaptorIO::Protocol::HTTP::Client.new(switch_board: RaptorIO::Socket::SwitchBoard.new)
 
 puts "Sending Test request for Authentication challenge"
 test_response = http_client.get options[:url], mode: :sync
