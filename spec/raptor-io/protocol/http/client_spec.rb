@@ -570,29 +570,29 @@ describe RaptorIO::Protocol::HTTP::Client do
         end
 
         context 'due to an invalid IP address' do
-          # it 'passes the callback an empty response', speed: 'slow' do
-          #   url = 'http://10.11.12.13'
-          # 
-          #   response = nil
-          #   client.get( url ){ |r| response = r }
-          #   client.run
-          # 
-          #   response.version.should == '1.1'
-          #   response.code.should == 0
-          #   response.message.should be_nil
-          #   response.body.should be_nil
-          #   response.headers.should == {}
-          # end
-          # 
-          # it 'assigns RaptorIO::Socket::Error::ConnectionError to #error', speed: 'slow' do
-          #   url = 'http://10.11.12.13'
-          # 
-          #   response = nil
-          #   client.get( url ){ |r| response = r }
-          #   client.run
-          # 
-          #   response.error.should be_kind_of RaptorIO::Socket::Error::ConnectionError
-          # end
+          it 'passes the callback an empty response', speed: 'slow' do
+            url = 'http://10.11.12.13'
+          
+            response = nil
+            client.get( url ){ |r| response = r }
+            client.run
+          
+            response.version.should == '1.1'
+            response.code.should == 0
+            response.message.should be_nil
+            response.body.should be_nil
+            response.headers.should == {}
+          end
+          
+          it 'assigns RaptorIO::Socket::Error::ConnectionError to #error', speed: 'slow' do
+            url = 'http://10.11.12.13'
+          
+            response = nil
+            client.get( url ){ |r| response = r }
+            client.run
+          
+            response.error.should be_kind_of RaptorIO::Socket::Error::ConnectionError
+          end
         end
 
         context 'due to an invalid hostname' do
