@@ -89,6 +89,10 @@ class Request < Message
     @http_method ||= :get
     @continue    = true  if @continue.nil?
     @raw         = false if @raw.nil?
+
+    if @http_method == :post
+      headers["content-type"] ||= "application/x-www-form-urlencoded"
+    end
   end
 
   # Clears all callbacks.
@@ -154,7 +158,7 @@ class Request < Message
     qparams.merge( parameters )
   end
 
-  # @return [URI] Location of the resource to request.
+  # @return [URI] Location of the resource to request, including query params.
   def effective_url
     cparsed_url = parsed_url.dup
     cparsed_url.query = query_parameters.map do |k, v|
@@ -164,29 +168,26 @@ class Request < Message
     cparsed_url.normalize
   end
 
-  # @return [String]  Response body to use.
+  # @return [String]
+  #   Response body to use when {#to_s converting to a string}. Affected by
+  #   values in {#headers}
   def effective_body
-    return '' if headers['Expect'] == '100-continue'
-    return encode_if_not_raw(body.to_s)
+    if headers['Expect'] == '100-continue'
+      ''
+    elsif headers['Content-Type'] == 'application/x-www-form-urlencoded'
+      encode_if_not_raw(body.to_s)
+    else
+      body.to_s
+    end
+  end
 
-    body_params = if !body.to_s.empty?
-                    body.split('&').inject({}) do |h, pair|
-                      k, v = pair.split('=', 2)
-                      h.merge( decode_if_not_raw(k) => decode_if_not_raw(v) )
-                    end
-                  else
-                    {}
-                  end
-
-    return '' if body_params.empty? && parameters.empty?
-
-    body_params.merge( parameters ).map do |k, v|
-      "#{encode_if_not_raw(k)}=#{encode_if_not_raw(v)}"
-    end.join('&')
+  # Whether a header called `header` exists
+  def has_header?(header)
+    !!headers[header]
   end
 
   #
-  # @note Method will be normalized to a lower-case symbol.
+  # @note `http_verb` will be normalized to a lower-case symbol.
   #
   # Sets the request HTTP method.
   #
@@ -216,7 +217,9 @@ class Request < Message
     final_body = effective_body
 
     computed_headers = Headers.new( 'Host' => "#{effective_url.host}:#{effective_url.port}" )
-    computed_headers['Content-Length'] = final_body.size.to_s if !final_body.to_s.empty?
+    if !headers['transfer-encoding'] && !headers['content-length'] && !final_body.empty?
+      computed_headers['Content-Length'] = final_body.size.to_s
+    end
 
     request = "#{http_method.to_s.upcase} #{resource} HTTP/#{version}#{CRLF}"
     request << computed_headers.merge(headers).to_s
@@ -282,7 +285,8 @@ class Request < Message
   def self.parse( request )
     data = {}
     first_line, headers_and_body = request.split( CRLF_PATTERN, 2 )
-    data[:http_method], data[:url], data[:version] = first_line.scan( /([A-Z]+)\s+(.*)\s+HTTP\/([0-9\.]+)/ ).flatten
+    data[:http_method], data[:url], data[:version] =
+      first_line.scan( /([A-Z]+)\s+(.*)\s+HTTP\/([0-9\.]+)/ ).flatten
     headers, data[:body] = headers_and_body.split( HEADER_SEPARATOR_PATTERN, 2 )
 
     # Use Host to fill in the parsed_uri stuff.

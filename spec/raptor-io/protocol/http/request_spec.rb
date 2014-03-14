@@ -28,6 +28,15 @@ describe RaptorIO::Protocol::HTTP::Request do
       r.raw.should          == options[:raw]
     end
 
+    context 'POST' do
+      it 'content-type defaults to "application/x-www-form-urlencoded"' do
+        options = { url: url, http_method: :post, }
+        request = described_class.new( options )
+        expect(request).to have_header('content-type')
+        expect(request.headers['content-type']).to include("application/x-www-form-urlencoded")
+      end
+    end
+
     it 'uses the setter methods when configuring' do
       options = { url: url, http_method: 'gEt', parameters: { 'test' => 'blah' } }
       described_class.new( options ).http_method.should == :get
@@ -191,12 +200,6 @@ describe RaptorIO::Protocol::HTTP::Request do
               r.query_parameters.should == parameters
             end
           end
-          context 'and the URL has query parameters' do
-            it 'returns the query parameters merged with the options parameters' do
-              r = described_class.new( url: url_with_query, http_method: :get, parameters: parameters )
-              r.query_parameters.should == { 'id' => '1', 'stuff' => 'blah' }.merge(parameters)
-            end
-          end
         end
       end
       context 'other' do
@@ -302,38 +305,36 @@ describe RaptorIO::Protocol::HTTP::Request do
 
     context 'when there is a body' do
       context 'when :raw option is' do
+        let(:option_body) { "fds g45\#$ 6@ %y @^2\r\n" }
+        let(:encoded_body) { 'fds+g45%23%24+6%40+%25y+%40%5E2%0D%0A' }
+        let(:unencoded_body) { "fds g45\#$ 6@ %y @^2\r\n" }
+        let(:headers) { { "Content-Type" => "application/x-www-form-urlencoded" } }
+
+        let(:options) do
+          {
+            url:  url,
+            headers: headers,
+            body: option_body
+          }
+        end
+
         context true do
           it 'does not encode it' do
-            options = {
-                raw:  true,
-                url:  url,
-                body: "fds g45\#$ 6@ %y @^2\r\n"
-            }
-            described_class.new( options ).effective_body.should ==
-                options[:body]
+            options.merge({ raw: true })
+            described_class.new( options ).effective_body.should == unencoded_body
           end
         end
 
         context false do
           it 'encodes it' do
-            options = {
-                raw:  false,
-                url:  url,
-                body: "fds g45\#$ 6@ %y @^2\r\n"
-            }
-            described_class.new( options ).effective_body.should ==
-                'fds+g45%23%24+6%40+%25y+%40%5E2%0D%0A'
+            options.merge({ raw: false })
+            described_class.new( options ).effective_body.should == encoded_body
           end
         end
 
         context 'default' do
           it 'encodes it' do
-            options = {
-                url:  url,
-                body: "fds g45\#$ 6@ %y @^2\r\n"
-            }
-            described_class.new( options ).effective_body.should ==
-                'fds+g45%23%24+6%40+%25y+%40%5E2%0D%0A'
+            described_class.new( options ).effective_body.should == encoded_body
           end
         end
       end
@@ -387,50 +388,6 @@ describe RaptorIO::Protocol::HTTP::Request do
 
         context 'when there are parameters as options' do
           let(:parameters) { { 'id/' => '2', 'stuff' => 'blah/' } }
-
-          context 'and there is no body configured' do
-            context 'when :raw option is' do
-              context true do
-                it 'returns the option parameters' do
-                  options = {
-                      raw: true,
-                      url: url_with_query,
-                      http_method: :post,
-                      parameters: parameters
-                  }
-                  described_class.new( options ).effective_body.to_s.should ==
-                      "id/=2&stuff=blah/"
-                end
-              end
-
-              context false do
-                it 'returns the escaped option parameters' do
-                  options = {
-                      raw: false,
-                      url: url_with_query,
-                      http_method: :post,
-                      parameters: parameters
-                  }
-                  described_class.new( options ).effective_body.to_s.should ==
-                      "id%2F=2&stuff=blah%2F"
-                end
-              end
-
-              context 'default' do
-                it 'returns the escaped option parameters' do
-                  options = {
-                      raw: false,
-                      url: url_with_query,
-                      http_method: :post,
-                      parameters: parameters
-                  }
-                  described_class.new( options ).effective_body.to_s.should ==
-                      "id%2F=2&stuff=blah%2F"
-                end
-              end
-            end
-
-          end
 
           it 'has UTF8 support' do
             options = {
@@ -758,43 +715,15 @@ describe RaptorIO::Protocol::HTTP::Request do
       end
 
       context 'POST' do
-        context 'when no parameters have been provided as options' do
-          it 'uses the original body' do
-            options = {
-                url: url_with_query,
-                http_method: :post,
-                body: 'stuff=1&blah=test'
-            }
-            described_class.new( options ).to_s.split( /[\n\r]+/ ).last.should ==
-                options[:body]
-          end
-        end
-        context 'when there are parameters as options' do
-          let(:parameters) { { 'id $#^3 4q%$#' => '2 dfgr ', 'stuff' => 'blah' } }
-
-          context 'and there is no body configured' do
-            it 'uses the escaped option parameters' do
-              options = {
-                  url: url_with_query,
-                  http_method: :post,
-                  parameters: parameters
-              }
-              described_class.new( options ).to_s.split( /[\n\r]+/ ).last.should ==
-                  "id+%24%23%5E3+4q%25%24%23=2+dfgr+&stuff=blah"
-            end
-          end
-          context 'and there is a body' do
-            it 'uses the body parameters merged with the options parameters' do
-              options = {
-                  url: url_with_query,
-                  http_method: :post,
-                  body: 'stuff 4354%$43=$#535!35VWE g4 %yt5&stuff=1',
-                  parameters: parameters
-              }
-              described_class.new( options ).to_s.split( /[\n\r]+/ ).last.should ==
-                  "stuff+4354%25%2443=%24%23535%2135VWE+g4+%25yt5&stuff=blah&id+%24%23%5E3+4q%25%24%23=2+dfgr+"
-            end
-          end
+        it 'uses the original body' do
+          options = {
+            raw: true,
+            url: url_with_query,
+            http_method: :post,
+            body: 'stuff=1&blah=test'
+          }
+          described_class.new( options ).to_s.split( /[\n\r]+/ ).last.should ==
+              options[:body]
         end
       end
 
@@ -807,16 +736,6 @@ describe RaptorIO::Protocol::HTTP::Request do
           }
           described_class.new( options ).to_s.split( /[\n\r]+/ ).last.should ==
               options[:body]
-        end
-
-        it 'escapes the original body' do
-          options = {
-              url: url_with_query,
-              http_method: :other,
-              body: 'stuff here #$^#46 %H# '
-          }
-          described_class.new( options ).to_s.split( /[\n\r]+/ ).last.should ==
-              'stuff+here+%23%24%5E%2346+%25H%23+'
         end
 
         it 'returns the original URL' do
@@ -883,14 +802,6 @@ describe RaptorIO::Protocol::HTTP::Request do
     end
 
     context 'when there is a body' do
-      it 'encodes it' do
-        options = {
-            url:  url,
-            body: "fds g45\#$ 6@ %y @^2\r\n"
-        }
-        described_class.new( options ).to_s.split( /[\n\r]+/ ).last.should ==
-                "fds+g45%23%24+6%40+%25y+%40%5E2%0D%0A"
-      end
       it 'sets the Content-Length header' do
         options = {
             url:  url,
@@ -899,8 +810,8 @@ describe RaptorIO::Protocol::HTTP::Request do
         described_class.new( options ).to_s.should ==
             "GET / HTTP/1.1\r\n" +
                 "Host: #{parsed_url.host}:#{parsed_url.port}\r\n" +
-                "Content-Length: 37\r\n\r\n" +
-                "fds+g45%23%24+6%40+%25y+%40%5E2%0D%0A"
+                "Content-Length: 21\r\n\r\n" +
+                  "fds g45\#$ 6@ %y @^2\r\n"
       end
     end
 
