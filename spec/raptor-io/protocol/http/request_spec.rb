@@ -74,23 +74,20 @@ describe RaptorIO::Protocol::HTTP::Request do
   end
 
   describe '#continue?' do
+    subject { described_class.new( options ).continue? }
     context 'default' do
-      it 'returns true' do
-        described_class.new( url: url ).continue?.should be_true
-      end
+      it { should be_true }
     end
 
     context 'when the continue option has been set to' do
       context true do
-        it 'returns false' do
-          described_class.new( url: url, continue: true ).continue?.should be_true
-        end
+        let(:options) { { url: url, continue: true } }
+        it { should be_true }
       end
 
       context false do
-        it 'returns false' do
-          described_class.new( url: url, continue: false ).continue?.should be_false
-        end
+        let(:options) { { url: url, continue: false } }
+        it { should be_false }
       end
     end
   end
