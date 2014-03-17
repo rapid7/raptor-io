@@ -9,6 +9,11 @@ describe RaptorIO::Protocol::HTTP::Request do
   let(:parsed_url) { URI(url) }
   let(:url_with_query) { 'http://test.com/?id=1&stuff=blah' }
 
+  subject(:request) do
+    described_class.new( options )
+  end
+  let(:options) { { url: url } }
+
   describe '#initialize' do
     it 'sets the instance attributes by the options' do
       options = {
@@ -351,10 +356,10 @@ describe RaptorIO::Protocol::HTTP::Request do
             context true do
               it 'returns the original body' do
                 options = {
-                    raw: true,
-                    url: url_with_query,
-                    http_method: :post,
-                    body: 'stuff=/1&blah=/test'
+                  raw: true,
+                  url: url_with_query,
+                  http_method: :post,
+                  body: 'stuff=/1&blah=/test'
                 }
                 described_class.new( options ).effective_body.should == options[:body]
               end
@@ -363,10 +368,10 @@ describe RaptorIO::Protocol::HTTP::Request do
             context false do
               it 'escapes and returns the body' do
                 options = {
-                    raw: false,
-                    url: url_with_query,
-                    http_method: :post,
-                    body: 'stuff=/1&blah=/test'
+                  raw: false,
+                  url: url_with_query,
+                  http_method: :post,
+                  body: 'stuff=/1&blah=/test'
                 }
                 described_class.new( options ).effective_body.should == 'stuff=%2F1&blah=%2Ftest'
               end
@@ -375,10 +380,10 @@ describe RaptorIO::Protocol::HTTP::Request do
             context 'default' do
               it 'escapes and returns the body' do
                 options = {
-                    raw: false,
-                    url: url_with_query,
-                    http_method: :post,
-                    body: 'stuff=/1&blah=/test'
+                  raw: false,
+                  url: url_with_query,
+                  http_method: :post,
+                  body: 'stuff=/1&blah=/test'
                 }
                 described_class.new( options ).effective_body.should == 'stuff=%2F1&blah=%2Ftest'
               end
@@ -391,26 +396,26 @@ describe RaptorIO::Protocol::HTTP::Request do
 
           it 'has UTF8 support' do
             options = {
-                url: url_with_query,
-                http_method: :post,
-                parameters: {
-                    'test' => 'τεστ'
-                }
+              url: url_with_query,
+              http_method: :post,
+              parameters: {
+                'test' => 'τεστ'
+              }
             }
             described_class.new( options ).effective_body.to_s.should ==
-                "test=%CF%84%CE%B5%CF%83%CF%84"
+              "test=%CF%84%CE%B5%CF%83%CF%84"
           end
 
           context 'and there is a body' do
             it 'returns the body parameters merged with the options parameters' do
               options = {
-                  url: url_with_query,
-                  http_method: :post,
-                  body: 'stuff 4354%$43=$#535!35VWE g4 %yt5&stuff=1',
-                  parameters: parameters
+                url: url_with_query,
+                http_method: :post,
+                body: 'stuff 4354%$43=$#535!35VWE g4 %yt5&stuff=1',
+                parameters: parameters
               }
               described_class.new( options ).effective_body.to_s.should ==
-                  "stuff+4354%25%2443=%24%23535%2135VWE+g4+%25yt5&stuff=blah%2F&id%2F=2"
+                "stuff+4354%25%2443=%24%23535%2135VWE+g4+%25yt5&stuff=blah%2F&id%2F=2"
             end
           end
         end
@@ -421,10 +426,10 @@ describe RaptorIO::Protocol::HTTP::Request do
           context true do
             it 'returns the original body' do
               options = {
-                  raw: true,
-                  url: url_with_query,
-                  http_method: :other,
-                  body: 'stuff here #$^#46 %H# '
+                raw: true,
+                url: url_with_query,
+                http_method: :other,
+                body: 'stuff here #$^#46 %H# '
               }
               described_class.new( options ).effective_body.should == options[:body]
             end
@@ -433,25 +438,25 @@ describe RaptorIO::Protocol::HTTP::Request do
           context false do
             it 'escapes and returns the original body' do
               options = {
-                  raw: false,
-                  url: url_with_query,
-                  http_method: :other,
-                  body: 'stuff here #$^#46 %H# '
+                raw: false,
+                url: url_with_query,
+                http_method: :other,
+                body: 'stuff here #$^#46 %H# '
               }
               described_class.new( options ).effective_body.should ==
-                  'stuff+here+%23%24%5E%2346+%25H%23+'
+                'stuff+here+%23%24%5E%2346+%25H%23+'
             end
           end
 
           context 'default' do
             it 'escapes and returns the original body' do
               options = {
-                  url: url_with_query,
-                  http_method: :other,
-                  body: 'stuff here #$^#46 %H# '
+                url: url_with_query,
+                http_method: :other,
+                body: 'stuff here #$^#46 %H# '
               }
               described_class.new( options ).effective_body.should ==
-                  'stuff+here+%23%24%5E%2346+%25H%23+'
+                'stuff+here+%23%24%5E%2346+%25H%23+'
             end
           end
         end
@@ -462,8 +467,6 @@ describe RaptorIO::Protocol::HTTP::Request do
 
   describe '#clear_callbacks' do
     it 'clears all callbacks' do
-      request = described_class.new( url: url )
-
       request.on_complete { |res| res }
       request.on_complete.size.should == 1
 
@@ -484,8 +487,6 @@ describe RaptorIO::Protocol::HTTP::Request do
   describe '#on_complete' do
     context 'when passed a block' do
       it 'adds it as a callback to be passed the response' do
-        request = described_class.new( url: url )
-
         passed_response = nil
         request.on_complete { |res| passed_response = res }
 
@@ -496,8 +497,6 @@ describe RaptorIO::Protocol::HTTP::Request do
       end
 
       it 'can add multiple callbacks' do
-        request = described_class.new( url: url )
-
         passed_responses = []
 
         2.times do
@@ -514,7 +513,6 @@ describe RaptorIO::Protocol::HTTP::Request do
     end
 
     it 'returns all relevant callbacks' do
-      request = described_class.new( url: url )
       2.times do
         request.on_complete { |res| res }
       end
@@ -525,8 +523,6 @@ describe RaptorIO::Protocol::HTTP::Request do
   describe '#on_success' do
     context 'when passed a block' do
       it 'adds it as a callback to be called on a successful request' do
-        request = described_class.new( url: url )
-
         passed_response = nil
         request.on_success { |res| passed_response = res }
 
@@ -537,8 +533,6 @@ describe RaptorIO::Protocol::HTTP::Request do
       end
 
       it 'can add multiple callbacks' do
-        request = described_class.new( url: url )
-
         passed_responses = []
 
         2.times do
@@ -555,7 +549,6 @@ describe RaptorIO::Protocol::HTTP::Request do
     end
 
     it 'returns all relevant callbacks' do
-      request = described_class.new( url: url )
       2.times do
         request.on_success { |res| res }
       end
@@ -566,8 +559,6 @@ describe RaptorIO::Protocol::HTTP::Request do
   describe '#on_failure' do
     context 'when passed a block' do
       it 'adds a callback block to be called on a failed request' do
-        request = described_class.new( url: url )
-
         passed_response = nil
         request.on_failure { |res| passed_response = res }
 
@@ -578,8 +569,6 @@ describe RaptorIO::Protocol::HTTP::Request do
       end
 
       it 'can add multiple callbacks' do
-        request = described_class.new( url: url )
-
         passed_responses = []
 
         2.times do
@@ -605,9 +594,6 @@ describe RaptorIO::Protocol::HTTP::Request do
   end
 
   describe '#handle_response' do
-    subject(:request) do
-      request = described_class.new( url: url )
-    end
 
     it 'assigns self as the #request attribute of the response' do
       passed_response = nil
@@ -672,10 +658,7 @@ describe RaptorIO::Protocol::HTTP::Request do
   end
 
   describe '#to_s' do
-    subject(:request_str) do
-      described_class.new( options ).to_s
-    end
-    let(:options) { { url: url } }
+    subject(:request_str) { described_class.new( options ).to_s }
 
     it 'includes a Host header' do
       request_str.split("\r\n").should include("Host: #{parsed_url.host}:#{parsed_url.port}")
@@ -750,9 +733,9 @@ describe RaptorIO::Protocol::HTTP::Request do
         end
         it 'escapes and includes them in the request' do
           described_class.new( options ).to_s.should ==
-              "GET / HTTP/1.1\r\n" +
-              "Host: #{parsed_url.host}:#{parsed_url.port}\r\n" +
-              "X-Stuff: blah\r\n\r\n"
+            "GET / HTTP/1.1\r\n" +
+            "Host: #{parsed_url.host}:#{parsed_url.port}\r\n" +
+            "X-Stuff: blah\r\n\r\n"
         end
       end
     end
@@ -805,11 +788,11 @@ describe RaptorIO::Protocol::HTTP::Request do
       end
       it 'sets the Content-Length header' do
         request_str.should ==
-            "GET / HTTP/1.1\r\n" +
-            "Host: #{parsed_url.host}:#{parsed_url.port}\r\n" +
-            "Content-Length: 21\r\n" +
-            "\r\n" +
-            "fds g45\#$ 6@ %y @^2\r\n"
+          "GET / HTTP/1.1\r\n" +
+          "Host: #{parsed_url.host}:#{parsed_url.port}\r\n" +
+          "Content-Length: 21\r\n" +
+          "\r\n" +
+          "fds g45\#$ 6@ %y @^2\r\n"
       end
     end
 
@@ -840,32 +823,32 @@ EOTXT
 
       request.headers.cookies.should == [
         {
-            name: 'cname',
-            value: 'cvalue',
-            version: 0,
-            port: nil,
-            discard: nil,
-            comment_url: nil,
-            expires: nil,
-            max_age: nil,
-            comment: nil,
-            secure: nil,
-            path: nil,
-            domain: nil
+          name: 'cname',
+          value: 'cvalue',
+          version: 0,
+          port: nil,
+          discard: nil,
+          comment_url: nil,
+          expires: nil,
+          max_age: nil,
+          comment: nil,
+          secure: nil,
+          path: nil,
+          domain: nil
         },
         {
-            name: 'c2name',
-            value: 'c2value',
-            version: 0,
-            port: nil,
-            discard: nil,
-            comment_url: nil,
-            expires: nil,
-            max_age: nil,
-            comment: nil,
-            secure: nil,
-            path: nil,
-            domain: nil
+          name: 'c2name',
+          value: 'c2value',
+          version: 0,
+          port: nil,
+          discard: nil,
+          comment_url: nil,
+          expires: nil,
+          max_age: nil,
+          comment: nil,
+          secure: nil,
+          path: nil,
+          domain: nil
         }
       ]
     end
