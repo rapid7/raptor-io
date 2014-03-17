@@ -294,18 +294,18 @@ describe RaptorIO::Protocol::HTTP::Request do
 
   describe '#effective_body' do
     context 'when the Expect header field has been set' do
-      it 'returns an empty string' do
-        described_class.new( url: url,
-                             body: 'stuff',
-                             headers: { 'Expect' => '100-continue' }
-        ).effective_body.should == ''
+      subject do
+        described_class.new(
+          url: url,
+          headers: {'Expect'=>'100-continue'}
+        ).effective_body
       end
+      it { should be_empty }
     end
 
     context 'when no body has been provided' do
-      it 'returns an empty string' do
-        described_class.new( url: url ).effective_body.should == ''
-      end
+      subject { described_class.new( url:url ).effective_body }
+      it { should be_empty }
     end
 
     context 'when there is a body' do
@@ -398,7 +398,7 @@ describe RaptorIO::Protocol::HTTP::Request do
             options = {
               url: url_with_query,
               http_method: :post,
-              parameters: {
+              post_parameters: {
                 'test' => 'τεστ'
               }
             }

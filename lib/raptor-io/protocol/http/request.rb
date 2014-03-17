@@ -85,6 +85,7 @@ class Request < Message
 
     fail ArgumentError, "Missing ':url' option." if !@url
 
+    @post_parameters ||= {}
     @parameters  ||= {}
     @http_method ||= :get
     @continue    = true  if @continue.nil?
@@ -92,6 +93,8 @@ class Request < Message
 
     if @http_method == :post
       headers["content-type"] ||= "application/x-www-form-urlencoded"
+    elsif @post_parameters.any?
+      raise ArgumentError, "Post parameters don't make sense with non-post request"
     end
   end
 
@@ -175,7 +178,14 @@ class Request < Message
     if headers['Expect'] == '100-continue'
       ''
     elsif headers['Content-Type'] == 'application/x-www-form-urlencoded'
-      encode_if_not_raw(body.to_s)
+      if @post_parameters.any?
+        escaped_params = @post_parameters.map do |k,v|
+          CGI.escape(k.to_s) + "=" + CGI.escape(v.to_s)
+        end
+        escaped_params.join("&")
+      else
+        body.to_s
+      end
     else
       body.to_s
     end
