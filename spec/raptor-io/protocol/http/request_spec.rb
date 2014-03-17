@@ -605,9 +605,11 @@ describe RaptorIO::Protocol::HTTP::Request do
   end
 
   describe '#handle_response' do
-    it 'assigns self as the #request attribute of the response' do
+    subject(:request) do
       request = described_class.new( url: url )
+    end
 
+    it 'assigns self as the #request attribute of the response' do
       passed_response = nil
       request.on_complete { |res| passed_response = res }
 
@@ -621,8 +623,6 @@ describe RaptorIO::Protocol::HTTP::Request do
       let(:response) { RaptorIO::Protocol::HTTP::Response.new( url: url, code: 200 ) }
 
       it 'calls #on_complete callbacks' do
-        request = described_class.new( url: url )
-
         passed_response = nil
         request.on_complete { |res| passed_response = res }
         request.handle_response( response )
@@ -630,8 +630,6 @@ describe RaptorIO::Protocol::HTTP::Request do
         passed_response.should == response
       end
       it 'calls #on_success callbacks' do
-        request = described_class.new( url: url )
-
         passed_response = nil
         request.on_success { |res| passed_response = res }
         request.handle_response( response )
@@ -639,8 +637,6 @@ describe RaptorIO::Protocol::HTTP::Request do
         passed_response.should == response
       end
       it 'does not call #on_failure callbacks' do
-        request = described_class.new( url: url )
-
         passed_response = nil
         request.on_failure { |res| passed_response = res }
         request.handle_response( response )
@@ -652,8 +648,6 @@ describe RaptorIO::Protocol::HTTP::Request do
       let(:response) { RaptorIO::Protocol::HTTP::Response.new( url: url, code: 0 ) }
 
       it 'calls #on_complete callbacks' do
-        request = described_class.new( url: url )
-
         passed_response = nil
         request.on_complete { |res| passed_response = res }
         request.handle_response( response )
@@ -661,8 +655,6 @@ describe RaptorIO::Protocol::HTTP::Request do
         passed_response.should == response
       end
       it 'does not call #on_success callbacks' do
-        request = described_class.new( url: url )
-
         passed_response = nil
         request.on_success { |res| passed_response = res }
         request.handle_response( response )
@@ -670,8 +662,6 @@ describe RaptorIO::Protocol::HTTP::Request do
         passed_response.should be_nil
       end
       it 'calls #on_failure callbacks' do
-        request = described_class.new( url: url )
-
         passed_response = nil
         request.on_failure { |res| passed_response = res }
         request.handle_response( response )
@@ -682,18 +672,21 @@ describe RaptorIO::Protocol::HTTP::Request do
   end
 
   describe '#to_s' do
+    subject(:request_str) do
+      described_class.new( options ).to_s
+    end
+    let(:options) { { url: url } }
+
     it 'includes a Host header' do
-      described_class.new( url: url ).to_s.should ==
-          "GET / HTTP/1.1\r\n" +
-              "Host: #{parsed_url.host}:#{parsed_url.port}\r\n\r\n"
+      request_str.split("\r\n").should include("Host: #{parsed_url.host}:#{parsed_url.port}")
     end
 
     context 'when the request method is' do
       context 'GET' do
         context 'when no parameters have been provided as options' do
+          let(:options) { { url: url_with_query, http_method: :get } }
           it 'uses the original URL' do
-            r = described_class.new( url: url_with_query, http_method: :get )
-            r.to_s.lines.first.should == "GET /?id=1&stuff=blah HTTP/1.1\r\n"
+            request_str.lines.first.should == "GET /?id=1&stuff=blah HTTP/1.1\r\n"
           end
         end
         context 'when there are parameters as options' do
@@ -715,103 +708,108 @@ describe RaptorIO::Protocol::HTTP::Request do
       end
 
       context 'POST' do
-        it 'uses the original body' do
-          options = {
+        let(:options) do
+          {
             raw: true,
             url: url_with_query,
             http_method: :post,
             body: 'stuff=1&blah=test'
           }
-          described_class.new( options ).to_s.split( /[\n\r]+/ ).last.should ==
-              options[:body]
+        end
+        it 'uses the original body' do
+          request_str.split("\r\n").last.should == options[:body]
         end
       end
 
       context 'other' do
-        it 'returns the original body' do
-          options = {
-              url: url_with_query,
-              http_method: :other,
-              body: 'stuff'
+        let(:options) do
+          {
+            url: url_with_query,
+            http_method: :other,
+            body: 'stuff'
           }
-          described_class.new( options ).to_s.split( /[\n\r]+/ ).last.should ==
-              options[:body]
         end
-
+        it 'returns the original body' do
+          request_str.split("\r\n").last.should == options[:body]
+        end
         it 'returns the original URL' do
-          options = {
-              url: url_with_query,
-              http_method: :other
-          }
-          described_class.new( options ).to_s.lines.first.should ==
-              "OTHER /?id=1&stuff=blah HTTP/1.1\r\n"
+          request_str.lines.first.should == "OTHER /?id=1&stuff=blah HTTP/1.1\r\n"
         end
       end
     end
 
     context 'when headers' do
       context 'have been provided' do
-        it 'escapes and includes them in the request' do
-          options = {
-              url:     url,
-              headers: {
-                  'X-Stuff' => "blah"
-              }
+        let(:options) do
+          {
+            url:     url,
+            headers: {
+              'X-Stuff' => "blah"
+            }
           }
+        end
+        it 'escapes and includes them in the request' do
           described_class.new( options ).to_s.should ==
               "GET / HTTP/1.1\r\n" +
-                "Host: #{parsed_url.host}:#{parsed_url.port}\r\n" +
-                "X-Stuff: blah\r\n\r\n"
+              "Host: #{parsed_url.host}:#{parsed_url.port}\r\n" +
+              "X-Stuff: blah\r\n\r\n"
         end
       end
     end
 
     context 'when an HTTP method' do
       context 'has been provided' do
-        it 'includes it the request' do
-          options = {
-              url:         url,
-              http_method: :stuff
+        let(:options) do
+          {
+            url:         url,
+            http_method: :stuff
           }
-          described_class.new( options ).to_s.lines.first.should == "STUFF / HTTP/1.1\r\n"
+        end
+        it 'includes it the request' do
+          request_str.lines.first.should == "STUFF / HTTP/1.1\r\n"
         end
       end
       context 'has not been provided' do
         it 'defaults to GET' do
-          described_class.new( url: url ).to_s.lines.first.should == "GET / HTTP/1.1\r\n"
+          request_str.lines.first.should == "GET / HTTP/1.1\r\n"
         end
       end
     end
 
     context 'when an HTTP version' do
       context 'has been provided' do
-        it 'includes it the request' do
-          options = {
-              url:     url,
-              version: '2'
+        let(:options) do
+          {
+            url:     url,
+            version: '2'
           }
-          described_class.new( options ).to_s.lines.first.should == "GET / HTTP/2\r\n"
+        end
+        it 'includes it the request' do
+          request_str.lines.first.should == "GET / HTTP/2\r\n"
         end
       end
 
       context 'has not been provided' do
         it 'defaults to 1.1' do
-          described_class.new( url: url ).to_s.lines.first.should == "GET / HTTP/1.1\r\n"
+          request_str.lines.first.should == "GET / HTTP/1.1\r\n"
         end
       end
     end
 
     context 'when there is a body' do
-      it 'sets the Content-Length header' do
-        options = {
-            url:  url,
-            body: "fds g45\#$ 6@ %y @^2\r\n"
+      let(:options) do
+        {
+          url:  url,
+          body: "fds g45\#$ 6@ %y @^2\r\n"
         }
-        described_class.new( options ).to_s.should ==
+      end
+      it 'sets the Content-Length header' do
+        request_str.should ==
             "GET / HTTP/1.1\r\n" +
-                "Host: #{parsed_url.host}:#{parsed_url.port}\r\n" +
-                "Content-Length: 21\r\n\r\n" +
-                  "fds g45\#$ 6@ %y @^2\r\n"
+            "Host: #{parsed_url.host}:#{parsed_url.port}\r\n" +
+            "Content-Length: 21\r\n" +
+            "\r\n" +
+            "fds g45\#$ 6@ %y @^2\r\n"
       end
     end
 
