@@ -293,6 +293,7 @@ describe RaptorIO::Protocol::HTTP::Request do
   end
 
   describe '#effective_body' do
+
     context 'when the Expect header field has been set' do
       subject do
         described_class.new(
@@ -304,165 +305,10 @@ describe RaptorIO::Protocol::HTTP::Request do
     end
 
     context 'when no body has been provided' do
-      subject { described_class.new( url:url ).effective_body }
+      subject { described_class.new( url: url ).effective_body }
       it { should be_empty }
     end
 
-    context 'when there is a body' do
-      context 'when :raw option is' do
-        let(:option_body) { "fds g45\#$ 6@ %y @^2\r\n" }
-        let(:encoded_body) { 'fds+g45%23%24+6%40+%25y+%40%5E2%0D%0A' }
-        let(:unencoded_body) { "fds g45\#$ 6@ %y @^2\r\n" }
-        let(:headers) { { "Content-Type" => "application/x-www-form-urlencoded" } }
-
-        let(:options) do
-          {
-            url:  url,
-            headers: headers,
-            body: option_body
-          }
-        end
-
-        context true do
-          it 'does not encode it' do
-            options.merge({ raw: true })
-            described_class.new( options ).effective_body.should == unencoded_body
-          end
-        end
-
-        context false do
-          it 'encodes it' do
-            options.merge({ raw: false })
-            described_class.new( options ).effective_body.should == encoded_body
-          end
-        end
-
-        context 'default' do
-          it 'encodes it' do
-            described_class.new( options ).effective_body.should == encoded_body
-          end
-        end
-      end
-
-      it 'has UTF8 support' do
-        described_class.new( url: 'http://stuff', body: 'τεστ' ).effective_body.should == '%CF%84%CE%B5%CF%83%CF%84'
-      end
-    end
-
-    context 'when the request method is' do
-      context 'POST' do
-        context 'when no parameters have been provided as options' do
-          context 'when :raw option is' do
-            context true do
-              it 'returns the original body' do
-                options = {
-                  raw: true,
-                  url: url_with_query,
-                  http_method: :post,
-                  body: 'stuff=/1&blah=/test'
-                }
-                described_class.new( options ).effective_body.should == options[:body]
-              end
-            end
-
-            context false do
-              it 'escapes and returns the body' do
-                options = {
-                  raw: false,
-                  url: url_with_query,
-                  http_method: :post,
-                  body: 'stuff=/1&blah=/test'
-                }
-                described_class.new( options ).effective_body.should == 'stuff=%2F1&blah=%2Ftest'
-              end
-            end
-
-            context 'default' do
-              it 'escapes and returns the body' do
-                options = {
-                  raw: false,
-                  url: url_with_query,
-                  http_method: :post,
-                  body: 'stuff=/1&blah=/test'
-                }
-                described_class.new( options ).effective_body.should == 'stuff=%2F1&blah=%2Ftest'
-              end
-            end
-          end
-        end
-
-        context 'when there are parameters as options' do
-          let(:parameters) { { 'id/' => '2', 'stuff' => 'blah/' } }
-
-          it 'has UTF8 support' do
-            options = {
-              url: url_with_query,
-              http_method: :post,
-              post_parameters: {
-                'test' => 'τεστ'
-              }
-            }
-            described_class.new( options ).effective_body.to_s.should ==
-              "test=%CF%84%CE%B5%CF%83%CF%84"
-          end
-
-          context 'and there is a body' do
-            it 'returns the body parameters merged with the options parameters' do
-              options = {
-                url: url_with_query,
-                http_method: :post,
-                body: 'stuff 4354%$43=$#535!35VWE g4 %yt5&stuff=1',
-                parameters: parameters
-              }
-              described_class.new( options ).effective_body.to_s.should ==
-                "stuff+4354%25%2443=%24%23535%2135VWE+g4+%25yt5&stuff=blah%2F&id%2F=2"
-            end
-          end
-        end
-      end
-
-      context 'other' do
-        context 'when :raw option is' do
-          context true do
-            it 'returns the original body' do
-              options = {
-                raw: true,
-                url: url_with_query,
-                http_method: :other,
-                body: 'stuff here #$^#46 %H# '
-              }
-              described_class.new( options ).effective_body.should == options[:body]
-            end
-          end
-
-          context false do
-            it 'escapes and returns the original body' do
-              options = {
-                raw: false,
-                url: url_with_query,
-                http_method: :other,
-                body: 'stuff here #$^#46 %H# '
-              }
-              described_class.new( options ).effective_body.should ==
-                'stuff+here+%23%24%5E%2346+%25H%23+'
-            end
-          end
-
-          context 'default' do
-            it 'escapes and returns the original body' do
-              options = {
-                url: url_with_query,
-                http_method: :other,
-                body: 'stuff here #$^#46 %H# '
-              }
-              described_class.new( options ).effective_body.should ==
-                'stuff+here+%23%24%5E%2346+%25H%23+'
-            end
-          end
-        end
-
-      end
-    end
   end
 
   describe '#clear_callbacks' do
