@@ -50,7 +50,7 @@ class Response < Message
   #   `true` if the response is a `3xx` redirect **and** there is a `Location`
   #   header field.
   def redirect?
-    code >= 300 && code <= 399 && !!headers['Location']
+    code.between?(300, 399) && !!headers['Location']
   end
 
   # @note Depends on the response code.
