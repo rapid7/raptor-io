@@ -93,7 +93,9 @@ class Request < Message
 
     if @http_method == :post
       headers["content-type"] ||= "application/x-www-form-urlencoded"
-    elsif @post_parameters.any?
+    end
+
+    if @http_method != :post && @post_parameters.any?
       raise ArgumentError, "Post parameters don't make sense with non-post request"
     end
   end
@@ -164,10 +166,7 @@ class Request < Message
   # @return [URI] Location of the resource to request, including query params.
   def effective_url
     cparsed_url = parsed_url.dup
-    cparsed_url.query = query_parameters.map do |k, v|
-      "#{encode_if_not_raw(k)}=#{encode_if_not_raw(v)}"
-    end.join('&') if query_parameters.any?
-
+    cparsed_url.query = hash_to_param_str(query_parameters) if query_parameters.any?
     cparsed_url.normalize
   end
 
@@ -176,18 +175,18 @@ class Request < Message
   #   values in {#headers}
   def effective_body
     if headers['Expect'] == '100-continue'
-      ''
-    elsif headers['Content-Type'] == 'application/x-www-form-urlencoded'
-      if @post_parameters.any?
-        escaped_params = @post_parameters.map do |k,v|
-          CGI.escape(k.to_s) + "=" + CGI.escape(v.to_s)
-        end
-        escaped_params.join("&")
-      else
-        body.to_s
-      end
+      return ''
     else
-      body.to_s
+      case headers['Content-Type']
+      when 'application/x-www-form-urlencoded'
+        if @post_parameters.any?
+          return hash_to_param_str(@post_parameters)
+        else
+          return body.to_s
+        end
+      else
+        return body.to_s
+      end
     end
   end
 
@@ -313,6 +312,10 @@ class Request < Message
 
   def decode_if_not_raw( str )
     raw? ? str : CGI.unescape( str )
+  end
+
+  def hash_to_param_str(hash)
+    hash.map { |k, v| "#{encode_if_not_raw(k)}=#{encode_if_not_raw(v)}" }.join('&')
   end
 
 end

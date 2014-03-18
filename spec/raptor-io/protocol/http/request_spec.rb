@@ -33,29 +33,31 @@ describe RaptorIO::Protocol::HTTP::Request do
       r.raw.should          == options[:raw]
     end
 
-    context 'POST' do
-      it 'content-type defaults to "application/x-www-form-urlencoded"' do
-        options = { url: url, http_method: :post, }
-        request = described_class.new( options )
-        expect(request).to have_header('content-type')
-        expect(request.headers['content-type']).to include("application/x-www-form-urlencoded")
-      end
-    end
-
     it 'uses the setter methods when configuring' do
       options = { url: url, http_method: 'gEt', parameters: { 'test' => 'blah' } }
       described_class.new( options ).http_method.should == :get
     end
 
+    context 'GET' do
+      context 'with post parameters' do
+        it 'should raise' do
+          options = { url: url, post_parameters: { 'a'=>'b' } }
+          expect { described_class.new(options) }.to raise_error ArgumentError
+        end
+      end
+    end
+
+    context 'POST' do
+      let(:options) { { url: url, http_method: :post, } }
+      it 'content-type defaults to "application/x-www-form-urlencoded"' do
+        expect(request).to have_header('content-type')
+        expect(request.headers['content-type']).to include("application/x-www-form-urlencoded")
+      end
+    end
+
     context 'when no :url option has been provided' do
       it 'raises ArgumentError' do
-        raised = false
-        begin
-          described_class.new
-        rescue ArgumentError
-          raised = true
-        end
-        raised.should be_true
+        expect { described_class.new }.to raise_error ArgumentError
       end
     end
   end
@@ -290,20 +292,37 @@ describe RaptorIO::Protocol::HTTP::Request do
   end
 
   describe '#effective_body' do
+    subject { described_class.new( options ).effective_body }
 
     context 'when the Expect header field has been set' do
-      subject do
-        described_class.new(
+      let(:options) do
+        {
           url: url,
           headers: {'Expect'=>'100-continue'}
-        ).effective_body
+        }
       end
       it { should be_empty }
     end
 
     context 'when no body has been provided' do
-      subject { described_class.new( url: url ).effective_body }
+      let(:options) { { url: url } }
       it { should be_empty }
+    end
+
+    context 'when post parameters are given' do
+      let(:options) do
+        {
+          http_method: :post,
+          url: url,
+          post_parameters: {
+            'foo' => '%stuff&things/'
+          }
+        }
+      end
+
+      it 'should encode them' do
+        subject.should == 'foo=%25stuff%26things%2F'
+      end
     end
 
   end
