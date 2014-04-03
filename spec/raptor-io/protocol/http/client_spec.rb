@@ -417,7 +417,7 @@ describe RaptorIO::Protocol::HTTP::Client do
         end
 
         context 'when a timeout occurs' do
-          let (:options) do
+          let(:options) do
             { timeout: 1 }
           end
           it 'raises RaptorIO::Error::Timeout', speed: 'slow' do
