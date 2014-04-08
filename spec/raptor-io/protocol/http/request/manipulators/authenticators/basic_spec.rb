@@ -15,13 +15,13 @@ describe 'RaptorIO::Protocol::HTTP::Request::Manipulators::Authenticators::Basic
 
   it 'provides Basic authentication' do
     opts = {
-        mode: :sync, manipulators: {
-            'authenticators/basic' =>
-                {
-                    username: 'admin',
-                    password: 'secret'
-                }
+      mode: :sync, manipulators: {
+        'authenticators/basic' =>
+        {
+          username: 'admin',
+          password: 'secret'
         }
+      }
     }
 
     2.times do
