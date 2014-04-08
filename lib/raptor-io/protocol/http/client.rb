@@ -387,7 +387,7 @@ class Client
   # associated request once the full response is received -- at which point it
   # also closes the socket.
   #
-  # @param  [#gets] socket  Readable IO object.
+  # @param  [#read,#gets] socket  Readable IO object.
   #
   # @return [true, nil]
   #   `true` if the response finished being buffered, `nil` otherwise.

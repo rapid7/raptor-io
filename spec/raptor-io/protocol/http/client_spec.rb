@@ -469,11 +469,11 @@ describe RaptorIO::Protocol::HTTP::Client do
       end
     end
 
-    describe 'Content-Encoding' do
+    describe 'Transfer-Encoding' do
       context 'supports' do
-        it 'chunked', speed: 'slow' do
+        it 'chunked' do
           res = client.get( "#{@url}/chunked", mode: :sync )
-          res.body.should == "foo\nbara\rbaraf\r\n"
+          res.body.should == "foo\rbarz\n#{"asdf"*20}"
           res.headers.should_not include 'Transfer-Encoding'
           res.headers['Content-Length'].to_i.should == res.body.size
         end

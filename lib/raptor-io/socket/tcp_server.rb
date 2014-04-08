@@ -13,4 +13,7 @@ class RaptorIO::Socket::TCPServer < RaptorIO::Socket
   # @!method listen
   def_delegator :@socket, :listen, :listen
 
+  # @!method ungetc
+  def_delegator :@socket, :ungetc, :ungetc
+
 end
