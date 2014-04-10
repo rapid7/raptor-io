@@ -32,7 +32,6 @@ RSpec.configure do |config|
   config.before( :all ) do
     RaptorIO::Protocol::HTTP::Client.reset
     RaptorIO::Protocol::HTTP::Request::Manipulators.reset
-    WebServers.killall
   end
 
   config.after( :all ) do
