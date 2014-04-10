@@ -7,18 +7,17 @@ describe RaptorIO::Protocol::HTTP::Client do
   before :all do
     WebServers.start :client_close_connection
     WebServers.start :client_https
-    WebServers.start :client
+    WebServers.start :default
 
-    @url       = WebServers.url_for( :client )
-    @https_url = WebServers.url_for( :client_https ).gsub( 'http', 'https' )
+    @https_url = WebServers.url_for(:client_https).gsub('http', 'https')
   end
 
-  before( :each ) do
+  before(:each) do
     RaptorIO::Protocol::HTTP::Request::Manipulators.reset
     RaptorIO::Protocol::HTTP::Request::Manipulators.library = manipulator_fixtures_path
   end
 
-  let(:url) { 'http://test.com' }
+  let(:url) { WebServers.url_for(:default) }
   let(:switch_board) { RaptorIO::Socket::SwitchBoard.new }
   let(:options) { {} }
   subject(:client) do
@@ -90,9 +89,9 @@ describe RaptorIO::Protocol::HTTP::Client do
 
         context 'when a request is queued' do
           it 'runs the configured manipulators' do
-            request = RaptorIO::Protocol::HTTP::Request.new( url: "#{@url}/" )
-            client.queue( request )
-            request.url.should == "#{@url}/" + ('foo' * 15)
+            request = RaptorIO::Protocol::HTTP::Request.new(url: "#{url}/")
+            client.queue(request)
+            request.url.should == "#{url}/" + ('foo' * 15)
           end
         end
       end
@@ -117,7 +116,7 @@ describe RaptorIO::Protocol::HTTP::Client do
         context 'when a timeout occurs' do
           it 'raises RaptorIO::Error::Timeout', speed: 'slow' do
             expect {
-              client.get( "#{@url}/sleep", mode: :sync )
+              client.get("#{url}/sleep", mode: :sync)
             }.to raise_error RaptorIO::Error::Timeout
           end
         end
@@ -144,7 +143,7 @@ describe RaptorIO::Protocol::HTTP::Client do
           cnt   = 0
           times = 10
 
-          url = "#{@url}/sleep"
+          url = "#{url}/sleep"
 
           client.concurrency = 1
           times.times do
@@ -193,7 +192,7 @@ describe RaptorIO::Protocol::HTTP::Client do
         end
 
         it 'sets the User-Agent for the requests' do
-          client.request( @url ).headers['User-Agent'].should == ua
+          client.request(url).headers['User-Agent'].should == ua
         end
 
       end
@@ -204,14 +203,14 @@ describe RaptorIO::Protocol::HTTP::Client do
     context 'when the options are invalid' do
       it 'raises RaptorIO::Protocol::HTTP::Request::Manipulator::Error::InvalidOptions' do
         expect do
-          client.update_manipulators( options_validator: { mandatory_string: 12 } )
+          client.update_manipulators(options_validator: { mandatory_string: 12 })
         end.to raise_error RaptorIO::Protocol::HTTP::Request::Manipulator::Error::InvalidOptions
       end
     end
 
     it 'updates the client-wide manipulators' do
       manipulators = { 'manifoolators/fooer' => { times: 16 } }
-      client.update_manipulators( manipulators )
+      client.update_manipulators(manipulators)
       client.manipulators.should == manipulators
     end
   end
@@ -245,18 +244,18 @@ describe RaptorIO::Protocol::HTTP::Client do
 
   describe '#request' do
     it 'supports SSL' do
-      res = client.get( @https_url, mode: :sync )
+      res = client.get(@https_url, mode: :sync)
       res.should be_kind_of RaptorIO::Protocol::HTTP::Response
       res.code.should == 200
       res.body.should == 'Stuff...'
     end
 
     it 'handles responses without body (1xx, 204, 304)' do
-      client.get( "#{@url}/204", mode: :sync ).should be_kind_of RaptorIO::Protocol::HTTP::Response
+      client.get("#{url}/204", mode: :sync).should be_kind_of RaptorIO::Protocol::HTTP::Response
     end
 
     it 'properly transmits raw binary data' do
-      client.get( "#{@url}/echo_body",
+      client.get("#{url}/echo_body",
                   raw: true,
                   mode: :sync,
                   body: "\ff\ff"
@@ -264,7 +263,7 @@ describe RaptorIO::Protocol::HTTP::Client do
     end
 
     it 'properly transmits raw multibyte data' do
-      client.get( "#{@url}/echo_body",
+      client.get("#{url}/echo_body",
                   raw: true,
                   mode: :sync,
                   body: 'τεστ'
@@ -273,16 +272,16 @@ describe RaptorIO::Protocol::HTTP::Client do
 
     it 'forwards the given options to the Request object' do
       options = { parameters: { 'name' => 'value' }}
-      client.request( '/blah/', options ).parameters.should == options[:parameters]
+      client.request('/blah/', options).parameters.should == options[:parameters]
     end
 
     context 'when passed a block' do
       it 'sets it as a callback' do
         passed_response = nil
-        response = RaptorIO::Protocol::HTTP::Response.new( url: url )
+        response = RaptorIO::Protocol::HTTP::Response.new(url: url)
 
-        request = client.request( '/blah/' ) { |res| passed_response = res }
-        request.handle_response( response )
+        request = client.request('/blah/') { |res| passed_response = res }
+        request.handle_response(response)
         passed_response.should == response
       end
     end
@@ -292,7 +291,7 @@ describe RaptorIO::Protocol::HTTP::Client do
         context 'when the options are invalid' do
           it 'raises RaptorIO::Protocol::HTTP::Request::Manipulator::Error::InvalidOptions' do
             expect do
-              client.get( "#{@url}/",
+              client.get("#{url}/",
                           manipulators: { options_validator: { mandatory_string: 12 } }
               )
             end.to raise_error RaptorIO::Protocol::HTTP::Request::Manipulator::Error::InvalidOptions
@@ -300,19 +299,19 @@ describe RaptorIO::Protocol::HTTP::Client do
         end
 
         it 'loads and configures the given manipulators' do
-          request = client.get( "#{@url}/",
+          request = client.get("#{url}/",
                                 manipulators:  {
                                     'manifoolators/fooer' => { times: 10 }
                                 }
           )
-          request.url.should == "#{@url}/" + ('foo' * 10)
+          request.url.should == "#{url}/" + ('foo' * 10)
         end
       end
 
       describe :cookies do
         context Hash do
           it 'formats and sets request cookies' do
-            client.get( "#{@url}/cookies",
+            client.get("#{url}/cookies",
                         cookies:  {
                             'name' => 'value',
                             'name2' => 'value2'
@@ -324,7 +323,7 @@ describe RaptorIO::Protocol::HTTP::Client do
 
         context String do
           it 'sets request cookies' do
-            client.get( "#{@url}/cookies",
+            client.get("#{url}/cookies",
                         cookies:  'name=value;name2=value2',
                         mode:     :sync
             ).body.should == 'name=value;name2=value2'
@@ -337,7 +336,7 @@ describe RaptorIO::Protocol::HTTP::Client do
         context 'default' do
           it 'handles responses with status "100" automatically' do
             body = 'stuff-here'
-            client.get( "#{@url}/100",
+            client.get("#{url}/100",
                         headers:  {
                             'Expect' => '100-continue'
                         },
@@ -350,7 +349,7 @@ describe RaptorIO::Protocol::HTTP::Client do
         context true do
           it 'handles responses with status "100" automatically' do
             body = 'stuff-here'
-            client.get( "#{@url}/100",
+            client.get("#{url}/100",
                         headers:  {
                             'Expect' => '100-continue'
                         },
@@ -364,7 +363,7 @@ describe RaptorIO::Protocol::HTTP::Client do
         context false do
           it 'does not handle responses with status "100" automatically' do
             body = 'stuff-here'
-            client.get( "#{@url}/100",
+            client.get("#{url}/100",
                         headers:  {
                             'Expect' => '100-continue'
                         },
@@ -380,31 +379,31 @@ describe RaptorIO::Protocol::HTTP::Client do
         it 'handles timeouts progressively and in groups', speed: 'slow' do
 
           2.times do
-            client.get( "#{@url}/long-sleep", timeout: 20 ) do |response|
+            client.get("#{url}/long-sleep", timeout: 20) do |response|
               response.error.should be_nil
             end
           end
 
           2.times do
-            client.get( "#{@url}/long-sleep", timeout: 2 ) do |response|
+            client.get("#{url}/long-sleep", timeout: 2) do |response|
               response.error.should be_kind_of RaptorIO::Error::Timeout
             end
           end
 
           2.times do
-            client.get( "#{@url}/long-sleep", timeout: 3 ) do |response|
+            client.get("#{url}/long-sleep", timeout: 3) do |response|
               response.error.should be_kind_of RaptorIO::Error::Timeout
             end
           end
 
           2.times do
-            client.get( "#{@url}/long-sleep", timeout: 7 ) do |response|
+            client.get("#{url}/long-sleep", timeout: 7) do |response|
               response.error.should be_nil
             end
           end
 
           2.times do
-            client.get( "#{@url}/long-sleep", timeout: 10 ) do |response|
+            client.get("#{url}/long-sleep", timeout: 10) do |response|
               response.error.should be_nil
             end
           end
@@ -422,7 +421,7 @@ describe RaptorIO::Protocol::HTTP::Client do
           end
           it 'raises RaptorIO::Error::Timeout', speed: 'slow' do
             expect {
-              client.get( "#{@url}/sleep", mode: :sync )
+              client.get("#{url}/sleep", mode: :sync)
             }.to raise_error RaptorIO::Error::Timeout
           end
         end
@@ -434,7 +433,7 @@ describe RaptorIO::Protocol::HTTP::Client do
                 parameters: { 'name' => 'value' },
                 mode:       :sync
             }
-            response = client.request( @url, options )
+            response = client.request(url, options)
             response.should be_kind_of RaptorIO::Protocol::HTTP::Response
             response.request.parameters.should == options[:parameters]
           end
@@ -444,35 +443,35 @@ describe RaptorIO::Protocol::HTTP::Client do
 
     it 'increments the queue size' do
       client.queue_size.should == 0
-      client.request( '/blah/' )
+      client.request('/blah/')
       client.queue_size.should == 1
     end
 
     it 'returns the request' do
-      client.request( '/blah/' ).should be_kind_of RaptorIO::Protocol::HTTP::Request
+      client.request('/blah/').should be_kind_of RaptorIO::Protocol::HTTP::Request
     end
 
     it 'treats a closed connection as a signal for end of a response' do
-      url = WebServers.url_for( :client_close_connection )
-      client.get( url, mode: :sync ).body.should == "Success\n.\n"
-      client.get( url, mode: :sync ).body.should == "Success\n.\n"
-      client.get( url, mode: :sync ).body.should == "Success\n.\n"
+      url = WebServers.url_for(:client_close_connection)
+      client.get(url, mode: :sync).body.should == "Success\n.\n"
+      client.get(url, mode: :sync).body.should == "Success\n.\n"
+      client.get(url, mode: :sync).body.should == "Success\n.\n"
     end
 
     describe 'Content-Encoding' do
       it 'supports gzip' do
-        client.get( "#{@url}/gzip", mode: :sync ).body.should == 'gzip'
+        client.get("#{url}/gzip", mode: :sync).body.should == 'gzip'
       end
 
       it 'supports deflate' do
-        client.get( "#{@url}/deflate", mode: :sync ).body.should == 'deflate'
+        client.get("#{url}/deflate", mode: :sync).body.should == 'deflate'
       end
     end
 
     describe 'Transfer-Encoding' do
       context 'supports' do
         it 'chunked' do
-          res = client.get( "#{@url}/chunked", mode: :sync )
+          res = client.get("#{url}/chunked", mode: :sync)
           res.body.should == "foo\rbarz\n#{"asdf"*20}"
           res.headers.should_not include 'Transfer-Encoding'
           res.headers['Content-Length'].to_i.should == res.body.size
@@ -483,20 +482,20 @@ describe RaptorIO::Protocol::HTTP::Client do
 
   describe '#get' do
     it 'queues a GET request' do
-      client.get( '/blah/' ).http_method.should == :get
+      client.get('/blah/').http_method.should == :get
     end
   end
 
   describe '#post' do
     it 'queues a POST request' do
-      client.post( '/blah/' ).http_method.should == :post
+      client.post('/blah/').http_method.should == :post
     end
   end
 
   describe '#queue_size' do
     it 'returns the amount of queued requests' do
       client.queue_size.should == 0
-      10.times { client.request( '/' ) }
+      10.times { client.request('/') }
       client.queue_size.should == 10
     end
   end
@@ -504,11 +503,11 @@ describe RaptorIO::Protocol::HTTP::Client do
   describe '#queue' do
     it 'queues a request' do
       client.queue_size.should == 0
-      client.queue( RaptorIO::Protocol::HTTP::Request.new( url: url ) )
+      client.queue(RaptorIO::Protocol::HTTP::Request.new(url: url))
       client.queue_size.should == 1
     end
     it 'returns the queued request' do
-      request = RaptorIO::Protocol::HTTP::Request.new( url: url )
+      request = RaptorIO::Protocol::HTTP::Request.new(url: url)
       client.queue(request).should == request
     end
 
@@ -516,16 +515,16 @@ describe RaptorIO::Protocol::HTTP::Client do
       context 'when the options are invalid' do
         it 'raises RaptorIO::Protocol::HTTP::Request::Manipulator::Error::InvalidOptions' do
           expect do
-            request = RaptorIO::Protocol::HTTP::Request.new( url: "#{@url}/" )
-            client.queue( request, options_validator: { mandatory_string: 12 } )
+            request = RaptorIO::Protocol::HTTP::Request.new(url: "#{url}/")
+            client.queue(request, options_validator: { mandatory_string: 12 })
           end.to raise_error RaptorIO::Protocol::HTTP::Request::Manipulator::Error::InvalidOptions
         end
       end
 
       it 'loads and configures the given manipulators' do
-        request = RaptorIO::Protocol::HTTP::Request.new( url: "#{@url}/" )
-        client.queue( request, 'manifoolators/fooer' => { times: 10 } )
-        request.url.should == "#{@url}/" + ('foo' * 10)
+        request = RaptorIO::Protocol::HTTP::Request.new(url: "#{url}/")
+        client.queue(request, 'manifoolators/fooer' => { times: 10 })
+        request.url.should == "#{url}/" + ('foo' * 10)
       end
     end
 
@@ -534,7 +533,7 @@ describe RaptorIO::Protocol::HTTP::Client do
   describe '#<<' do
     it 'alias of #queue' do
       client.queue_size.should == 0
-      client << RaptorIO::Protocol::HTTP::Request.new( url: url )
+      client << RaptorIO::Protocol::HTTP::Request.new(url: url)
       client.queue_size.should == 1
     end
   end
@@ -547,7 +546,7 @@ describe RaptorIO::Protocol::HTTP::Client do
             url = 'http://localhost:9696969'
 
             response = nil
-            client.get( url ){ |r| response = r }
+            client.get(url){ |r| response = r }
             client.run
 
             response.version.should == '1.1'
@@ -561,7 +560,7 @@ describe RaptorIO::Protocol::HTTP::Client do
             url = 'http://localhost:9696969'
 
             response = nil
-            client.get( url ){ |r| response = r }
+            client.get(url){ |r| response = r }
             client.run
 
             response.error.should be_kind_of RaptorIO::Socket::Error::ConnectionError
@@ -574,7 +573,7 @@ describe RaptorIO::Protocol::HTTP::Client do
             url = 'http://10.11.12.13'
 
             response = nil
-            client.get( url ){ |r| response = r }
+            client.get(url){ |r| response = r }
             client.run
 
             response.version.should == '1.1'
@@ -588,7 +587,7 @@ describe RaptorIO::Protocol::HTTP::Client do
             url = 'http://10.11.12.13'
 
             response = nil
-            client.get( url ){ |r| response = r }
+            client.get(url){ |r| response = r }
             client.run
 
             response.error.should be_kind_of RaptorIO::Socket::Error::ConnectionError
@@ -600,7 +599,7 @@ describe RaptorIO::Protocol::HTTP::Client do
             url = 'http://stuffhereblahblahblah'
 
             response = nil
-            client.get( url ){ |r| response = r }
+            client.get(url){ |r| response = r }
             client.run
 
             response.version.should == '1.1'
@@ -614,7 +613,7 @@ describe RaptorIO::Protocol::HTTP::Client do
             url = 'http://stuffhereblahblahblah'
 
             response = nil
-            client.get( url ){ |r| response = r }
+            client.get(url){ |r| response = r }
             client.run
 
             response.error.should be_kind_of RaptorIO::Socket::Error::CouldNotResolve
@@ -626,7 +625,7 @@ describe RaptorIO::Protocol::HTTP::Client do
         context 'due to a closed port' do
           it 'raises RaptorIO::Socket::Error::ConnectionRefused' do
             expect {
-              client.get( 'http://localhost:858589', mode: :sync )
+              client.get('http://localhost:858589', mode: :sync)
             }.to raise_error RaptorIO::Socket::Error::ConnectionRefused
           end
         end
@@ -634,7 +633,7 @@ describe RaptorIO::Protocol::HTTP::Client do
         context 'due to an invalid address' do
           it 'raises RaptorIO::Socket::Error::CouldNotResolve' do
             expect {
-              client.get( 'http://stuffhereblahblahblah', mode: :sync )
+              client.get('http://stuffhereblahblahblah', mode: :sync)
             }.to raise_error RaptorIO::Socket::Error::CouldNotResolve
           end
         end
@@ -647,7 +646,7 @@ describe RaptorIO::Protocol::HTTP::Client do
       times = 2
 
       times.times do
-        client.get @url do |r|
+        client.get(url) do |r|
           cnt += 1
         end
       end
@@ -658,8 +657,8 @@ describe RaptorIO::Protocol::HTTP::Client do
 
     it 'runs requests queued via callbacks' do
       called = false
-      client.get @url do
-        client.get @url do
+      client.get(url) do
+        client.get(url) do
           called = true
         end
       end

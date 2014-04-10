@@ -3,7 +3,7 @@ require 'raptor-io/socket'
 
 describe 'RaptorIO::Protocol::HTTP::Request::Manipulators::Authenticators::Digest' do
 
-  let(:url) { "http://127.0.0.1/digest_spec" }
+  let(:url) { "http://127.0.0.1/digest/" }
 
   let(:manipulators) { RaptorIO::Protocol::HTTP::Request::Manipulators }
 
@@ -40,19 +40,21 @@ describe 'RaptorIO::Protocol::HTTP::Request::Manipulators::Authenticators::Diges
 
   context 'when authenticating to a real server' do
     before :all do
-      WebServers.start :digest
-      @url = WebServers.url_for( :digest )
+      WebServers.start :default
+      @url = WebServers.url_for( :default )
     end
-    let(:url) { @url }
+    let(:url) { @url + "/digest/"}
 
     context 'with the wrong password' do
       it 'fails authentication' do
+        resp = client.get( url, mode: :sync )
+        resp.code.should == 401
         opts = {
           mode: :sync,
           manipulators: {
             'authenticators/digest' =>
             {
-              response: client.get( url, mode: :sync ),
+              response: resp,
               username: 'admin',
               password: 'wrong'
             }
@@ -67,12 +69,14 @@ describe 'RaptorIO::Protocol::HTTP::Request::Manipulators::Authenticators::Diges
 
     context 'with the correct password' do
       it 'authenticates successfully' do
+        resp = client.get( url, mode: :sync )
+        resp.code.should == 401
         opts = {
           mode: :sync,
           manipulators: {
             'authenticators/digest' =>
             {
-              response: client.get( url, mode: :sync ),
+              response: resp,
               username: 'admin',
               password: 'secret'
             }

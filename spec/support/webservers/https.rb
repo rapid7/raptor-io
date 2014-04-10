@@ -37,7 +37,7 @@ class HTTPSServer < Sinatra::Base
 
 end
 
-server = ::Rack::Handler::WEBrick
+server = ::Rack::Handler.default
 trap( :INT ) { server.shutdown }
 
 server.run( HTTPSServer, options )

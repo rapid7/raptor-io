@@ -6,9 +6,15 @@ class WebServers
 
   attr_reader :lib
 
+  def default
+    @default ||= File.basename("default.rb",".rb")
+  end
+
   def initialize
     @lib     = File.expand_path(File.dirname(__FILE__) + '/../webservers')
-    @servers = {}
+
+    default_data = { port: available_port, path: @lib + "/default.rb" }
+    @servers = Hash.new { |hash, key| hash[key] = default_data }
 
     Dir.glob( File.join( @lib + '/**', '*.rb' ) ) do |path|
       @servers[normalize_name( File.basename( path, '.rb' ) )] = {
@@ -24,7 +30,7 @@ class WebServers
     server_info = data_for( name )
     server_info[:pid] = Process.spawn(
       'ruby', server_info[:path], '-p', server_info[:port].to_s,
-      :out=>"/dev/null", :err=>"/dev/null"
+      :out=>"/dev/null", #:err=>"/dev/null"
     )
 
     sleep 0.2 while !up?( name )
