@@ -131,6 +131,11 @@ if __FILE__ == $0
     "/basic/" => ProtectedBasic,
     "/digest/" => ProtectedDigest,
   })
-  Rack::Handler.default.run(map, Port: options[:port], Address: options[:address])
+
+  # Use thin here explicitly to take advantage of it's thread-ability.
+  # We need a concurrent server to test concurrency in the client
+  Rack::Handler::Thin.run(map, Port: options[:port], Address: options[:address]) do |thin|
+    thin.threaded = true
+  end
 end
 

@@ -6,10 +6,10 @@ describe RaptorIO::Protocol::HTTP::Client do
 
   before :all do
     WebServers.start :client_close_connection
-    WebServers.start :client_https
+    WebServers.start :https
     WebServers.start :default
 
-    @https_url = WebServers.url_for(:client_https).gsub('http', 'https')
+    @https_url = WebServers.url_for(:https).gsub('http', 'https')
   end
 
   before(:each) do
@@ -116,7 +116,7 @@ describe RaptorIO::Protocol::HTTP::Client do
         context 'when a timeout occurs' do
           it 'raises RaptorIO::Error::Timeout', speed: 'slow' do
             expect {
-              client.get("#{url}/sleep", mode: :sync)
+              client.get("#{url}/long-sleep", mode: :sync)
             }.to raise_error RaptorIO::Error::Timeout
           end
         end
@@ -125,11 +125,10 @@ describe RaptorIO::Protocol::HTTP::Client do
     end
 
     describe :concurrency do
-      context 'without a value' do
-        it 'defaults to 20' do
-          client.concurrency.should == 20
-        end
+      it 'defaults to 20' do
+        client.concurrency.should == 20
       end
+
       context 'with a value' do
         let(:options) do
           { concurrency: 10 }
@@ -139,7 +138,7 @@ describe RaptorIO::Protocol::HTTP::Client do
           client.concurrency.should == 10
         end
 
-        it 'sets the amount of maximum open connections at any given time', speed: 'slow' do
+        it 'is faster with 20 than with 1', speed: 'slow' do
           cnt   = 0
           times = 10
 
@@ -243,11 +242,16 @@ describe RaptorIO::Protocol::HTTP::Client do
   end
 
   describe '#request' do
-    it 'supports SSL' do
-      res = client.get(@https_url, mode: :sync)
-      res.should be_kind_of RaptorIO::Protocol::HTTP::Response
-      res.code.should == 200
-      res.body.should == 'Stuff...'
+    context "when using SSL" do
+      let(:options) do
+        { ssl_version: :SSLv3 }
+      end
+      it 'gets a response' do
+        res = client.get(@https_url, mode: :sync)
+        res.should be_kind_of RaptorIO::Protocol::HTTP::Response
+        res.code.should == 200
+        res.body.should == 'Stuff...'
+      end
     end
 
     it 'handles responses without body (1xx, 204, 304)' do
@@ -412,10 +416,10 @@ describe RaptorIO::Protocol::HTTP::Client do
           client.run
           runtime = Time.now - t
 
-          (runtime >= 5.0 || runtime < 6.0).should be_true
+          expect(runtime).to be_between(5.0, 7.0)
         end
 
-        context 'when a timeout occurs' do
+        context 'when a timeout occurs in sync mode' do
           let(:options) do
             { timeout: 1 }
           end
@@ -426,6 +430,7 @@ describe RaptorIO::Protocol::HTTP::Client do
           end
         end
       end
+
       describe :mode do
         describe :sync do
           it 'performs the request synchronously and returns the response' do
