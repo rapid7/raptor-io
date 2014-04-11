@@ -1,4 +1,4 @@
-require_relative '../../../../../support/lib/webserver_option_parser'
+require_relative '../lib/webserver_option_parser'
 require 'sinatra/base'
 require 'webrick'
 require 'webrick/https'
