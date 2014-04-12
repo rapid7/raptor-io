@@ -425,7 +425,7 @@ describe RaptorIO::Protocol::HTTP::Client do
           end
           it 'raises RaptorIO::Error::Timeout', speed: 'slow' do
             expect {
-              client.get("#{url}/sleep", mode: :sync)
+              client.get("#{url}/long-sleep", mode: :sync)
             }.to raise_error RaptorIO::Error::Timeout
           end
         end

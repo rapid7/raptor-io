@@ -37,7 +37,10 @@ class HTTPSServer < Sinatra::Base
 
 end
 
-server = ::Rack::Handler.default
+# Use WEBrick explicitly here because Thin doesn't seem to do SSL
+# correctly.  It's probably just the way we're configuring it but
+# whatever, I don't care, WEBrick works.
+server = ::Rack::Handler::WEBrick
 trap( :INT ) { server.shutdown }
 
 server.run( HTTPSServer, options )
