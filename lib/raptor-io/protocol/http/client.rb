@@ -223,7 +223,7 @@ class Client
               @sockets[:reads].map { |socket| @pending_responses[socket][:timeout] }.sort.first
 
           clock = Time.now
-          res = select( @sockets[:reads], nil, @sockets[:reads], lowest_timeout )
+          res = Socket.select( @sockets[:reads], nil, @sockets[:reads], lowest_timeout )
           waiting_time = Time.now - clock
 
           # Adjust the timeouts for *all* sockets since they all benefited from
@@ -277,7 +277,7 @@ class Client
 
         next if @sockets[:writes].empty?
 
-        _, writes, errors = select( nil, @sockets[:writes], @sockets[:writes] )
+        _, writes, errors = Socket.select( nil, @sockets[:writes], @sockets[:writes] )
 
         errors.each do |socket|
           handle_error( @sockets[:lookup_request][socket], nil, socket )
@@ -387,7 +387,7 @@ class Client
   # associated request once the full response is received -- at which point it
   # also closes the socket.
   #
-  # @param  [#gets] socket  Readable IO object.
+  # @param  [#read,#gets] socket  Readable IO object.
   #
   # @return [true, nil]
   #   `true` if the response finished being buffered, `nil` otherwise.

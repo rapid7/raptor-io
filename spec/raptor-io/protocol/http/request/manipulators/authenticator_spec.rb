@@ -2,11 +2,9 @@ require 'spec_helper'
 
 describe 'RaptorIO::Protocol::HTTP::Request::Manipulators::Authenticator' do
   before :all do
-    WebServers.start :basic
-    @basic_url = WebServers.url_for( :basic )
-
-    WebServers.start :digest
-    @digest_url = WebServers.url_for( :digest )
+    WebServers.start :default
+    @basic_url = WebServers.url_for( :default ) + "/basic/"
+    @digest_url = WebServers.url_for( :default ) + "/digest/"
 
     @iis_address   = ENV['IIS']
     @ntlm_url      = "http://#{@iis_address}/ntlm/"

@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe 'RaptorIO::Protocol::HTTP::Request::Manipulators::Authenticators::NTLM' do
   before :all do
-    WebServers.start :basic
+    WebServers.start :default
     @url = "http://#{ENV['IIS']}/ntlm/"
   end
 

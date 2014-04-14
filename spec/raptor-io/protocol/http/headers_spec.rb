@@ -13,7 +13,7 @@ describe RaptorIO::Protocol::HTTP::Headers do
         'x-morE-stUfF' => 'blah'
       }
       described_class.new( options ).to_s.should ==
-              "X-More-Stuff: blah"
+        "X-More-Stuff: blah"
     end
   end
 
@@ -47,8 +47,8 @@ describe RaptorIO::Protocol::HTTP::Headers do
 
     it 'returns an array of set-cookie strings' do
       set_coookies = [
-          'name=value; Expires=Wed, 09 Jun 2020 10:18:14 GMT',
-          'name2=value2; Expires=Wed, 09 Jun 2021 10:18:14 GMT'
+        'name=value; Expires=Wed, 09 Jun 2020 10:18:14 GMT',
+        'name2=value2; Expires=Wed, 09 Jun 2021 10:18:14 GMT'
       ]
 
       described_class.new( 'Set-Cookie' => set_coookies ).set_cookie.should == set_coookies
@@ -64,45 +64,45 @@ describe RaptorIO::Protocol::HTTP::Headers do
 
     it 'returns an array of cookies as hashes' do
       described_class.new(
-          'Set-Cookie' => [
-              'name=value; Expires=Wed, 09 Jun 2020 10:18:14 GMT',
-              'name2=value2; Expires=Wed, 09 Jun 2021 10:18:14 GMT'
-          ]
+        'Set-Cookie' => [
+          'name=value; Expires=Wed, 09 Jun 2020 10:18:14 GMT',
+          'name2=value2; Expires=Wed, 09 Jun 2021 10:18:14 GMT'
+        ]
       ).parsed_set_cookie.should == [
-          {
-              name:         'name',
-              value:        'value',
-              version:      0,
-              port:         nil,
-              discard:      nil,
-              comment_url:  nil,
-              expires:      Time.parse( '2020-06-09 13:18:14 +0300' ),
-              max_age:      nil,
-              comment:      nil,
-              secure:       nil,
-              path:         nil,
-              domain:       nil
-          },
-          {
-              name:         'name2',
-              value:        'value2',
-              version:      0,
-              port:         nil,
-              discard:      nil,
-              comment_url:  nil,
-              expires:      Time.parse( '2021-06-09 13:18:14 +0300' ),
-              max_age:      nil,
-              comment:      nil,
-              secure:       nil,
-              path:         nil,
-              domain:       nil
-          }
+        {
+          name:         'name',
+          value:        'value',
+          version:      0,
+          port:         nil,
+          discard:      nil,
+          comment_url:  nil,
+          expires:      Time.parse( '2020-06-09 13:18:14 +0300' ),
+          max_age:      nil,
+          comment:      nil,
+          secure:       nil,
+          path:         nil,
+          domain:       nil
+        },
+        {
+          name:         'name2',
+          value:        'value2',
+          version:      0,
+          port:         nil,
+          discard:      nil,
+          comment_url:  nil,
+          expires:      Time.parse( '2021-06-09 13:18:14 +0300' ),
+          max_age:      nil,
+          comment:      nil,
+          secure:       nil,
+          path:         nil,
+          domain:       nil
+        }
       ]
     end
   end
 
   describe '#cookies' do
-    context 'when there is no Cookie fied' do
+    context 'when there is no Cookie field' do
       it 'returns an empty array' do
         described_class.new.cookies.should == []
       end
@@ -110,36 +110,36 @@ describe RaptorIO::Protocol::HTTP::Headers do
 
     it 'returns an array of cookies as hashes' do
       described_class.new(
-          'Cookie' => 'cname=cvalue; c2name=c2value'
+        'Cookie' => 'cname=cvalue; c2name=c2value'
       ).cookies.should == [
-          {
-              name: 'cname',
-              value: 'cvalue',
-              version: 0,
-              port: nil,
-              discard: nil,
-              comment_url: nil,
-              expires: nil,
-              max_age: nil,
-              comment: nil,
-              secure: nil,
-              path: nil,
-              domain: nil
-          },
-          {
-              name: 'c2name',
-              value: 'c2value',
-              version: 0,
-              port: nil,
-              discard: nil,
-              comment_url: nil,
-              expires: nil,
-              max_age: nil,
-              comment: nil,
-              secure: nil,
-              path: nil,
-              domain: nil
-          }
+        {
+          name: 'cname',
+          value: 'cvalue',
+          version: 0,
+          port: nil,
+          discard: nil,
+          comment_url: nil,
+          expires: nil,
+          max_age: nil,
+          comment: nil,
+          secure: nil,
+          path: nil,
+          domain: nil
+        },
+        {
+          name: 'c2name',
+          value: 'c2value',
+          version: 0,
+          port: nil,
+          discard: nil,
+          comment_url: nil,
+          expires: nil,
+          max_age: nil,
+          comment: nil,
+          secure: nil,
+          path: nil,
+          domain: nil
+        }
       ]
     end
   end
@@ -164,25 +164,24 @@ describe RaptorIO::Protocol::HTTP::Headers do
         "Content-length: 431\r\n\r\n"
 
       headers = described_class.parse( headers_string )
-      headers.should ==
-          {
-              'Content-Type'      => 'text/html;charset=utf-8',
-              'Content-Length'    => '431'
-          }
+      headers.should == {
+        'Content-Type'      => 'text/html;charset=utf-8',
+        'Content-Length'    => '431'
+      }
       headers.class.should == described_class
     end
 
     it 'supports CR terminators' do
       headers_string = "content-Type: text/html;charset=utf-8\n" +
-          "Content-length: 431\n\n"
+        "Content-length: 431\n\n"
 
       headers = described_class.parse( headers_string )
       headers.should ==
-          {
-              'Content-Type'      => 'text/html;charset=utf-8',
-              'Content-Length'    => '431'
-          }
-      headers.class.should == described_class
+        {
+        'Content-Type'      => 'text/html;charset=utf-8',
+        'Content-Length'    => '431'
+      }
+        headers.class.should == described_class
     end
   end
 

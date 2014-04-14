@@ -3,9 +3,11 @@ require 'raptor-io/socket'
 
 describe 'RaptorIO::Protocol::HTTP::Request::Manipulators::Authenticators::Basic' do
   before :all do
-    WebServers.start :basic
-    @url = WebServers.url_for( :basic )
+    WebServers.start :default
+    @url = WebServers.url_for( :default )
   end
+
+  let(:url) { @url + "/basic/" }
 
   before( :each ) do
     RaptorIO::Protocol::HTTP::Request::Manipulators.reset
@@ -15,17 +17,17 @@ describe 'RaptorIO::Protocol::HTTP::Request::Manipulators::Authenticators::Basic
 
   it 'provides Basic authentication' do
     opts = {
-        mode: :sync, manipulators: {
-            'authenticators/basic' =>
-                {
-                    username: 'admin',
-                    password: 'secret'
-                }
+      mode: :sync, manipulators: {
+        'authenticators/basic' =>
+        {
+          username: 'admin',
+          password: 'secret'
         }
+      }
     }
 
     2.times do
-      client.get( @url, opts ).code.should == 200
+      client.get( url, opts ).code.should == 200
     end
   end
 end

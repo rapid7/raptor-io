@@ -18,7 +18,7 @@ module Authenticators
 class Digest < Manipulator
 
   def run
-    request.headers['Authorization'] = {
+    authorization = {
         'Digest username' => username,
         realm:               challenge[:realm],
         nonce:               challenge[:nonce],
@@ -29,7 +29,8 @@ class Digest < Manipulator
         response:            response,
         algorithm:           algorithm_name,
         opaque:              challenge[:opaque]
-    }.map { |k, v| "#{k}=\"#{v}\"" }.join( ', ' )
+    }
+    request.headers['Authorization'] = authorization.map { |k, v| "#{k}=\"#{v}\"" }.join( ', ' )
   end
 
   private
@@ -109,6 +110,7 @@ class Digest < Manipulator
     return @challenge if @challenge
 
     challenge_options = {}
+
     options[:response].headers['www-authenticate'].split( ',' ).each do |pair|
       matches = pair.strip.match( /(.+)="(.*)"/ )
       challenge_options[matches[1].to_sym] = matches[2]

@@ -28,9 +28,9 @@ class RaptorIO::Socket
   #
   # @see http://bugs.ruby-lang.org/issues/8875
   # @see http://jira.codehaus.org/browse/JRUBY-6874
-  # @param read_array [Array] (see IO.select)
-  # @param write_array [Array] (see IO.select)
-  # @param error_array [Array] (see IO.select)
+  # @param read_array [Array,nil] (see IO.select)
+  # @param write_array [Array,nil] (see IO.select)
+  # @param error_array [Array,nil] (see IO.select)
   # @param timeout [Fixnum,nil] (see IO.select)
   #
   # @return [Array] An Array containing three arrays of IO objects that
@@ -47,12 +47,14 @@ class RaptorIO::Socket
 
     selectable_readers = read_array.dup.delete_if do |reader|
       begin
-        # If this socket doesn't have a read_nonblock method, then it's
-        # a server of some kind and we have to run it through the real
-        # select to see if it can {TCPServer#accept accept}.
-        next false unless reader.respond_to? :read_nonblock
-
-        byte = reader.read_nonblock(1)
+        if reader.respond_to? :read_nonblock
+          byte = reader.read_nonblock(1)
+        else
+          # This socket doesn't have a read_nonblock method, so it's a
+          # server of some kind and we have to run it through the real
+          # select to see if it can {TCPServer#accept accept}.
+          next false
+        end
       rescue IO::WaitReadable, IO::WaitWritable
         # Then this thing needs to go through the real select to be able
         # to tell if it has data.
@@ -78,8 +80,6 @@ class RaptorIO::Socket
 
     if readers_with_data.any?
       if selectable_readers.any? || write_array.any? || error_array.any?
-        #$stderr.puts(" ----- Selecting readers:")
-        #pp selectable_readers
         # Then see if anything has data right now by using a 0 timeout
         r,w,e = IO.select(selectable_readers, write_array, error_array, 0)
 
@@ -99,8 +99,6 @@ class RaptorIO::Socket
       real = IO.select(read_array, write_array, error_array, timeout)
     end
 
-    #$stderr.puts '------ RaptorIO::Socket.select result ------'
-    #pp real
     return real
   end
 
