@@ -14,7 +14,7 @@ Gem::Specification.new do |spec|
   spec.description   = %q{Provides a variety of classes useful for security testing and exploit development.}
   spec.summary       = 'RaptorIO security library.'
   spec.homepage      = 'https://github.com/rapid7/raptor'
-  spec.license       = 'MIT'
+  spec.license       = 'BSD'
 
   spec.files         = Dir.glob('lib/**/**')
   spec.executables   = Dir.glob('bin/*')
