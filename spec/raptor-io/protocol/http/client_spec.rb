@@ -129,9 +129,12 @@ describe RaptorIO::Protocol::HTTP::Client do
         client.concurrency.should == 20
       end
 
-      context 'with a value' do
+      context 'with a value', focus:true do
         let(:options) do
           { concurrency: 10 }
+        end
+        let(:url) do
+          WebServers.url_for(:default) + "/sleep"
         end
 
         it 'sets the request concurrency option' do
@@ -142,11 +145,10 @@ describe RaptorIO::Protocol::HTTP::Client do
           cnt   = 0
           times = 10
 
-          url = "#{url}/sleep"
-
           client.concurrency = 1
           times.times do
-            client.get url do
+            client.get url do |response|
+              expect(response.error).to be_nil
               cnt += 1
             end
           end
@@ -159,7 +161,8 @@ describe RaptorIO::Protocol::HTTP::Client do
           cnt = 0
           client.concurrency = 20
           times.times do
-            client.get url do
+            client.get url do |response|
+              expect(response.error).to be_nil
               cnt += 1
             end
           end
