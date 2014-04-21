@@ -9,7 +9,7 @@ describe RaptorIO::Protocol::HTTP::Client do
     WebServers.start :https
     WebServers.start :default
 
-    @https_url = WebServers.url_for(:https).gsub('http', 'https')
+    @https_url = WebServers.url_for(:https)
   end
 
   before(:each) do

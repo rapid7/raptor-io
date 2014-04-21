@@ -45,7 +45,11 @@ class WebServers
   end
 
   def protocol_for( name )
-    'http'
+    if name =~ /https/i
+      'https'
+    else
+      'http'
+    end
   end
 
   def port_for( name )
@@ -60,7 +64,10 @@ class WebServers
     begin
       ::Net::HTTP.get_response( URI.parse( url_for( name ) ) )
       true
-    rescue Errno::ECONNRESET
+    rescue OpenSSL::SSL::SSLError
+      true
+    rescue Errno::ECONNRESET, EOFError
+      # Handle :client_close_connection server's behavior
       true
     rescue
       false
