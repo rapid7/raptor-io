@@ -129,7 +129,7 @@ describe RaptorIO::Protocol::HTTP::Client do
         client.concurrency.should == 20
       end
 
-      context 'with a value', focus:true do
+      context 'with a value' do
         let(:options) do
           { concurrency: 10 }
         end
