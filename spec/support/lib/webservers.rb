@@ -64,10 +64,14 @@ class WebServers
     begin
       ::Net::HTTP.get_response( URI.parse( url_for( name ) ) )
       true
-    rescue OpenSSL::SSL::SSLError
-      true
     rescue Errno::ECONNRESET, EOFError
-      # Handle :client_close_connection server's behavior
+      # We get ECONNRESET when using the :client_close_connection server
+      #
+      # We get EOFError when using the https server because we're
+      # sending a regular http request and the server closes the
+      # connection before sending any data.
+      #
+      # Either way, this means the server is running.
       true
     rescue
       false
