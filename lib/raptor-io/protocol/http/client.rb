@@ -141,6 +141,7 @@ class Client
   def request( url, options = {}, &block )
     options = options.dup
     options[:timeout] ||= @timeout
+    options[:mode] ||= :async
 
     req = Request.new( options.merge( url: url ) )
 
@@ -154,7 +155,9 @@ class Client
         req.headers['Cookie'] = options[:cookies]
     end
 
-    return sync_request( req, options[:manipulators] || {} ) if options[:mode] == :sync
+    if options[:mode] == :sync
+      return sync_request( req, options[:manipulators] || {} )
+    end
 
     req.on_complete( &block ) if block_given?
 
@@ -444,7 +447,14 @@ class Client
       return true
     end
 
-    response[:headers] << socket.gets.to_s
+    line = socket.gets
+    if !line
+      handle_error( @sockets[:lookup_request][socket], EOFError.new, socket )
+      response[:force_no_keep_alive] = true
+      return true
+    end
+
+    response[:headers] << line
 
     # Keep going until we get all the headers.
     return if !(response[:headers] =~ HEADER_SEPARATOR_PATTERN)
