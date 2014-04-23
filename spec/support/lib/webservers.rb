@@ -45,7 +45,11 @@ class WebServers
   end
 
   def protocol_for( name )
-    'http'
+    if name =~ /https/i
+      'https'
+    else
+      'http'
+    end
   end
 
   def port_for( name )
@@ -60,7 +64,14 @@ class WebServers
     begin
       ::Net::HTTP.get_response( URI.parse( url_for( name ) ) )
       true
-    rescue Errno::ECONNRESET
+    rescue Errno::ECONNRESET, EOFError
+      # We get ECONNRESET when using the :client_close_connection server
+      #
+      # We get EOFError when using the https server because we're
+      # sending a regular http request and the server closes the
+      # connection before sending any data.
+      #
+      # Either way, this means the server is running.
       true
     rescue
       false
