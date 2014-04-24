@@ -207,7 +207,7 @@ describe RaptorIO::Protocol::HTTP::Server do
     end
 
     describe :port do
-      it 'binds to this port' do
+      it 'binds to this port (8080)' do
         server = new_server( port: 8080 )
         server.port.should == 8080
         server.run_nonblock

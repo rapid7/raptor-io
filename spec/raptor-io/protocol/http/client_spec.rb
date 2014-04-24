@@ -9,7 +9,7 @@ describe RaptorIO::Protocol::HTTP::Client do
     WebServers.start :https
     WebServers.start :default
 
-    @https_url = WebServers.url_for(:https).gsub('http', 'https')
+    @https_url = WebServers.url_for(:https)
   end
 
   before(:each) do
@@ -133,6 +133,9 @@ describe RaptorIO::Protocol::HTTP::Client do
         let(:options) do
           { concurrency: 10 }
         end
+        let(:url) do
+          WebServers.url_for(:default) + "/sleep"
+        end
 
         it 'sets the request concurrency option' do
           client.concurrency.should == 10
@@ -142,11 +145,10 @@ describe RaptorIO::Protocol::HTTP::Client do
           cnt   = 0
           times = 10
 
-          url = "#{url}/sleep"
-
           client.concurrency = 1
           times.times do
-            client.get url do
+            client.get url do |response|
+              expect(response.error).to be_nil
               cnt += 1
             end
           end
@@ -159,7 +161,8 @@ describe RaptorIO::Protocol::HTTP::Client do
           cnt = 0
           client.concurrency = 20
           times.times do
-            client.get url do
+            client.get url do |response|
+              expect(response.error).to be_nil
               cnt += 1
             end
           end
@@ -544,107 +547,6 @@ describe RaptorIO::Protocol::HTTP::Client do
   end
 
   describe '#run' do
-    context 'when a request fails' do
-      context 'in asynchronous mode' do
-        context 'due to a closed port' do
-          it 'passes the callback an empty response' do
-            url = 'http://localhost:9696969'
-
-            response = nil
-            client.get(url){ |r| response = r }
-            client.run
-
-            response.version.should == '1.1'
-            response.code.should == 0
-            response.message.should be_nil
-            response.body.should be_nil
-            response.headers.should == {}
-          end
-
-          it 'assigns RaptorIO::Socket::Error::ConnectionError to #error' do
-            url = 'http://localhost:9696969'
-
-            response = nil
-            client.get(url){ |r| response = r }
-            client.run
-
-            response.error.should be_kind_of RaptorIO::Socket::Error::ConnectionError
-          end
-
-        end
-
-        context 'due to an invalid IP address' do
-          it 'passes the callback an empty response', speed: 'slow' do
-            url = 'http://10.11.12.13'
-
-            response = nil
-            client.get(url){ |r| response = r }
-            client.run
-
-            response.version.should == '1.1'
-            response.code.should == 0
-            response.message.should be_nil
-            response.body.should be_nil
-            response.headers.should == {}
-          end
-
-          it 'assigns RaptorIO::Socket::Error::ConnectionError to #error', speed: 'slow' do
-            url = 'http://10.11.12.13'
-
-            response = nil
-            client.get(url){ |r| response = r }
-            client.run
-
-            response.error.should be_kind_of RaptorIO::Socket::Error::ConnectionError
-          end
-        end
-
-        context 'due to an invalid hostname' do
-          it 'passes the callback an empty response' do
-            url = 'http://stuffhereblahblahblah'
-
-            response = nil
-            client.get(url){ |r| response = r }
-            client.run
-
-            response.version.should == '1.1'
-            response.code.should == 0
-            response.message.should be_nil
-            response.body.should be_nil
-            response.headers.should == {}
-          end
-
-          it 'assigns RaptorIO::Socket::Error::CouldNotResolve to #error' do
-            url = 'http://stuffhereblahblahblah'
-
-            response = nil
-            client.get(url){ |r| response = r }
-            client.run
-
-            response.error.should be_kind_of RaptorIO::Socket::Error::CouldNotResolve
-          end
-        end
-      end
-
-      context 'in synchronous mode' do
-        context 'due to a closed port' do
-          it 'raises RaptorIO::Socket::Error::ConnectionRefused' do
-            expect {
-              client.get('http://localhost:858589', mode: :sync)
-            }.to raise_error RaptorIO::Socket::Error::ConnectionRefused
-          end
-        end
-
-        context 'due to an invalid address' do
-          it 'raises RaptorIO::Socket::Error::CouldNotResolve' do
-            expect {
-              client.get('http://stuffhereblahblahblah', mode: :sync)
-            }.to raise_error RaptorIO::Socket::Error::CouldNotResolve
-          end
-        end
-      end
-
-    end
 
     it 'runs all the queued requests' do
       cnt   = 0
