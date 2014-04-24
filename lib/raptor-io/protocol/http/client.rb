@@ -412,7 +412,7 @@ class Client
           return
         end
       else
-        # A Content-Type is not strictly necessary, the end of the response body
+        # A Content-Length is not strictly necessary, the end of the response body
         # can also be signaled by the server closing the connection. That's why
         # the following code is so ugly.
 
