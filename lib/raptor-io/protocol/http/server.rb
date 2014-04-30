@@ -243,6 +243,12 @@ class Server
 
   private
 
+  # {Socket.select Select} the server socket and all of our client sockets
+  #
+  # @return [Hash<Symbol,Socket>]
+  #   Readable sockets in :reads, Writable sockets in :writes, Errored
+  #   sockets in :errors
+  # @return [nil] If there are no changes to the selected sockets
   def select_sockets
     clock = Time.now
     sockets = Socket.select( [@server] | @sockets[:reads],

@@ -226,30 +226,15 @@ describe RaptorIO::Protocol::HTTP::Server do
     end
 
     describe :timeout do
-      it 'defaults to 10', speed: 'slow' do
+      it 'defaults to 10' do
         server = new_server
         server.timeout.should == 10
-        server.run_nonblock
-
-        server.timeouts.should == 0
-
-        socket = Socket.new( Socket::Constants::AF_INET, Socket::Constants::SOCK_STREAM, 0 )
-        sockaddr = Socket.pack_sockaddr_in( server.port, server.address )
-        socket.connect( sockaddr )
-
-        sleep 9
-
-        server.timeouts.should == 0
-
-        sleep 11
-        socket.close
-
-        server.timeouts.should == 1
       end
 
-      it 'sets the request timeout' do
-        server = new_server( timeout: 1 )
-        server.timeout.should == 1
+      it 'sets the request timeout', speed: 'slow' do
+        timeout = 2
+        server = new_server( timeout: timeout )
+        server.timeout.should == timeout
         server.run_nonblock
 
         server.timeouts.should == 0
@@ -258,10 +243,16 @@ describe RaptorIO::Protocol::HTTP::Server do
         sockaddr = Socket.pack_sockaddr_in( server.port, server.address )
         socket.connect( sockaddr )
 
-        sleep 2
-        socket.close
+        # half way through the timeout period
+        sleep(timeout / 2.0)
+        server.timeouts.should == 0
 
+        # We've now slept through a total of two timeout periods, which
+        # should ensure that the client has timed out
+        sleep(timeout * 2)
         server.timeouts.should == 1
+
+        socket.close
       end
     end
 
